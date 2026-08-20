@@ -1,0 +1,69 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "io.github.halfmasa.xaerobinding.mixin",
+  "compatibilityLevel": "{{COMPATIBILITY_LEVEL}}",
+  "plugin": "io.github.halfmasa.xaerobinding.mixin.XaeroMixinPlugin",
+  "client": [
+    "MinimapWorldStateUpdaterMixin",
+    "WorldMapProcessorMixin",
+    "LevelStorageSourceMixin",
+    "ItemEntityMixin",
+    "BoatViewMixin",
+    "BoatItemViewMixin",
+    "KeyMappingAccessor",
+    "MinecraftInputAccessor",
+    "KeyboardHandlerAccessor",
+    "KeybindPieKeyMappingMixin",
+    "MultiPlayerGameModeAccessor",
+    "KeyboardInputMixin",
+    "ScreenshotMixin",
+    "PackCompatibilityMixin",
+    "ItemStackTooltipMixin",
+    "FreeCameraInteractionMixin",
+    "FastLoadingOverlayMixin",
+    "FastLevelLoadingScreenMixin",
+    "ToastKillerMixin",
+    "ClickAndSendMixin",
+    "MapInSlotMixin",
+    "BetterSavedHotbarsMixin",
+    "CondensedCreativeMixin",
+    "ReiItemHistoryMixin",
+    "ReiItemHistoryOverlayMixin",
+    "ReiItemHistoryFavoritesMixin",
+    "ReiItemHistoryCaptureMixin",
+    "JeiItemHistoryMixin",
+    "JeiItemHistoryBookmarkMixin",
+    "JeiItemHistoryCaptureMixin",
+    "JeiItemGiveHistoryMixin",
+    "JeiItemHistoryInputMixin",
+    "KeepModMenuScrollMixin",
+    "GuiListBaseAccessor",
+    "GuiListBaseScrollMixin",
+    "MaLiLibConfigScrollMixin",
+    "ServerPingerFixMixin",
+    "ServerIconCacheMixin",
+    "ImeEditBoxMixin",
+    "ImeScreenMixin",
+    "ImeMinecraftMixin",
+    "ImeTextScreenMixin",
+    "ImeReiTextFieldMixin",
+    "LiquidBlockRendererMixin",
+    "SodiumFluidRendererMixin",
+    "SodiumLevelSliceFluidMixin",
+    "EntityRenderAggregationMixin",
+    "EntityRenderDispatcherAggregationMixin"
+    ,"DraggableListsMinecraftMixin"
+    ,"draggable.packs.PackSelectionModelMixin"
+    ,"draggable.packs.PackSelectionScreenMixin"
+    ,"draggable.packs.TransferableSelectionList_PackEntryMixin"
+    ,"draggable.packs.TransferableSelectionListMixin"
+    ,"draggable.server.JoinMultiplayerScreenMixin"
+    ,"draggable.server.OnlineServerEntryMixin"
+    ,"draggable.server.ServerListMixin"
+    ,"draggable.server.ServerSelectionListMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

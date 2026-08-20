@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "halfmasa",
+  "version": "${mod_version}",
+  "name": "halfmasa",
+  "description": "halfmasa（半马萨）：MaLiLib 风格的 Xaero 存档绑定、路径点与创造模式实用工具。",
+  "authors": ["half_masa"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "main": ["io.github.halfmasa.xaerobinding.XaeroWorldBinding"],
+    "modmenu": ["io.github.halfmasa.xaerobinding.compat.ModMenuIntegration"]
+  },
+  "mixins": ["halfmasa.mixins.json"],
+  "depends": {
+    "minecraft": "${minecraft_dependency}",
+    "fabricloader": ">=0.16.14",
+    "malilib": "${malilib_dependency}"
+  },
+  "suggests": {
+    "xaerominimap": ">=26.4.0",
+    "xaeroworldmap": ">=1.44.0",
+    "modmenu": "*",
+    "carpet": "*",
+    "tweakeroo": "*",
+    "roughlyenoughitems": "*",
+    "jei": "*"
+  }
+}

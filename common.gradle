@@ -1,0 +1,112 @@
+final int mcVersion = project.mcVersion
+final boolean unobfuscated = mcVersion >= 26_00_00
+
+apply plugin: unobfuscated ? 'net.fabricmc.fabric-loom' : 'net.fabricmc.fabric-loom-remap'
+apply plugin: 'com.replaymod.preprocess'
+apply plugin: 'maven-publish'
+
+repositories {
+    maven { url = 'https://masa.dy.fi/maven/sakura-ryoko' }
+    maven { url = 'https://maven.fallenbreath.me/releases' }
+    maven { url = 'https://maven.fabricmc.net/' }
+    maven { url = 'https://maven.terraformersmc.com/releases/' }
+    maven { url = 'https://api.modrinth.com/maven' }
+    maven { url = 'https://maven.blamejared.com' }
+    maven { url = 'https://maven.shedaniel.me' }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    if (!unobfuscated) {
+        mappings loom.officialMojangMappings()
+    }
+
+    def loader = "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    def malilib = "fi.dy.masa.malilib:malilib-fabric-${project.malilib_mc_version}:${project.malilib_version}"
+    def xaeroMinimap = "maven.modrinth:xaeros-minimap:${project.xaero_minimap_version}"
+    def xaeroWorldMap = "maven.modrinth:xaeros-world-map:${project.xaero_world_map_version}"
+    if (unobfuscated) {
+        implementation loader
+        implementation malilib
+        compileOnly "maven.modrinth:modmenu:${project.mod_menu_version}"
+        compileOnly xaeroMinimap
+        compileOnly xaeroWorldMap
+    } else {
+        modImplementation loader
+        modImplementation malilib
+        modCompileOnly "maven.modrinth:modmenu:${project.mod_menu_version}"
+        modCompileOnly xaeroMinimap
+        modCompileOnly xaeroWorldMap
+        if (project.hasProperty('jei_compile_version')) {
+            modCompileOnly "mezz.jei:jei-${project.minecraft_version}-fabric:${project.jei_compile_version}"
+        }
+        if (project.hasProperty('rei_compile_version')) {
+            modCompileOnly "me.shedaniel:RoughlyEnoughItems-fabric:${project.rei_compile_version}"
+        }
+        def historyCompatRuntime = project.findProperty('history_compat_runtime') == 'true'
+        def historyJeiRuntime = historyCompatRuntime || project.findProperty('history_compat_runtime_jei') == 'true'
+        def historyReiRuntime = historyCompatRuntime || project.findProperty('history_compat_runtime_rei') == 'true'
+        if ((historyJeiRuntime || historyReiRuntime) &&
+                project.hasProperty('jei_compile_version') && project.hasProperty('rei_compile_version')) {
+            modLocalRuntime "net.fabricmc.fabric-api:fabric-api:0.116.15+1.21.1"
+            modLocalRuntime "dev.architectury:architectury-fabric:13.0.11"
+            modLocalRuntime "me.shedaniel.cloth:cloth-config-fabric:15.0.140"
+        }
+        if (historyJeiRuntime && project.hasProperty('jei_compile_version')) {
+            modLocalRuntime "mezz.jei:jei-${project.minecraft_version}-fabric:${project.jei_compile_version}"
+        }
+        if (historyReiRuntime && project.hasProperty('rei_compile_version')) {
+            modLocalRuntime "me.shedaniel:RoughlyEnoughItems-fabric:${project.rei_compile_version}"
+        }
+    }
+}
+
+def javaVersion = unobfuscated ? JavaVersion.VERSION_25 : JavaVersion.VERSION_21
+group = rootProject.group
+version = "${rootProject.mod_version}+${rootProject.buildTimestamp}"
+base.archivesName = "${rootProject.mod_file_name}-${project.artifact_mc_version}"
+
+loom {
+    mixin {
+        useLegacyMixinAp = !unobfuscated
+    }
+}
+
+processResources {
+    def properties = [
+            mod_version: project.version,
+            minecraft_dependency: project.minecraft_dependency,
+            malilib_dependency: project.malilib_dependency,
+            compatibility_level: unobfuscated ? 'JAVA_25' : 'JAVA_21'
+    ]
+    inputs.properties(properties)
+    filesMatching('fabric.mod.json') { expand properties }
+    filesMatching('halfmasa.mixins.json') {
+        filter { line -> line.replace('{{COMPATIBILITY_LEVEL}}', properties.compatibility_level) }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = unobfuscated ? 25 : 21
+
+    def explicitBuildProjects = gradle.startParameter.taskNames
+            .findAll { it ==~ /:[^:]+:build/ }
+            .collect { it.substring(0, it.lastIndexOf(':')) }
+            .unique()
+    if (explicitBuildProjects.size() == 1 && !explicitBuildProjects.contains(project.path)) {
+        onlyIf { false }
+    }
+}
+
+java {
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    withSourcesJar()
+}
+
+jar {
+    from(rootProject.file('LICENSE')) {
+        rename { "${it}_${base.archivesName.get()}" }
+    }
+}

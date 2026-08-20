@@ -1,0 +1,22 @@
+{
+  "text.autoconfig.condensed_creative.title": "合并创造物品栏配置",
+  "text.autoconfig.condensed_creative.category.common": "通用",
+  "text.autoconfig.condensed_creative.category.debug_info": "调试信息",
+  "text.autoconfig.condensed_creative.category.client": "客户端",
+  "text.autoconfig.condensed_creative.option.defaultCCGroups": "启用内置合并条目",
+  "text.autoconfig.condensed_creative.option.defaultEntriesConfig": "内置条目配置",
+  "text.autoconfig.condensed_creative.option.defaultEntriesConfig.enchantmentBooks": "附魔书",
+  "text.autoconfig.condensed_creative.option.defaultEntriesConfig.tippedArrows": "药箭",
+  "text.autoconfig.condensed_creative.option.defaultEntriesConfig.potions": "药水",
+  "text.autoconfig.condensed_creative.option.entryRefreshButton": "显示条目刷新按钮",
+  "text.autoconfig.condensed_creative.option.entryBackgroundColor": "显示条目背景",
+  "text.autoconfig.condensed_creative.option.entryBorderColor": "显示条目边框",
+  "text.autoconfig.condensed_creative.option.condensedEntryBorderColor": "合并条目颜色",
+  "text.autoconfig.condensed_creative.option.rotationPreview": "启用条目轮换预览",
+  "text.autoconfig.condensed_creative.option.tagPreviewForEntries": "显示标签提示",
+  "text.autoconfig.condensed_creative.option.debugIdentifiersForEntries": "显示内部标识符",
+  "itemGroup.condensed_creative.test": "合并创造物品栏",
+  "itemGroup.condensed_creative.test.tab.building_blocks": "建筑方块",
+  "itemGroup.condensed_creative.test.tab.colored_blocks": "染色方块",
+  "itemGroup.condensed_creative.test.tab.ingredients": "原材料"
+}

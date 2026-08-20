@@ -1,0 +1,23 @@
+.gradle/
+build/
+run/
+.gradle-dist/
+.tools/
+.reference/
+versions/*/build/
+versions/*/run/
+versions/*/bin/
+versions/*/out/
+versions/*/src/
+out/
+.idea/
+*.iml
+
+# Local build archives, test runs, and investigation artifacts
+mod-builds/
+logs/
+tmp_*/
+backups/
+share/
+tmp_*.zip
+src/src/

@@ -1,0 +1,21 @@
+# Third-party notices
+
+- Creative container fill is adapted from [TechUtils](https://github.com/VelizarBG/techutils), released under The Unlicense.
+- Elytra flight time is independently implemented after reference to [ElytraTime](https://github.com/Linter2/ElytraTime), licensed under LGPL-3.0.
+- Unrestricted boat view references [BoatView360](https://github.com/AsOne2020/BoatView360), licensed under LGPL-3.0.
+- Held-item boat rendering references [Boat Item View](https://github.com/50ap5ud5/BoatItemView), licensed under LGPL-3.0.
+- Inventory movement references [InvMoveCompats](https://github.com/PieKing1215/InvMoveCompats), licensed under LGPL-3.0.
+- Free-camera extensions optionally integrate with [Tweakeroo](https://github.com/sakura-ryoko/tweakeroo), licensed under LGPL-3.0.
+- Loading-screen acceleration references [Force Close World Loading Screen](https://github.com/kennytv/kennytvs-epic-force-close-loading-screen-mod-for-fabric), licensed under MIT.
+- Saved-hotbar editing is adapted from [Better Saved Hotbars](https://github.com/LukynkaCZE/better-saved-hotbars), licensed under CC0-1.0.
+- Keybind selection references [KeybindsGalore Plus](https://github.com/av306/KeybindsGalore-Plus), licensed under LGPL-3.0.
+- Click-and-send references [LetMeClickAndSend](https://github.com/Fallen-Breath/LetMeClickAndSend), licensed under LGPL-3.0.
+- Map-in-slot rendering references [Map In Slot](https://github.com/Crec0/map-in-slot), licensed under MIT.
+- Toast suppression references [Toast Killer](https://github.com/anopensaucedev/Toast-Killer), licensed under Apache-2.0.
+- Server ping recovery references [ServerPingerFixer](https://github.com/JustAlittleWolf/ServerPingerFixer), licensed under MIT.
+- Windows IME integration uses the JNI component from [XPlus ContingameIME](https://github.com/Wudji/XPlus-ContingameIME), licensed under LGPL-2.1. Its corresponding C++ source and license are included under `third_party/xplus-contingameime/` in the JAR.
+- The expandable IME row references the interaction pattern used by [LPCTools](https://github.com/Le-Petit-C/LPCTools). No LPCTools code or other features are included.
+- The left-side `[+]`/`[-]` configuration fold button follows the MaLiLib/LPCTools interaction pattern and is independently implemented. No LPCTools code or dependency is included.
+- Creative inventory condensed entries are adapted from [Condensed Creative](https://github.com/wisp-forest/CondensedCreativeItems) by Wisp Forest, licensed under MIT. The corresponding license is included under `third_party/condensed-creative/` in the JAR.
+- Mod Menu and MaLiLib configuration scroll restoration is independently implemented after reference to [KeepMyScroll](https://github.com/My-Pal-is-a-Dog/keepmyscroll), licensed under CC BY-NC-SA 4.0. No KeepMyScroll source code is included.
+- Item-manager recipe lookup history compatibility references [Roughly Enough Items](https://github.com/shedaniel/RoughlyEnoughItems) and [Just Enough Items](https://github.com/mezz/JustEnoughItems), both licensed under MIT. Its independent history-grid interaction also references [JEI Recipe History](https://github.com/christofmeg/JEI-Recipe-History), licensed under MIT. History storage and rendering are independently implemented by halfmasa and no referenced classes are bundled.
