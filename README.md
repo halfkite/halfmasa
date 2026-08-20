@@ -51,16 +51,16 @@ JEI/REI 配方历史默认关闭。启用后可以设置显示行数和四角位
 在 Windows PowerShell 中运行：
 
 ```powershell
-.\.gradle-dist\gradle-9.5.1\bin\gradle.bat -g "$env:USERPROFILE\.gradle" buildAllVersions
+.\gradlew.bat buildAllVersions
 ```
 
 单独构建 1.21.1：
 
 ```powershell
-.\.tools\gradle-9.5.1\bin\gradle.bat :1.21.1:build
+.\gradlew.bat :1.21.1:build
 ```
 
-可安装 JAR 会输出到构建目录，并按构建流程归档到 `mod-builds/<timestamp>/`。归档目录是本地构建产物，不属于源码提交内容。
+全部版本的可安装 JAR 会归档到 `build/libs/<timestamp>/`；单版本产物位于对应的 `versions/<version>/build/libs/`。这些目录属于本地构建产物，不会提交到源码仓库。
 
 ## 致谢与许可证
 
@@ -113,16 +113,16 @@ Use the artifact matching your Minecraft version. Features are validated against
 On Windows PowerShell:
 
 ```powershell
-.\.gradle-dist\gradle-9.5.1\bin\gradle.bat -g "$env:USERPROFILE\.gradle" buildAllVersions
+.\gradlew.bat buildAllVersions
 ```
 
 To build only Minecraft 1.21.1:
 
 ```powershell
-.\.tools\gradle-9.5.1\bin\gradle.bat :1.21.1:build
+.\gradlew.bat :1.21.1:build
 ```
 
-Installable JARs are produced by the build and archived locally under `mod-builds/<timestamp>/`. Those archives are intentionally excluded from source control.
+Installable JARs for all versions are archived under `build/libs/<timestamp>/`. A single-version build is written to `versions/<version>/build/libs/`. Build outputs are intentionally excluded from source control.
 
 ## Credits and License
 
