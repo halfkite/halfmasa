@@ -77,9 +77,40 @@ jobs:
       target_subproject: ${{ inputs.target_subproject || 'all' }}
       ref: ${{ github.sha }}
 
+  credentials:
+    name: Verify publishing credentials
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify Modrinth access
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_API_TOKEN }}
+          MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID || '9ZHJ1Ue9' }}
+        run: |
+          set -euo pipefail
+          test -n "$MODRINTH_TOKEN"
+          curl --fail --silent --show-error \
+            --header "Authorization: $MODRINTH_TOKEN" \
+            --header 'User-Agent: halfkite/halfmasa release-workflow' \
+            https://api.modrinth.com/v2/user >/dev/null
+          curl --fail --silent --show-error \
+            --header "Authorization: $MODRINTH_TOKEN" \
+            --header 'User-Agent: halfkite/halfmasa release-workflow' \
+            "https://api.modrinth.com/v2/project/$MODRINTH_PROJECT_ID" >/dev/null
+
+      - name: Verify CurseForge upload access
+        env:
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$CURSEFORGE_TOKEN"
+          curl --fail --silent --show-error \
+            --header "X-Api-Token: $CURSEFORGE_TOKEN" \
+            'https://minecraft.curseforge.com/api/game/version-types?cache=true' >/dev/null
+
   prepare:
     name: Create release and changelog
-    needs: [validate, build]
+    needs: [validate, build, credentials]
     runs-on: ubuntu-latest
     outputs:
       release_tag: ${{ steps.release.outputs.tag }}
