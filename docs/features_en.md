@@ -1,6 +1,6 @@
 # halfmasa Features and Configuration
 
-> Documentation version: `1.1.1`
+> Documentation version: `1.1.1-beta.1`
 
 Press `X + H` to open the configuration screen, or use Mod Menu. Unless noted otherwise, features are disabled by default. An empty hotkey means that no key is bound by default.
 
