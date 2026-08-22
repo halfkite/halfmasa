@@ -1,6 +1,6 @@
 # halfmasa 功能与配置
 
-> 文档版本：`1.1.1-beta.1`
+> 文档版本：`1.1.2`
 
 按 `X + H` 打开配置界面，也可以从 Mod Menu 进入。除特别说明外，功能默认关闭；热键为空表示默认不绑定按键。
 
@@ -56,7 +56,7 @@
 | `boatView360` / `boatItemView` | `false` | 解除乘船视角旋转限制，并在划船时保留第一人称手持物品显示。 |
 | `inventoryMove` | `false` | 原版背包和容器界面打开时继续移动、跳跃和潜行。 |
 | `fastWorldLoadingScreen` / `fastResourcePackLoadingScreen` | `false` | 减少世界与资源包加载界面的额外等待。 |
-| `betterSavedHotbars` | `false` | 扩展创造模式保存工具栏行为。 |
+| `betterSavedHotbars` | `false` | 增强创造保存工具栏：支持拖入或替换单个物品、中键删除，并记住滚动位置；旧版游戏根目录 `hotbar.nbt` 首次自动复制到 `config/halfmasa/better-saved-hotbars/hotbar.nbt`。 |
 | `cooldownAutoAttack` | `false` | 按住攻击键时在原版攻击冷却完成后自动攻击准星目标。 |
 | `draggableLists` | `false` | 支持拖动资源包和服务器列表条目，并可隐藏原生移动箭头。 |
 | `fastScrolling` | `false` | 仅加速当前界面（包括 MaLiLib 配置界面）的滚轮事件，不影响游戏内快捷栏；展开后可分别配置两套模式。 |

@@ -427,6 +427,14 @@ public final class Configs implements IConfigHandler
             ENABLE_WORLD_BINDING,
             CUSTOM_SAVES_PATHS,
             KEEP_WORLD_SELECTION_ON_EMPTY);
+    private static final List<IConfigBase> RECORD_RELATED_CONFIGS = Stream.of(
+            List.of(ITEM_SEARCH_HISTORY),
+            ITEM_SEARCH_HISTORY_CHILDREN,
+            List.of(ITEM_MANAGER_RECIPE_HISTORY),
+            ITEM_MANAGER_RECIPE_HISTORY_CHILDREN,
+            List.of(BETTER_SAVED_HOTBARS, KEEP_MOD_MENU_SCROLL))
+            .flatMap(list -> list.stream().map(config -> (IConfigBase) config))
+            .toList();
 
     public static final List<IConfigBase> PORTED = Stream.of(List.of(
             CUSTOM_SAVES_PATHS,
@@ -645,6 +653,10 @@ public final class Configs implements IConfigHandler
             FAST_WORLD_LOADING_SCREEN,
             FAST_RESOURCE_PACK_LOADING_SCREEN,
             BETTER_SAVED_HOTBARS,
+            ITEM_SEARCH_HISTORY,
+            ITEM_MANAGER_RECIPE_HISTORY,
+            CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION,
+            KEEP_MOD_MENU_SCROLL,
             COOLDOWN_AUTO_ATTACK,
             DRAGGABLE_LISTS,
             BRIDGING_ASSIST,
@@ -662,10 +674,6 @@ public final class Configs implements IConfigHandler
             SERVER_PINGER_FIX,
             CONTINGAME_IME,
             CONDENSED_CREATIVE,
-            KEEP_MOD_MENU_SCROLL,
-            ITEM_SEARCH_HISTORY,
-            ITEM_MANAGER_RECIPE_HISTORY,
-            CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION,
             FILL_SAFETY);
 
     @Override
@@ -826,12 +834,12 @@ public final class Configs implements IConfigHandler
 
     public static List<IConfigBase> getPortedView()
     {
-        return keepSavesRelatedConfigsTogether(groupedPortedView());
+        return keepRelatedConfigsTogether(groupedPortedView());
     }
 
     public static List<IConfigBase> getClientView()
     {
-        return keepSavesRelatedConfigsTogether(visibleConfigs(CLIENT));
+        return keepRelatedConfigsTogether(visibleConfigs(CLIENT));
     }
 
     public static List<IConfigBase> getAllView()
@@ -840,33 +848,33 @@ public final class Configs implements IConfigHandler
                 .flatMap(List::stream)
                 .distinct()
                 .toList();
-        return keepSavesRelatedConfigsTogether(configs);
+        return keepRelatedConfigsTogether(configs);
     }
 
     public static List<IConfigBase> getRecommendedView()
     {
-        return keepSavesRelatedConfigsTogether(visibleConfigs(RECOMMENDED));
+        return keepRelatedConfigsTogether(visibleConfigs(RECOMMENDED));
     }
 
     public static List<IConfigBase> getExtensionsView()
     {
-        return keepSavesRelatedConfigsTogether(visibleConfigs(EXTENSIONS));
+        return keepRelatedConfigsTogether(visibleConfigs(EXTENSIONS));
     }
 
     public static List<IConfigBase> getDisabledView()
     {
-        return keepSavesRelatedConfigsTogether(visibleConfigs(DISABLED));
+        return keepRelatedConfigsTogether(visibleConfigs(DISABLED));
     }
 
     public static List<IConfigBase> getWaypointView()
     {
-        return keepSavesRelatedConfigsTogether(
+        return keepRelatedConfigsTogether(
                 groupedView(WAYPOINT, WAYPOINT_SHARING_GROUP, Configs::isWaypointSharingChild));
     }
 
     public static List<IConfigBase> getCreativeView()
     {
-        return keepSavesRelatedConfigsTogether(visibleConfigs(Stream.concat(
+        return keepRelatedConfigsTogether(visibleConfigs(Stream.concat(
                 CREATIVE.stream(),
                 Stream.concat(
                         Stream.of(CONDENSED_CREATIVE, CONDENSED_CREATIVE_EXPANDED),
@@ -876,15 +884,26 @@ public final class Configs implements IConfigHandler
 
     private static List<IConfigBase> keepSavesRelatedConfigsTogether(List<IConfigBase> configs)
     {
+        return keepConfigsTogether(configs, SAVES_RELATED_CONFIGS);
+    }
+
+    private static List<IConfigBase> keepRelatedConfigsTogether(List<IConfigBase> configs)
+    {
+        return keepConfigsTogether(keepSavesRelatedConfigsTogether(configs), RECORD_RELATED_CONFIGS);
+    }
+
+    private static List<IConfigBase> keepConfigsTogether(
+            List<IConfigBase> configs, List<IConfigBase> relatedConfigs)
+    {
         java.util.ArrayList<IConfigBase> result = new java.util.ArrayList<>();
         boolean inserted = false;
         for (IConfigBase config : configs)
         {
-            if (SAVES_RELATED_CONFIGS.contains(config))
+            if (relatedConfigs.contains(config))
             {
                 if (!inserted)
                 {
-                    SAVES_RELATED_CONFIGS.stream()
+                    relatedConfigs.stream()
                             .filter(configs::contains)
                             .forEach(result::add);
                     inserted = true;

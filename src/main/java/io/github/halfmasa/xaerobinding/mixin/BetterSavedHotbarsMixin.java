@@ -25,6 +25,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
 
@@ -32,6 +33,7 @@ import io.github.halfmasa.xaerobinding.config.Configs;
 public abstract class BetterSavedHotbarsMixin
         extends AbstractContainerScreen<CreativeModeInventoryScreen.ItemPickerMenu>
 {
+    @Unique private static float halfmasa_savedHotbarScroll;
     @Shadow private static CreativeModeTab selectedTab;
     @Shadow private float scrollOffs;
     @Shadow protected abstract void selectTab(CreativeModeTab tab);
@@ -97,13 +99,6 @@ public abstract class BetterSavedHotbarsMixin
             return;
         }
 
-        if (!slot.getItem().isEmpty())
-        {
-            client.player.containerMenu.setCarried(ItemStack.EMPTY);
-            ci.cancel();
-            return;
-        }
-
         this.halfmasa_storeCell(row, column, carried);
         client.player.containerMenu.setCarried(ItemStack.EMPTY);
         this.halfmasa_refreshTab();
@@ -120,16 +115,22 @@ public abstract class BetterSavedHotbarsMixin
         List<ItemStack> loaded = hotbar.load(client.player.level().registryAccess());
         List<ItemStack> backup = new ArrayList<>(9);
 
-        for (int index = 0; index < 9; index++)
+        try
         {
-            backup.add(inventory.getItem(index).copy());
-            inventory.setItem(index, loaded.get(index).copy());
+            for (int index = 0; index < 9; index++)
+            {
+                backup.add(inventory.getItem(index).copy());
+                inventory.setItem(index, loaded.get(index).copy());
+            }
+            inventory.setItem(column, value.copy());
+            hotbar.storeFrom(inventory, client.player.level().registryAccess());
         }
-        inventory.setItem(column, value.copy());
-        hotbar.storeFrom(inventory, client.player.level().registryAccess());
-        for (int index = 0; index < 9; index++)
+        finally
         {
-            inventory.setItem(index, backup.get(index));
+            for (int index = 0; index < backup.size(); index++)
+            {
+                inventory.setItem(index, backup.get(index));
+            }
         }
         manager.save();
     }
@@ -138,8 +139,30 @@ public abstract class BetterSavedHotbarsMixin
     private void halfmasa_refreshTab()
     {
         float scroll = this.scrollOffs;
+        halfmasa_savedHotbarScroll = scroll;
         this.selectTab(selectedTab);
         this.scrollOffs = scroll;
         this.menu.scrollTo(scroll);
+    }
+
+    @Inject(method = "selectTab", at = @At("TAIL"))
+    private void halfmasa_restoreSavedHotbarScroll(CreativeModeTab tab, CallbackInfo ci)
+    {
+        if (Configs.BETTER_SAVED_HOTBARS.getBooleanValue() &&
+            tab.getType() == CreativeModeTab.Type.HOTBAR)
+        {
+            this.scrollOffs = halfmasa_savedHotbarScroll;
+            this.menu.scrollTo(halfmasa_savedHotbarScroll);
+        }
+    }
+
+    @Inject(method = "mouseScrolled", at = @At("RETURN"))
+    private void halfmasa_rememberSavedHotbarScroll(CallbackInfoReturnable<Boolean> cir)
+    {
+        if (Configs.BETTER_SAVED_HOTBARS.getBooleanValue() && selectedTab != null &&
+            selectedTab.getType() == CreativeModeTab.Type.HOTBAR)
+        {
+            halfmasa_savedHotbarScroll = this.scrollOffs;
+        }
     }
 }

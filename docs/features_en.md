@@ -1,6 +1,6 @@
 # halfmasa Features and Configuration
 
-> Documentation version: `1.1.1-beta.1`
+> Documentation version: `1.1.2`
 
 Press `X + H` to open the configuration screen, or use Mod Menu. Unless noted otherwise, features are disabled by default. An empty hotkey means that no key is bound by default.
 
@@ -55,7 +55,7 @@ The panel initializes on the first item-manager screen without requiring a recip
 | `boatView360` / `boatItemView` | `false` | Removes the local boat-camera rotation limit and keeps first-person held items visible while rowing. |
 | `inventoryMove` | `false` | Allows movement, jumping, and sneaking while vanilla inventory or container screens are open. |
 | `fastWorldLoadingScreen` / `fastResourcePackLoadingScreen` | `false` | Reduces avoidable waiting in world and resource-pack loading screens. |
-| `betterSavedHotbars` | `false` | Extends creative saved-hotbar behavior. |
+| `betterSavedHotbars` | `false` | Enhances creative saved hotbars with individual insertion or replacement, middle-click deletion, and retained scrolling; the legacy root `hotbar.nbt` is copied once to `config/halfmasa/better-saved-hotbars/hotbar.nbt`. |
 | `cooldownAutoAttack` | `false` | Attacks the targeted entity while attack is held and the vanilla cooldown is ready. |
 | `draggableLists` | `false` | Adds drag reordering to resource-pack and server lists, with optional arrow hiding. |
 | `fastScrolling` | `false` | Accelerates only the current screen's scroll events, including MaLiLib config screens, and leaves in-game hotbar scrolling unchanged; expand it to configure both modes. |
