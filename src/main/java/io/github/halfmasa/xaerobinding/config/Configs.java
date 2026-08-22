@@ -231,6 +231,8 @@ public final class Configs implements IConfigHandler
             "keybindWheelExpanded", false).apply(PORTED_KEY);
     public static final ConfigInteger KEYBIND_REPEAT_COOLDOWN = new ConfigInteger(
             "keybindPieRepeatCooldown", 20, 0, 200, true).apply(PORTED_KEY);
+    public static final ConfigInteger KEYBIND_SELECTION_COOLDOWN = new ConfigInteger(
+            "keybindPieSelectionCooldown", 10, 0, 100, true).apply(PORTED_KEY);
     public static final ConfigBoolean KEYBIND_ATTACK_WORKAROUND = new ConfigBoolean(
             "keybindPieAttackWorkaround", true).apply(PORTED_KEY);
     public static final ConfigString KEYBIND_IGNORED_KEYS = new ConfigString(
@@ -371,6 +373,7 @@ public final class Configs implements IConfigHandler
 
     private static final List<IConfigBase> KEYBIND_PIE_SETTINGS = List.of(
             KEYBIND_REPEAT_COOLDOWN,
+            KEYBIND_SELECTION_COOLDOWN,
             KEYBIND_ATTACK_WORKAROUND,
             KEYBIND_IGNORED_KEYS,
             KEYBIND_INVERT_IGNORED_KEYS,

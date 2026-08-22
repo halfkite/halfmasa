@@ -27,11 +27,11 @@ public abstract class BookViewScreenMixin
     @Unique private boolean halfmasa$spacingEnabled;
 
     //#if MC >= 26.1
-    @Inject(method = "extractRenderState", at = @At("HEAD"))
+    @Inject(method = "extractRenderState", at = @At("HEAD"), require = 0)
     private void halfmasa_refreshSpacingCache(
             GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci)
     //#else
-    //$$ @Inject(method = "render", at = @At("HEAD"))
+    //$$ @Inject(method = "render", at = @At("HEAD"), require = 0)
     //$$ private void halfmasa_refreshSpacingCache(
     //$$         GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci)
     //#endif
@@ -50,23 +50,33 @@ public abstract class BookViewScreenMixin
             method = "visitText",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/screens/inventory/BookViewScreen$BookAccess;getPage(I)Lnet/minecraft/network/chat/Component;"))
+                    target = "Lnet/minecraft/client/gui/screens/inventory/BookViewScreen$BookAccess;getPage(I)Lnet/minecraft/network/chat/Component;"),
+            require = 0)
     private Component halfmasa_spaceBookPage(BookViewScreen.BookAccess access, int page)
+    //#elseif MC >= 1.21.8
+    //$$ @Redirect(
+    //$$         method = "render",
+    //$$         at = @At(
+    //$$                 value = "INVOKE",
+    //$$                 target = "Lnet/minecraft/client/gui/screens/inventory/BookViewScreen$BookAccess;getPage(I)Lnet/minecraft/network/chat/Component;"),
+    //$$         require = 0)
+    //$$ private Component halfmasa_spaceBookPage(BookViewScreen.BookAccess access, int page)
     //#else
     //$$ @Redirect(
     //$$         method = "render",
     //$$         at = @At(
     //$$                 value = "INVOKE",
-    //$$                 target = "Lnet/minecraft/client/gui/screens/inventory/BookViewScreen$BookAccess;getPage(I)Lnet/minecraft/network/chat/FormattedText;"))
+    //$$                 target = "Lnet/minecraft/client/gui/screens/inventory/BookViewScreen$BookAccess;getPage(I)Lnet/minecraft/network/chat/FormattedText;"),
+    //$$         require = 0)
     //$$ private FormattedText halfmasa_spaceBookPage(BookViewScreen.BookAccess access, int page)
     //#endif
     {
-        //#if MC >= 26.1
+        //#if MC >= 1.21.8
         Component text = access.getPage(page);
         //#else
         //$$ FormattedText text = access.getPage(page);
         //#endif
-        //#if MC >= 26.1
+        //#if MC >= 1.21.8
         if (this.halfmasa$spacingEnabled) return CjkLatinComponentSpacing.apply(text);
         //#else
         //$$ if (this.halfmasa$spacingEnabled && text instanceof Component component)

@@ -16,7 +16,11 @@ import io.github.halfmasa.xaerobinding.config.Configs;
 @Mixin(targets = "net.caffeinemc.mods.sodium.client.world.LevelSlice")
 public abstract class SodiumLevelSliceFluidMixin
 {
-    @Inject(method = "method_8316", at = @At("RETURN"), cancellable = true)
+    //#if MC >= 26.1
+    @Inject(method = "getFluidState", at = @At("RETURN"), cancellable = true, require = 0)
+    //#else
+    //$$ @Inject(method = "method_8316", at = @At("RETURN"), cancellable = true, require = 0)
+    //#endif
     private void halfmasa_hideDisabledNeighborFluid(
             BlockPos pos, CallbackInfoReturnable<FluidState> cir)
     {

@@ -25,7 +25,8 @@ public abstract class ScreenshotMixin
             method = "grab(Lnet/minecraft/client/Minecraft;Z)V",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/Screenshot;grab(Ljava/io/File;Lcom/mojang/blaze3d/pipeline/RenderTarget;Ljava/util/function/Consumer;)V"))
+                    target = "Lnet/minecraft/client/Screenshot;grab(Ljava/io/File;Lcom/mojang/blaze3d/pipeline/RenderTarget;Ljava/util/function/Consumer;)V"),
+            require = 0)
     private static void halfmasa$markF2Screenshot(
             File gameDirectory,
             RenderTarget renderTarget,
@@ -41,7 +42,8 @@ public abstract class ScreenshotMixin
             method = "takeScreenshot(Lcom/mojang/blaze3d/pipeline/RenderTarget;ILjava/util/function/Consumer;)V",
             at = @At("HEAD"),
             argsOnly = true,
-            ordinal = 0)
+            ordinal = 0,
+            require = 0)
     private static Consumer<NativeImage> halfmasa$wrapScreenshotConsumer(Consumer<NativeImage> original)
     {
         //#if MC >= 26.0
@@ -53,7 +55,8 @@ public abstract class ScreenshotMixin
     //#else
     //$$ @Inject(
     //$$         method = "takeScreenshot(Lcom/mojang/blaze3d/pipeline/RenderTarget;)Lcom/mojang/blaze3d/platform/NativeImage;",
-    //$$         at = @At("RETURN"))
+    //$$         at = @At("RETURN"),
+    //$$         require = 0)
     //$$ private static void halfmasa$copyScreenshot(
     //$$         RenderTarget renderTarget,
     //$$         CallbackInfoReturnable<NativeImage> callback)

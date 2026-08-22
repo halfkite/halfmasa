@@ -2,6 +2,9 @@
 package io.github.halfmasa.xaerobinding.mixin;
 
 import net.minecraft.client.gui.GuiGraphics;
+//#if MC >= 1.21.10
+import net.minecraft.client.input.MouseButtonEvent;
+//#endif
 
 import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.Mixin;
@@ -51,10 +54,17 @@ public abstract class ReiItemHistoryMixin
 
     @Dynamic
     @Inject(method = {"mouseClicked", "method_25402"}, at = @At("HEAD"), cancellable = true, require = 0, remap = false)
+    //#if MC >= 1.21.10
     private void halfmasa_clickReiHistory(
-            double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir)
+            MouseButtonEvent event, boolean doubleClick, CallbackInfoReturnable<Boolean> cir)
     {
-        if (ItemManagerHistoryOverlay.handleReiClick(this, mouseX, mouseY, button))
+        if (ItemManagerHistoryOverlay.handleReiClick(this, event.x(), event.y(), event.button()))
+    //#else
+    //$$ private void halfmasa_clickReiHistory(
+    //$$         double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir)
+    //$$ {
+    //$$     if (ItemManagerHistoryOverlay.handleReiClick(this, mouseX, mouseY, button))
+    //#endif
         {
             cir.setReturnValue(true);
         }

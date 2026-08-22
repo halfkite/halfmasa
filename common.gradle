@@ -1,5 +1,6 @@
 final int mcVersion = project.mcVersion
 final boolean unobfuscated = mcVersion >= 26_00_00
+final String loaderVersion = unobfuscated ? '0.18.4' : rootProject.fabric_loader_version
 
 apply plugin: unobfuscated ? 'net.fabricmc.fabric-loom' : 'net.fabricmc.fabric-loom-remap'
 apply plugin: 'com.replaymod.preprocess'
@@ -21,7 +22,7 @@ dependencies {
         mappings loom.officialMojangMappings()
     }
 
-    def loader = "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    def loader = "net.fabricmc:fabric-loader:${loaderVersion}"
     def malilib = "fi.dy.masa.malilib:malilib-fabric-${project.malilib_mc_version}:${project.malilib_version}"
     def xaeroMinimap = "maven.modrinth:xaeros-minimap:${project.xaero_minimap_version}"
     def xaeroWorldMap = "maven.modrinth:xaeros-world-map:${project.xaero_world_map_version}"
@@ -61,6 +62,10 @@ dependencies {
     }
 }
 
+configurations.configureEach {
+    resolutionStrategy.force "net.fabricmc:fabric-loader:${loaderVersion}"
+}
+
 def javaVersion = unobfuscated ? JavaVersion.VERSION_25 : JavaVersion.VERSION_21
 group = rootProject.group
 version = "${rootProject.mod_version}+${rootProject.buildTimestamp}"
@@ -89,6 +94,7 @@ processResources {
             mod_version: project.version,
             minecraft_dependency: project.minecraft_dependency,
             malilib_dependency: project.malilib_dependency,
+            fabric_loader_dependency: ">=${loaderVersion}",
             compatibility_level: unobfuscated ? 'JAVA_25' : 'JAVA_21'
     ]
     inputs.properties(properties)

@@ -11,6 +11,8 @@ import java.util.Set;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import org.lwjgl.glfw.GLFW;
 
 import fi.dy.masa.malilib.interfaces.IClientTickHandler;
 
@@ -25,8 +27,10 @@ public final class KeybindPieManager implements IClientTickHandler
     private static final KeybindPieManager INSTANCE = new KeybindPieManager();
     private final Map<InputConstants.Key, HeldSelection> heldSelections = new HashMap<>();
     private final Map<KeyMapping, Integer> oneShotReleases = new HashMap<>();
+    private final Map<InputConstants.Key, SelectionCooldown> selectionCooldowns = new HashMap<>();
     private InputConstants.Key activeKey;
     private KeybindPieScreen activeScreen;
+    private Screen parentScreen;
 
     private KeybindPieManager() {}
 
@@ -40,6 +44,21 @@ public final class KeybindPieManager implements IClientTickHandler
         if (!Configs.KEYBIND_PIE_MENU.getBooleanValue())
         {
             return false;
+        }
+
+        SelectionCooldown cooldown = this.selectionCooldowns.get(key);
+        if (cooldown != null)
+        {
+            if (!pressed)
+            {
+                HeldSelection selected = this.heldSelections.remove(key);
+                if (selected != null)
+                {
+                    setDown(selected.mapping, false);
+                }
+                cooldown.released = true;
+            }
+            return true;
         }
 
         HeldSelection held = this.heldSelections.get(key);
@@ -63,12 +82,13 @@ public final class KeybindPieManager implements IClientTickHandler
         }
 
         Minecraft client = Minecraft.getInstance();
-        if (MinecraftClientCompat.getScreen(client) != null)
+        Screen screen = MinecraftClientCompat.getScreen(client);
+        if (screen instanceof KeybindPieScreen)
         {
             return false;
         }
 
-        List<KeyMapping> conflicts = mappingsFor(key);
+        List<KeyMapping> conflicts = mappingsFor(key, screen);
         if (conflicts.size() < 2)
         {
             return false;
@@ -80,6 +100,8 @@ public final class KeybindPieManager implements IClientTickHandler
         }
         this.activeKey = key;
         this.activeScreen = new KeybindPieScreen(key, conflicts);
+        this.parentScreen = screen;
+        this.activeScreen.setParent(screen);
         MinecraftClientCompat.setScreen(client, this.activeScreen);
         return true;
     }
@@ -90,20 +112,33 @@ public final class KeybindPieManager implements IClientTickHandler
         {
             return false;
         }
-        return (this.activeKey != null && this.activeKey.equals(key)) || mappingsFor(key).size() > 1;
+        if (this.selectionCooldowns.containsKey(key))
+        {
+            return true;
+        }
+        Screen screen = MinecraftClientCompat.getScreen(Minecraft.getInstance());
+        return (this.activeKey != null && this.activeKey.equals(key)) || mappingsFor(key, screen).size() > 1;
     }
 
     public void completeSelection(KeyMapping mapping, boolean clickHold)
     {
         InputConstants.Key key = this.activeKey;
+        Screen screen = this.parentScreen;
         this.activeKey = null;
         this.activeScreen = null;
+        this.parentScreen = null;
         Minecraft client = Minecraft.getInstance();
-        MinecraftClientCompat.setScreen(client, null);
+        MinecraftClientCompat.setScreen(client, screen);
 
         if (mapping == null || key == null)
         {
             return;
+        }
+
+        int cooldownTicks = Configs.KEYBIND_SELECTION_COOLDOWN.getIntegerValue();
+        if (cooldownTicks > 0)
+        {
+            this.selectionCooldowns.put(key, new SelectionCooldown(cooldownTicks, !clickHold));
         }
 
         setDown(mapping, true);
@@ -130,6 +165,7 @@ public final class KeybindPieManager implements IClientTickHandler
         {
             this.activeKey = null;
             this.activeScreen = null;
+            this.parentScreen = null;
         }
     }
 
@@ -142,8 +178,28 @@ public final class KeybindPieManager implements IClientTickHandler
             this.heldSelections.clear();
             this.oneShotReleases.keySet().forEach(mapping -> setDown(mapping, false));
             this.oneShotReleases.clear();
+            this.selectionCooldowns.clear();
             return;
         }
+
+        this.selectionCooldowns.entrySet().removeIf(entry -> {
+            InputConstants.Key key = entry.getKey();
+            SelectionCooldown cooldown = entry.getValue();
+            if (!cooldown.released && !isPhysicallyDown(client, key))
+            {
+                HeldSelection selected = this.heldSelections.remove(key);
+                if (selected != null)
+                {
+                    setDown(selected.mapping, false);
+                }
+                cooldown.released = true;
+            }
+            if (cooldown.released && cooldown.ticks-- <= 0)
+            {
+                return true;
+            }
+            return false;
+        });
 
         List<KeyMapping> release = new ArrayList<>();
         this.oneShotReleases.replaceAll((mapping, ticks) -> {
@@ -160,8 +216,13 @@ public final class KeybindPieManager implements IClientTickHandler
         }
 
         int repeatDelay = Math.max(1, Configs.KEYBIND_REPEAT_COOLDOWN.getIntegerValue());
-        for (HeldSelection held : this.heldSelections.values())
+        for (Map.Entry<InputConstants.Key, HeldSelection> entry : this.heldSelections.entrySet())
         {
+            if (this.selectionCooldowns.containsKey(entry.getKey()))
+            {
+                continue;
+            }
+            HeldSelection held = entry.getValue();
             if (++held.ticks >= repeatDelay)
             {
                 held.ticks = 0;
@@ -172,6 +233,11 @@ public final class KeybindPieManager implements IClientTickHandler
 
     private static List<KeyMapping> mappingsFor(InputConstants.Key key)
     {
+        return mappingsFor(key, MinecraftClientCompat.getScreen(Minecraft.getInstance()));
+    }
+
+    private static List<KeyMapping> mappingsFor(InputConstants.Key key, Screen screen)
+    {
         Minecraft client = Minecraft.getInstance();
         if (client.options == null)
         {
@@ -180,6 +246,7 @@ public final class KeybindPieManager implements IClientTickHandler
 
         return java.util.Arrays.stream(client.options.keyMappings)
                 .filter(mapping -> key.equals(((KeyMappingAccessor) mapping).halfmasa$getBoundKey()))
+                .filter(mapping -> KeybindCustomizationStore.getInstance().isActive(mapping, screen))
                 .sorted(Comparator.comparing(KeyMapping::getName))
                 .toList();
     }
@@ -201,6 +268,26 @@ public final class KeybindPieManager implements IClientTickHandler
         return Configs.KEYBIND_INVERT_IGNORED_KEYS.getBooleanValue() ? !listed : listed;
     }
 
+    private static boolean isPhysicallyDown(Minecraft client, InputConstants.Key key)
+    {
+        //#if MC >= 1.21.10
+        com.mojang.blaze3d.platform.Window window = client.getWindow();
+        long handle = window.handle();
+        //#else
+        //$$ long window = client.getWindow().getWindow();
+        //$$ long handle = window;
+        //#endif
+        if (key.getType() == InputConstants.Type.MOUSE)
+        {
+            return GLFW.glfwGetMouseButton(handle, key.getValue()) == GLFW.GLFW_PRESS;
+        }
+        if (key.getType() == InputConstants.Type.KEYSYM)
+        {
+            return InputConstants.isKeyDown(window, key.getValue());
+        }
+        return false;
+    }
+
     private static void setDown(KeyMapping mapping, boolean down)
     {
         ((KeyMappingAccessor) mapping).halfmasa$setDownDirect(down);
@@ -219,6 +306,18 @@ public final class KeybindPieManager implements IClientTickHandler
         private HeldSelection(KeyMapping mapping)
         {
             this.mapping = mapping;
+        }
+    }
+
+    private static final class SelectionCooldown
+    {
+        private int ticks;
+        private boolean released;
+
+        private SelectionCooldown(int ticks, boolean released)
+        {
+            this.ticks = ticks;
+            this.released = released;
         }
     }
 }

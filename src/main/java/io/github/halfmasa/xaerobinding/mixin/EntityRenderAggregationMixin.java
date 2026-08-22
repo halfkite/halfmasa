@@ -47,7 +47,8 @@ public abstract class EntityRenderAggregationMixin
             //#endif
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/multiplayer/ClientLevel;entitiesForRendering()Ljava/lang/Iterable;"))
+                    target = "Lnet/minecraft/client/multiplayer/ClientLevel;entitiesForRendering()Ljava/lang/Iterable;"),
+            require = 0)
     private Iterable<Entity> halfmasa_filterAggregatedEntities(ClientLevel level)
     {
         return EntityRenderAggregation.getInstance().filterForRendering(level.entitiesForRendering());

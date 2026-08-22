@@ -15,7 +15,7 @@
   "mixins": ["halfmasa.mixins.json"],
   "depends": {
     "minecraft": "${minecraft_dependency}",
-    "fabricloader": ">=0.16.14",
+    "fabricloader": "${fabric_loader_dependency}",
     "malilib": "${malilib_dependency}"
   },
   "suggests": {

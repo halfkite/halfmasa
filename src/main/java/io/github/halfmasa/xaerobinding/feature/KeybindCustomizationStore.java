@@ -14,6 +14,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.gui.screens.Screen;
 
 import io.github.halfmasa.xaerobinding.XaeroWorldBinding;
 import io.github.halfmasa.xaerobinding.config.Configs;
@@ -112,6 +113,11 @@ public final class KeybindCustomizationStore
         return category + ": " + action;
     }
 
+    public synchronized boolean isActive(KeyMapping mapping, Screen screen)
+    {
+        return get(mapping).activationContext.isActive(screen != null);
+    }
+
     public synchronized void reset(KeyMapping mapping)
     {
         ensureLoaded();
@@ -141,6 +147,10 @@ public final class KeybindCustomizationStore
         {
             entry.sectorColor &= 0xFFFFFF;
         }
+        if (entry.activationContext == null)
+        {
+            entry.activationContext = ActivationContext.AUTO;
+        }
         return entry;
     }
 
@@ -159,10 +169,44 @@ public final class KeybindCustomizationStore
         public String displayName;
         public boolean hideCategory;
         public Integer sectorColor;
+        public ActivationContext activationContext = ActivationContext.AUTO;
 
         private boolean isDefault()
         {
-            return (this.displayName == null || this.displayName.isBlank()) && !this.hideCategory && this.sectorColor == null;
+            return (this.displayName == null || this.displayName.isBlank()) &&
+                    !this.hideCategory && this.sectorColor == null &&
+                    this.activationContext == ActivationContext.AUTO;
+        }
+    }
+
+    public enum ActivationContext
+    {
+        AUTO,
+        GAMEPLAY,
+        SCREEN,
+        ANY,
+        DISABLED;
+
+        public boolean isActive(boolean hasScreen)
+        {
+            return switch (this)
+            {
+                case AUTO, GAMEPLAY -> !hasScreen;
+                case SCREEN -> hasScreen;
+                case ANY -> true;
+                case DISABLED -> false;
+            };
+        }
+
+        public ActivationContext next()
+        {
+            ActivationContext[] values = values();
+            return values[(this.ordinal() + 1) % values.length];
+        }
+
+        public String translationKey()
+        {
+            return "halfmasa.gui.keybind_editor.context." + this.name().toLowerCase(java.util.Locale.ROOT);
         }
     }
 }

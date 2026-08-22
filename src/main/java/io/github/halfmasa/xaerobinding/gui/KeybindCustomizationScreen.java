@@ -79,7 +79,17 @@ public final class KeybindCustomizationScreen extends GuiBase
                 this.initGui();
             });
 
-            int colorX = hideX + 96;
+            int contextX = hideX + 96;
+            ButtonGeneric context = new ButtonGeneric(
+                    contextX, y, 82, 20,
+                    StringUtils.translate(data.activationContext.translationKey()));
+            this.addButton(context, (button, mouseButton) -> {
+                data.activationContext = data.activationContext.next();
+                this.store.save();
+                this.initGui();
+            });
+
+            int colorX = contextX + 86;
             GuiTextFieldGeneric color = new GuiTextFieldGeneric(colorX, y, 72, 20, this.mc.font);
             color.setTextWrapper(data.sectorColor == null ? "" : String.format("#%06X", data.sectorColor));
             color.setMaxLengthWrapper(7);

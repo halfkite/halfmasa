@@ -18,22 +18,43 @@ import io.github.halfmasa.xaerobinding.feature.CjkLatinSpacing;
 @Mixin(MultiLineEditBox.class)
 public abstract class BookEditMultiLineMixin
 {
+    //#if MC >= 26.1
     @ModifyArg(
-            method = "renderContents",
+            method = "extractContents",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphics;drawString(Lnet/minecraft/client/gui/Font;Ljava/lang/String;IIIZ)I"),
-            index = 1)
+                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;text(Lnet/minecraft/client/gui/Font;Ljava/lang/String;IIIZ)V"),
+            index = 1,
+            require = 0)
+    //#else
+    //$$ @ModifyArg(
+    //$$         method = "renderContents",
+    //$$         at = @At(
+    //$$                 value = "INVOKE",
+    //$$                 target = "Lnet/minecraft/client/gui/GuiGraphics;drawString(Lnet/minecraft/client/gui/Font;Ljava/lang/String;IIIZ)V"),
+    //$$         index = 1,
+    //$$         require = 0)
+    //#endif
     private String halfmasa$spaceBookPageText(String text)
     {
         return this.halfmasa$bookSpacingEnabled() ? CjkLatinSpacing.apply(text) : text;
     }
 
+    //#if MC >= 26.1
     @Redirect(
-            method = "renderContents",
+            method = "extractContents",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/Font;width(Ljava/lang/String;)I"))
+                    target = "Lnet/minecraft/client/gui/Font;width(Ljava/lang/String;)I"),
+            require = 0)
+    //#else
+    //$$ @Redirect(
+    //$$         method = "renderContents",
+    //$$         at = @At(
+    //$$                 value = "INVOKE",
+    //$$                 target = "Lnet/minecraft/client/gui/Font;width(Ljava/lang/String;)I"),
+    //$$         require = 0)
+    //#endif
     private int halfmasa$measureSpacedBookPageText(Font font, String text)
     {
         return font.width(this.halfmasa$bookSpacingEnabled() ? CjkLatinSpacing.apply(text) : text);

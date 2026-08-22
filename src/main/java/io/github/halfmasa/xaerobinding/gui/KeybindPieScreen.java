@@ -96,15 +96,29 @@ public final class KeybindPieScreen extends GuiBase
                 ? Math.min(1.0D, (this.ticks + partialTick) / 6.0D)
                 : 1.0D;
         int outerRadius = (int) Math.ceil(radius * Configs.KEYBIND_EXPANSION.getDoubleValue() * animation);
-        int step = Math.max(1, 180 / Math.max(12, Configs.KEYBIND_CIRCLE_VERTICES.getIntegerValue()));
+        int step = Math.max(1, 60 / Math.max(12, Configs.KEYBIND_CIRCLE_VERTICES.getIntegerValue()));
+        int[] colors = new int[count];
+        for (int index = 0; index < count; index++)
+        {
+            colors[index] = sectorColor(index);
+        }
 
         for (int dy = -outerRadius; dy <= outerRadius; dy += step)
         {
+            int runStart = -outerRadius;
+            int runColor = 0;
             for (int dx = -outerRadius; dx <= outerRadius; dx += step)
             {
-                double distance = Math.sqrt((double) dx * dx + (double) dy * dy);
+                double distance = Math.sqrt((dx + 0.5D) * (dx + 0.5D) + (dy + 0.5D) * (dy + 0.5D));
+                int color = 0;
                 if (distance < cancelRadius * animation)
                 {
+                    if (color != runColor)
+                    {
+                        fillRun(graphics, runStart, dx, dy, step, runColor);
+                        runStart = dx;
+                        runColor = color;
+                    }
                     continue;
                 }
                 int sector = Math.min(count - 1,
@@ -116,17 +130,31 @@ public final class KeybindPieScreen extends GuiBase
                 }
                 if (distance > sectorRadius)
                 {
+                    if (color != runColor)
+                    {
+                        fillRun(graphics, runStart, dx, dy, step, runColor);
+                        runStart = dx;
+                        runColor = color;
+                    }
                     continue;
                 }
 
-                int color = sectorColor(sector);
-                graphics.fill(
-                        this.centerX + dx,
-                        this.centerY + dy,
-                        this.centerX + dx + step,
-                        this.centerY + dy + step,
-                        color);
+                color = colors[sector];
+                if (step == 1)
+                {
+                    double coverage = Math.min(
+                            distance - cancelRadius * animation + 0.5D,
+                            sectorRadius - distance + 0.5D);
+                    color = applyCoverage(color, Math.max(0.0D, Math.min(1.0D, coverage)));
+                }
+                if (color != runColor)
+                {
+                    fillRun(graphics, runStart, dx, dy, step, runColor);
+                    runStart = dx;
+                    runColor = color;
+                }
             }
+            fillRun(graphics, runStart, outerRadius + step, dy, step, runColor);
         }
 
         double sectorAngle = Math.PI * 2.0D / count;
@@ -178,6 +206,29 @@ public final class KeybindPieScreen extends GuiBase
         int green = Math.min(255, ((color >> 8) & 0xFF) + amount);
         int blue = Math.min(255, (color & 0xFF) + amount);
         return (red << 16) | (green << 8) | blue;
+    }
+
+    private static int applyCoverage(int color, double coverage)
+    {
+        int alpha = (color >>> 24) & 0xFF;
+        return ((int) Math.round(alpha * coverage) << 24) | (color & 0xFFFFFF);
+    }
+
+    //#if MC >= 1.21.11
+    private void fillRun(GuiContext graphics, int startX, int endX, int y, int step, int color)
+    //#else
+    //$$ private void fillRun(GuiGraphics graphics, int startX, int endX, int y, int step, int color)
+    //#endif
+    {
+        if ((color >>> 24) != 0 && endX > startX)
+        {
+            graphics.fill(
+                    this.centerX + startX,
+                    this.centerY + y,
+                    this.centerX + endX,
+                    this.centerY + y + step,
+                    color);
+        }
     }
 
     private static double normalizedAngle(double angle)

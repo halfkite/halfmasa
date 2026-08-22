@@ -18,14 +18,16 @@ public abstract class WorldSelectionListMixin
             method = "loadLevels",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/screens/worldselection/CreateWorldScreen;openFresh(Lnet/minecraft/client/Minecraft;Ljava/lang/Runnable;)V"))
+                    target = "Lnet/minecraft/client/gui/screens/worldselection/CreateWorldScreen;openFresh(Lnet/minecraft/client/Minecraft;Ljava/lang/Runnable;)V"),
+            require = 0)
     private void halfmasa$keepWorldSelectionOnEmpty(Minecraft minecraft, Runnable callback)
     //#else
     //$$ @Redirect(
     //$$         method = "loadLevels",
     //$$         at = @At(
     //$$                 value = "INVOKE",
-    //$$                 target = "Lnet/minecraft/client/gui/screens/worldselection/CreateWorldScreen;openFresh(Lnet/minecraft/client/Minecraft;Lnet/minecraft/client/gui/screens/Screen;)V"))
+    //$$                 target = "Lnet/minecraft/client/gui/screens/worldselection/CreateWorldScreen;openFresh(Lnet/minecraft/client/Minecraft;Lnet/minecraft/client/gui/screens/Screen;)V"),
+    //$$         require = 0)
     //$$ private void halfmasa$keepWorldSelectionOnEmpty(Minecraft minecraft, Screen callback)
     //#endif
     {

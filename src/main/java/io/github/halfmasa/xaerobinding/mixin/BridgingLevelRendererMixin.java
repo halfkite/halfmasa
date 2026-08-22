@@ -25,7 +25,7 @@ import io.github.halfmasa.xaerobinding.feature.bridging.BridgingAssist;
 public abstract class BridgingLevelRendererMixin
 {
     //#if MC >= 26.2
-    @Inject(method = "extractGizmos", at = @At("HEAD"))
+    @Inject(method = "extractGizmos", at = @At("HEAD"), require = 0)
     private void halfmasa$emitBridgingOutline(CallbackInfo ci)
     {
         BridgingAssist.getInstance().emitOutlineGizmo();
@@ -35,7 +35,8 @@ public abstract class BridgingLevelRendererMixin
     //$$         method = "extractLevel",
     //$$         at = @At(
     //$$                 value = "INVOKE",
-    //$$                 target = "Lnet/minecraft/client/renderer/debug/DebugRenderer;emitGizmos(Lnet/minecraft/client/renderer/culling/Frustum;DDDF)V"))
+    //$$                 target = "Lnet/minecraft/client/renderer/debug/DebugRenderer;emitGizmos(Lnet/minecraft/client/renderer/culling/Frustum;DDDF)V"),
+    //$$         require = 0)
     //$$ private void halfmasa$emitBridgingOutline(
     //$$         DebugRenderer debugRenderer,
     //$$         Frustum frustum,
@@ -52,7 +53,8 @@ public abstract class BridgingLevelRendererMixin
     //$$         method = "renderLevel",
     //$$         at = @At(
     //$$                 value = "INVOKE",
-    //$$                 target = "Lnet/minecraft/client/renderer/debug/DebugRenderer;emitGizmos(Lnet/minecraft/client/renderer/culling/Frustum;DDDF)V"))
+    //$$                 target = "Lnet/minecraft/client/renderer/debug/DebugRenderer;emitGizmos(Lnet/minecraft/client/renderer/culling/Frustum;DDDF)V"),
+    //$$         require = 0)
     //$$ private void halfmasa$emitBridgingOutline(
     //$$         DebugRenderer debugRenderer,
     //$$         Frustum frustum,
@@ -69,7 +71,8 @@ public abstract class BridgingLevelRendererMixin
     //$$         method = "renderLevel",
     //$$         at = @At(
     //$$                 value = "INVOKE",
-    //$$                 target = "Lnet/minecraft/client/renderer/debug/DebugRenderer;render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/culling/Frustum;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;DDDZ)V"))
+    //$$                 target = "Lnet/minecraft/client/renderer/debug/DebugRenderer;render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/culling/Frustum;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;DDDZ)V"),
+    //$$         require = 0)
     //$$ private void halfmasa$renderBridgingOutline(
     //$$         DebugRenderer debugRenderer,
     //$$         PoseStack poseStack,
@@ -84,7 +87,7 @@ public abstract class BridgingLevelRendererMixin
     //$$     BridgingAssist.getInstance().renderOutline(poseStack, bufferSource, cameraX, cameraY, cameraZ);
     //$$ }
     //#else
-    //$$ @Inject(method = "renderLevel", at = @At("TAIL"))
+    //$$ @Inject(method = "renderLevel", at = @At("TAIL"), require = 0)
     //$$ private void halfmasa$renderBridgingOutline(CallbackInfo ci)
     //$$ {
     //$$ }
