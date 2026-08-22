@@ -1,7 +1,7 @@
-﻿package io.github.halfmasa.xaerobinding.mixin;
+package io.github.halfmasa.xaerobinding.mixin;
 
 import net.minecraft.client.multiplayer.ServerData;
-//#if MC >= 26.2
+//#if MC >= 26.1
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 //#else
 //$$ import net.minecraft.client.gui.GuiGraphics;
@@ -22,10 +22,14 @@ public abstract class ServerIconCacheMixin
 {
     @Shadow @Final private ServerData serverData;
 
-    //#if MC >= 26.2
+    //#if MC >= 26.1
     @Inject(method = "extractContent", at = @At("HEAD"))
     private void halfmasa_synchronizeServerIcon(
             GuiGraphicsExtractor graphics, int x, int y, boolean hovered, float partialTick, CallbackInfo ci)
+    //#elseif MC >= 1.21.10
+    //$$ @Inject(method = "renderContent", at = @At("HEAD"))
+    //$$ private void halfmasa_synchronizeServerIcon(
+    //$$         GuiGraphics graphics, int x, int y, boolean hovered, float partialTick, CallbackInfo ci)
     //#else
     //$$ @Inject(method = "render", at = @At("HEAD"))
     //$$ private void halfmasa_synchronizeServerIcon(

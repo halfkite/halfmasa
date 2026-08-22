@@ -4,7 +4,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import net.minecraft.client.gui.GuiGraphics;
+//#if MC >= 26.1
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+//#else
+//$$ import net.minecraft.client.gui.GuiGraphics;
+//#endif
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.core.NonNullList;
@@ -126,7 +130,11 @@ public final class CreativeItemSearchHistory
 
     public static void renderToggle(
             CreativeModeInventoryScreen screen,
-            GuiGraphics graphics,
+            //#if MC >= 26.1
+            GuiGraphicsExtractor graphics,
+            //#else
+            //$$ GuiGraphics graphics,
+            //#endif
             int x,
             int y,
             float scrollOffset)
@@ -141,7 +149,11 @@ public final class CreativeItemSearchHistory
         graphics.fill(x + 1, y + 1, x + 15, y + 15, 0xFF6B6B6B);
         String label = state.expanded ? "[-]" : "[+]";
         int textX = x + (16 - Minecraft.getInstance().font.width(label)) / 2;
-        graphics.drawString(Minecraft.getInstance().font, label, textX, y + 5, 0xFFFFFFFF, true);
+        //#if MC >= 26.1
+        graphics.text(Minecraft.getInstance().font, label, textX, y + 5, 0xFFFFFFFF, true);
+        //#else
+        //$$ graphics.drawString(Minecraft.getInstance().font, label, textX, y + 5, 0xFFFFFFFF, true);
+        //#endif
     }
 
     private static boolean isEnabledOn(CreativeModeTab tab, String searchText)

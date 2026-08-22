@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.compat;
+package io.github.halfmasa.xaerobinding.compat;
 
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;

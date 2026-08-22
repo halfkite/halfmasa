@@ -1,8 +1,9 @@
-﻿package io.github.halfmasa.xaerobinding.gui;
+package io.github.halfmasa.xaerobinding.gui;
 
 import net.minecraft.client.Minecraft;
 
 import fi.dy.masa.malilib.config.IConfigBase;
+import fi.dy.masa.malilib.config.IConfigResettable;
 import fi.dy.masa.malilib.config.options.ConfigBoolean;
 import fi.dy.masa.malilib.gui.GuiConfigsBase.ConfigOptionWrapper;
 import fi.dy.masa.malilib.gui.button.ButtonGeneric;
@@ -20,6 +21,7 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
 {
     private static final int TRIGGER_WIDTH = 60;
     private static final int EXPAND_BUTTON_WIDTH = 18;
+    private static final int EXPAND_BUTTON_LEFT_OFFSET = -6;
     private static final int CHILD_INDENT = 28;
 
     public ActionConfigOptionWidget(
@@ -84,6 +86,16 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         return fitted.length();
     }
 
+    @Override
+    protected ButtonGeneric createResetButton(int x, int y, IConfigResettable config)
+    {
+        if (config == Configs.CUSTOM_SAVES_PATHS)
+        {
+            return new DisabledResetButton(x, y);
+        }
+        return super.createResetButton(x, y, config);
+    }
+
     //#if MC >= 1.21.10
     @Override
     protected void addConfigOption(int x, int y, int labelWidth, int configWidth, IConfigBase config)
@@ -99,12 +111,9 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         }
 
         ConfigBoolean expansion = Configs.getExpansionConfig(config);
-        int expandButtonX = x;
-        if (expansion != null)
-        {
-            x += EXPAND_BUTTON_WIDTH;
-            labelWidth = Math.max(20, labelWidth - EXPAND_BUTTON_WIDTH);
-        }
+        int expandButtonX = x + EXPAND_BUTTON_LEFT_OFFSET;
+        x += EXPAND_BUTTON_WIDTH;
+        labelWidth = Math.max(20, labelWidth - EXPAND_BUTTON_WIDTH);
 
         if (config instanceof ConfigGroupHeader)
         {
@@ -183,5 +192,20 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
                 screen.refreshExpandedConfigs();
             }
         });
+    }
+
+    private static final class DisabledResetButton extends ButtonGeneric
+    {
+        private DisabledResetButton(int x, int y)
+        {
+            super(x, y, -1, 20, StringUtils.translate("malilib.gui.button.reset.caps"));
+            super.setEnabled(false);
+        }
+
+        @Override
+        public void setEnabled(boolean enabled)
+        {
+            super.setEnabled(false);
+        }
     }
 }

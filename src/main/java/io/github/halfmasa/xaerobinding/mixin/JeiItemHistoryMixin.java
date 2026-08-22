@@ -1,3 +1,4 @@
+//#if MC <= 1.21.1
 package io.github.halfmasa.xaerobinding.mixin;
 
 import java.util.HashSet;
@@ -97,3 +98,4 @@ public abstract class JeiItemHistoryMixin
         ItemManagerHistoryOverlay.renderJei(this, graphics, mouseX, mouseY);
     }
 }
+//#endif

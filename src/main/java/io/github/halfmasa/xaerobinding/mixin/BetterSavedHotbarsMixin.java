@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.mixin;
+package io.github.halfmasa.xaerobinding.mixin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +10,7 @@ import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.player.inventory.Hotbar;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
-//#if MC >= 26.2
+//#if MC >= 26.1
 import net.minecraft.world.inventory.ContainerInput;
 //#else
 //$$ import net.minecraft.world.inventory.ClickType;
@@ -42,7 +42,7 @@ public abstract class BetterSavedHotbarsMixin
         super(menu, inventory, title);
     }
 
-    //#if MC >= 26.2
+    //#if MC >= 26.1
     @Inject(method = "slotClicked", at = @At("HEAD"), cancellable = true)
     private void halfmasa_editSavedHotbar(
             Slot slot, int slotId, int button, ContainerInput input, CallbackInfo ci)

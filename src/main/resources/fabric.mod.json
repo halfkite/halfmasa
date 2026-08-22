@@ -3,9 +3,10 @@
   "id": "halfmasa",
   "version": "${mod_version}",
   "name": "halfmasa",
-  "description": "halfmasa（半马萨）：MaLiLib 风格的 Xaero 存档绑定、路径点与创造模式实用工具。",
+  "description": "halfmasa: a client-side Fabric utility mod for Xaero save binding, waypoints, creative tools, inventory screens, and JEI/REI lookup history.",
   "authors": ["half_masa"],
   "license": "MIT",
+  "icon": "assets/halfmasa/icon.png",
   "environment": "client",
   "entrypoints": {
     "main": ["io.github.halfmasa.xaerobinding.XaeroWorldBinding"],

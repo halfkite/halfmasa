@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.mixin;
+package io.github.halfmasa.xaerobinding.mixin;
 
 import net.minecraft.client.gui.screens.Screen;
 //#if MC >= 1.21.5

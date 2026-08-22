@@ -1,6 +1,6 @@
-﻿package io.github.halfmasa.xaerobinding.mixin;
+package io.github.halfmasa.xaerobinding.mixin;
 
-//#if MC >= 26.2
+//#if MC >= 26.1
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 //#else
 //$$ import net.minecraft.client.gui.GuiGraphics;
@@ -17,7 +17,7 @@ import io.github.halfmasa.xaerobinding.feature.ImeOverlay;
 @Mixin(Screen.class)
 public abstract class ImeScreenMixin
 {
-    //#if MC >= 26.2
+    //#if MC >= 26.1
     @Inject(method = "extractRenderState", at = @At("RETURN"))
     private void halfmasa_renderImeOverlay(
             GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci)

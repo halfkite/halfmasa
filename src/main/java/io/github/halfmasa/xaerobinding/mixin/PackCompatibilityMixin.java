@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.mixin;
+package io.github.halfmasa.xaerobinding.mixin;
 
 import net.minecraft.server.packs.repository.PackCompatibility;
 import org.spongepowered.asm.mixin.Mixin;

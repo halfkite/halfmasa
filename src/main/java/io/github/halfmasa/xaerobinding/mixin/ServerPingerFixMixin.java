@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.mixin;
+package io.github.halfmasa.xaerobinding.mixin;
 
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;

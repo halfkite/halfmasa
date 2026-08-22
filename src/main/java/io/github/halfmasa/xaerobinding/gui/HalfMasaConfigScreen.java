@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.gui;
+package io.github.halfmasa.xaerobinding.gui;
 
 import java.util.List;
 
@@ -58,18 +58,19 @@ public final class HalfMasaConfigScreen extends GuiConfigsBase implements Scroll
 
     void refreshExpandedConfigs()
     {
-        int scrollPosition = this.getListWidget() != null
-                ? this.getListWidget().getScrollbar().getValue()
-                : 0;
+        WidgetListConfigOptions list = this.getListWidget();
+        if (list == null)
+        {
+            return;
+        }
+
+        int scrollPosition = list.getScrollbar().getValue();
         MaLiLibConfigScrollAccess scrollAccess =
                 (MaLiLibConfigScrollAccess) (Object) this;
         scrollAccess.halfmasa$saveConfigScroll();
-        this.reCreateListWidget();
-        this.initGui();
-        if (this.getListWidget() != null)
-        {
-            this.getListWidget().getScrollbar().setValue(scrollPosition);
-        }
+        this.clearOptions();
+        list.refreshEntries();
+        list.getScrollbar().setValue(scrollPosition);
     }
 
     @Override

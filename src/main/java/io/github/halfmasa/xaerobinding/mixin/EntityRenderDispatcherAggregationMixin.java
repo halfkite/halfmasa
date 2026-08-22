@@ -1,11 +1,17 @@
 package io.github.halfmasa.xaerobinding.mixin;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-
-import net.minecraft.client.renderer.MultiBufferSource;
+//#if MC < 1.21.10
+//$$ import com.mojang.blaze3d.vertex.PoseStack;
+//$$ import net.minecraft.client.renderer.MultiBufferSource;
+//#endif
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.world.entity.Entity;
+//#if MC >= 1.21.10
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.Vec3;
+//#endif
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -31,15 +37,51 @@ public abstract class EntityRenderDispatcherAggregationMixin
         }
     }
 
-    @Inject(method = "render(Lnet/minecraft/world/entity/Entity;DDDFFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"), cancellable = true)
-    private <E extends Entity> void halfmasa_skipAggregatedModel(
-            E entity, double x, double y, double z, float yaw, float tickDelta,
-            PoseStack poseStack, MultiBufferSource buffers, int packedLight,
-            org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci)
+    //#if MC >= 1.21.10
+    @Inject(method = "extractEntity", at = @At("RETURN"))
+    private <E extends Entity> void halfmasa_applyAggregationState(
+            E entity, float partialTick, CallbackInfoReturnable<EntityRenderState> cir)
     {
+        EntityRenderState state = cir.getReturnValue();
+        Component label = EntityRenderAggregation.getInstance().getLabel(entity);
+        if (label != null)
+        {
+            boolean side = io.github.halfmasa.xaerobinding.config.Configs.ENTITY_AGGREGATION_LABEL_POSITION
+                    .getOptionListValue() == io.github.halfmasa.xaerobinding.config.EntityLabelPosition.SIDE;
+            state.nameTag = label;
+            state.nameTagAttachment = new Vec3(
+                    side ? entity.getBbWidth() * 0.5D + 0.35D : 0.0D,
+                    side ? entity.getBbHeight() * 0.5D : entity.getBbHeight() + 0.5D,
+                    0.0D);
+        }
         if (EntityRenderAggregation.getInstance().shouldHideModel(entity))
         {
-            ci.cancel();
+            state.isInvisible = true;
         }
     }
+    //#elseif MC >= 1.21.4
+    //$$ @Inject(method = "render(Lnet/minecraft/world/entity/Entity;DDDFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"), cancellable = true)
+    //$$ private <E extends Entity> void halfmasa_skipAggregatedModel(
+    //$$         E entity, double x, double y, double z, float tickDelta,
+    //$$         PoseStack poseStack, MultiBufferSource buffers, int packedLight,
+    //$$         org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci)
+    //$$ {
+    //$$     if (EntityRenderAggregation.getInstance().shouldHideModel(entity))
+    //$$     {
+    //$$         ci.cancel();
+    //$$     }
+    //$$ }
+    //#else
+    //$$ @Inject(method = "render(Lnet/minecraft/world/entity/Entity;DDDFFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"), cancellable = true)
+    //$$ private <E extends Entity> void halfmasa_skipAggregatedModel(
+    //$$         E entity, double x, double y, double z, float yaw, float tickDelta,
+    //$$         PoseStack poseStack, MultiBufferSource buffers, int packedLight,
+    //$$         org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci)
+    //$$ {
+    //$$     if (EntityRenderAggregation.getInstance().shouldHideModel(entity))
+    //$$     {
+    //$$         ci.cancel();
+    //$$     }
+    //$$ }
+    //#endif
 }

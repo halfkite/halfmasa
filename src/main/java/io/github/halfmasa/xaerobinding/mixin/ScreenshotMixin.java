@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.mixin;
+package io.github.halfmasa.xaerobinding.mixin;
 
 import java.io.File;
 import java.util.function.Consumer;

@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.waypoint;
+package io.github.halfmasa.xaerobinding.waypoint;
 
 import java.util.ArrayDeque;
 import java.util.List;

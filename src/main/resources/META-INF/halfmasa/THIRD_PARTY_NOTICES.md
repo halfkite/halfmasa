@@ -5,7 +5,8 @@
 - Unrestricted boat view references [BoatView360](https://github.com/AsOne2020/BoatView360), licensed under LGPL-3.0.
 - Held-item boat rendering references [Boat Item View](https://github.com/50ap5ud5/BoatItemView), licensed under LGPL-3.0.
 - Inventory movement references [InvMoveCompats](https://github.com/PieKing1215/InvMoveCompats), licensed under LGPL-3.0.
-- Free-camera extensions optionally integrate with [Tweakeroo](https://github.com/sakura-ryoko/tweakeroo), licensed under LGPL-3.0.
+- Fast interface scrolling is adapted from [Fast Scrolling](https://github.com/Mat0u5/FastScrolling), licensed under MIT. The corresponding license is included under `third_party/fast-scrolling/` in the JAR.
+- Reach-around bridging assistance is adapted from [Bridging Mod](https://github.com/CloudG360/BridgingMod), licensed under MIT. Its target search and 1.21.1 interaction integration have been revised for halfmasa; the corresponding license is included under `third_party/bridging-mod/` in the JAR.
 - Loading-screen acceleration references [Force Close World Loading Screen](https://github.com/kennytv/kennytvs-epic-force-close-loading-screen-mod-for-fabric), licensed under MIT.
 - Saved-hotbar editing is adapted from [Better Saved Hotbars](https://github.com/LukynkaCZE/better-saved-hotbars), licensed under CC0-1.0.
 - Keybind selection references [KeybindsGalore Plus](https://github.com/av306/KeybindsGalore-Plus), licensed under LGPL-3.0.

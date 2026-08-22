@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.feature;
+package io.github.halfmasa.xaerobinding.feature;
 
 import net.minecraft.world.entity.Entity;
 //#if MC >= 1.21.11

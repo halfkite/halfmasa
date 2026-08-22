@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.mixin;
+package io.github.halfmasa.xaerobinding.mixin;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.entity.item.ItemEntity;

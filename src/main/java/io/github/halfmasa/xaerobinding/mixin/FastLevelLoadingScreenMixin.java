@@ -1,7 +1,7 @@
-﻿package io.github.halfmasa.xaerobinding.mixin;
+package io.github.halfmasa.xaerobinding.mixin;
 
 import net.minecraft.client.Minecraft;
-//#if MC >= 26.2
+//#if MC >= 26.1
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 //#else
 //$$ import net.minecraft.client.gui.GuiGraphics;
@@ -18,7 +18,7 @@ import io.github.halfmasa.xaerobinding.config.Configs;
 @Mixin(LevelLoadingScreen.class)
 public abstract class FastLevelLoadingScreenMixin
 {
-    //#if MC >= 26.2
+    //#if MC >= 26.1
     @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
     private void halfmasa_closeWorldLoadingScreen(
             GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci)
@@ -36,7 +36,7 @@ public abstract class FastLevelLoadingScreenMixin
         Minecraft client = Minecraft.getInstance();
         if (client.level != null && client.player != null)
         {
-            //#if MC >= 26.2
+            //#if MC >= 26.1
             ci.cancel();
             //#else
             //$$ client.setScreen(null);

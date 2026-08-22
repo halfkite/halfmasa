@@ -1,8 +1,8 @@
-﻿package io.github.halfmasa.xaerobinding.mixin;
+package io.github.halfmasa.xaerobinding.mixin;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-//#if MC >= 26.2
+//#if MC >= 26.1
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 //#else
 //$$ import com.mojang.blaze3d.vertex.PoseStack;
@@ -15,7 +15,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.MapItem;
-//#if MC >= 1.21.10
+//#if MC >= 1.21.8
 import org.joml.Matrix3x2fStack;
 //#endif
 
@@ -28,8 +28,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
 
-//#if MC >= 26.2
+//#if MC >= 26.1
 @Mixin(GuiGraphicsExtractor.class)
 //#else
 //$$ @Mixin(GuiGraphics.class)
@@ -38,9 +39,9 @@ public abstract class MapInSlotMixin
 {
     @Shadow @Final private Minecraft minecraft;
 
-    //#if MC >= 1.21.10
+    //#if MC >= 1.21.8
     @Shadow public abstract Matrix3x2fStack pose();
-    //#if MC >= 26.2
+    //#if MC >= 26.1
     @Shadow public abstract void map(MapRenderState state);
     //#else
     //$$ @Shadow public abstract void submitMapRenderState(MapRenderState state);
@@ -52,7 +53,7 @@ public abstract class MapInSlotMixin
     @Unique private final MapRenderState halfmasa_mapState = new MapRenderState();
     //#endif
 
-    //#if MC >= 26.2
+    //#if MC >= 26.1
     @Inject(
             method = "itemDecorations(Lnet/minecraft/client/gui/Font;Lnet/minecraft/world/item/ItemStack;IILjava/lang/String;)V",
             at = @At("HEAD"))
@@ -68,8 +69,8 @@ public abstract class MapInSlotMixin
         {
             return;
         }
-        if ((this.minecraft.screen == null && !Configs.MAP_IN_HOTBAR.getBooleanValue()) ||
-            (this.minecraft.screen != null && !Configs.MAP_IN_INVENTORY.getBooleanValue()))
+        if ((MinecraftClientCompat.getScreen(this.minecraft) == null && !Configs.MAP_IN_HOTBAR.getBooleanValue()) ||
+            (MinecraftClientCompat.getScreen(this.minecraft) != null && !Configs.MAP_IN_INVENTORY.getBooleanValue()))
         {
             return;
         }
@@ -81,14 +82,14 @@ public abstract class MapInSlotMixin
             return;
         }
 
-        //#if MC >= 26.2
+        //#if MC >= 26.1
         this.pose().pushMatrix();
         this.pose().translate(x, y);
         this.pose().scale(0.125F, 0.125F);
         this.minecraft.getMapRenderer().extractRenderState(mapId, savedData, this.halfmasa_mapState);
         this.map(this.halfmasa_mapState);
         this.pose().popMatrix();
-        //#elseif MC >= 1.21.10
+        //#elseif MC >= 1.21.8
         //$$ this.pose().pushMatrix();
         //$$ this.pose().translate(x, y);
         //$$ this.pose().scale(0.125F, 0.125F);

@@ -1,0 +1,233 @@
+name: Release halfmasa
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release version; must match mod_version, for example 1.1.1
+        required: true
+        type: string
+      target_subproject:
+        description: Minecraft version to publish, or all
+        required: false
+        type: choice
+        default: all
+        options:
+          - all
+          - '1.21.1'
+          - '1.21.4'
+          - '1.21.8'
+          - '1.21.10'
+          - '1.21.11'
+          - '26.1.2'
+          - '26.2'
+      previous_tag:
+        description: Previous tag for the changelog; leave empty to detect it
+        required: false
+        type: string
+      release_type:
+        description: Formal release removes build timestamps from public JAR names
+        required: false
+        type: choice
+        default: release
+        options:
+          - release
+          - beta
+
+permissions:
+  contents: write
+
+env:
+  RELEASE_TAG: ${{ inputs.release_tag }}
+  RELEASE_TYPE: ${{ inputs.release_type }}
+
+jobs:
+  validate:
+    name: Validate release version
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.version.outputs.release_tag }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Match tag to internal mod version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          mod_version="$(sed -n 's/^mod_version=//p' gradle.properties | head -n 1 | tr -d '\r')"
+          if [[ -z "$mod_version" ]]; then
+            echo 'mod_version is missing from gradle.properties' >&2
+            exit 1
+          fi
+          if [[ "$RELEASE_TAG" != "$mod_version" ]]; then
+            echo "Release tag '$RELEASE_TAG' must exactly match mod_version '$mod_version'." >&2
+            exit 1
+          fi
+          echo "release_tag=$mod_version" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build release artifacts
+    needs: validate
+    uses: ./.github/workflows/build.yml
+    with:
+      target_subproject: ${{ inputs.target_subproject || 'all' }}
+      ref: ${{ github.sha }}
+
+  prepare:
+    name: Create release and changelog
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate short changelog
+        env:
+          PREVIOUS_TAG: ${{ inputs.previous_tag }}
+        run: |
+          set -euo pipefail
+          args=(--head "$GITHUB_SHA" --tag "$RELEASE_TAG" --output RELEASE_NOTES.md)
+          if [[ -n "$PREVIOUS_TAG" ]]; then
+            args+=(--previous-tag "$PREVIOUS_TAG")
+          fi
+          python scripts/python/release_notes.py "${args[@]}"
+
+      - name: Create or verify tag and GitHub Release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          if git show-ref --tags --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            existing_sha="$(git rev-list -n 1 "refs/tags/$RELEASE_TAG")"
+            if [[ "$existing_sha" != "$GITHUB_SHA" ]]; then
+              echo "Tag $RELEASE_TAG already points to $existing_sha instead of $GITHUB_SHA." >&2
+              exit 1
+            fi
+          else
+            git tag -a "$RELEASE_TAG" "$GITHUB_SHA" -m "Release $RELEASE_TAG"
+            git push origin "$RELEASE_TAG"
+          fi
+
+          prerelease=false
+          if [[ "$RELEASE_TYPE" == 'beta' ]]; then
+            prerelease=true
+          fi
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" \
+              --title "$RELEASE_TAG" \
+              --notes-file RELEASE_NOTES.md \
+              --prerelease="$prerelease"
+          else
+            args=("$RELEASE_TAG" --target "$GITHUB_SHA" --title "$RELEASE_TAG" --notes-file RELEASE_NOTES.md)
+            if [[ "$prerelease" == 'true' ]]; then
+              args+=(--prerelease)
+            else
+              args+=(--latest)
+            fi
+            gh release create "${args[@]}"
+          fi
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release notes for publishers
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: RELEASE_NOTES.md
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish Minecraft ${{ matrix.mc_version }}
+    needs: [validate, build, prepare]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        mc_version: ${{ inputs.target_subproject == 'all' && fromJSON('["1.21.1","1.21.4","1.21.8","1.21.10","1.21.11","26.1.2","26.2"]') || fromJSON(format('["{0}"]', inputs.target_subproject)) }}
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-${{ matrix.mc_version }}
+          path: release-assets/${{ matrix.mc_version }}
+
+      - name: Download release notes
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes
+
+      - name: Verify and prepare public JAR
+        id: artifact
+        shell: pwsh
+        env:
+          MC_VERSION: ${{ matrix.mc_version }}
+          RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
+          RELEASE_TYPE: ${{ inputs.release_type }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dir = Join-Path 'release-assets' $env:MC_VERSION
+          $source = @(Get-ChildItem $dir -Filter '*.jar')
+          if ($source.Count -ne 1) {
+            throw "Expected exactly one downloaded JAR for $env:MC_VERSION, found $($source.Count)"
+          }
+          $manifestPath = Join-Path $dir "build-manifest-$env:MC_VERSION.json"
+          if (-not (Test-Path $manifestPath)) {
+            throw "Missing build manifest for $env:MC_VERSION"
+          }
+          $manifest = Get-Content -Raw $manifestPath | ConvertFrom-Json
+          $actualHash = (Get-FileHash $source[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($manifest.sha256 -ne $actualHash) {
+            throw "SHA-256 mismatch for $($source[0].Name)"
+          }
+          if ($manifest.mod_version -ne $env:RELEASE_TAG) {
+            throw "Artifact version '$($manifest.mod_version)' does not match release '$env:RELEASE_TAG'"
+          }
+
+          if ($env:RELEASE_TYPE -eq 'release') {
+            $publishedName = "halfmasa-fabric-$env:RELEASE_TAG-mc$env:MC_VERSION.jar"
+            $publishedPath = Join-Path $dir $publishedName
+            Move-Item $source[0].FullName $publishedPath
+          } else {
+            $publishedPath = $source[0].FullName
+          }
+
+          "jar=$publishedPath" >> $env:GITHUB_OUTPUT
+          "version=$env:RELEASE_TAG-mc$env:MC_VERSION" >> $env:GITHUB_OUTPUT
+
+      - name: Publish to GitHub, Modrinth, and CurseForge
+        uses: Kira-NT/mc-publish@v3.3.1
+        with:
+          modrinth-id: ${{ vars.MODRINTH_PROJECT_ID || '9ZHJ1Ue9' }}
+          modrinth-token: ${{ secrets.MODRINTH_API_TOKEN }}
+          curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID || '1661919' }}
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          github-token: ${{ github.token }}
+          github-tag: ${{ needs.prepare.outputs.release_tag }}
+          files: ${{ steps.artifact.outputs.jar }}
+          name: ${{ needs.validate.outputs.release_tag }}
+          version: ${{ steps.artifact.outputs.version }}
+          version-type: ${{ inputs.release_type }}
+          changelog-file: release-notes/RELEASE_NOTES.md
+          loaders: fabric
+          environment: client
+          game-versions: ${{ matrix.mc_version }}
+          java: ${{ startsWith(matrix.mc_version, '26.') && '25' || '21' }}
+          dependencies: |
+            malilib(required){modrinth:GcWjdA9I}{curseforge:303119}
+          retry-attempts: 3
+          retry-delay: 15000

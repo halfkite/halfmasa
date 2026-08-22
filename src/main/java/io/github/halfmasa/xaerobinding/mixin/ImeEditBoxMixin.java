@@ -1,7 +1,7 @@
-﻿package io.github.halfmasa.xaerobinding.mixin;
+package io.github.halfmasa.xaerobinding.mixin;
 
 import net.minecraft.client.Minecraft;
-//#if MC >= 26.2
+//#if MC >= 26.1
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 //#else
 //$$ import net.minecraft.client.gui.GuiGraphics;
@@ -30,7 +30,7 @@ public abstract class ImeEditBoxMixin
         ImeService.getInstance().onEditFocus((EditBox) (Object) this, focused);
     }
 
-    //#if MC >= 26.2
+    //#if MC >= 26.1
     @Inject(method = "extractWidgetRenderState", at = @At("TAIL"))
     private void halfmasa_updateImeCaret(
             GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci)

@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.waypoint;
+package io.github.halfmasa.xaerobinding.waypoint;
 
 import net.minecraft.client.Minecraft;
 

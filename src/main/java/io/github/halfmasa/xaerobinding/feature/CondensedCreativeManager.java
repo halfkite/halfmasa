@@ -8,12 +8,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+//#if MC >= 1.21.11
+import net.minecraft.resources.Identifier;
+//#else
+//$$ import net.minecraft.resources.ResourceLocation;
+//#endif
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
@@ -193,7 +198,11 @@ public final class CondensedCreativeManager
 
     private static String groupKey(ItemStack stack, String tabId)
     {
-        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        //#if MC >= 1.21.11
+        Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        //#else
+        //$$ ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        //#endif
         if (!"minecraft".equals(id.getNamespace())) return null;
         String path = id.getPath();
 
@@ -270,7 +279,15 @@ public final class CondensedCreativeManager
     private static String spawnEggGroup(ItemStack stack)
     {
         if (!(stack.getItem() instanceof SpawnEggItem egg)) return null;
+        //#if MC >= 1.21.10
         MobCategory category = egg.getType(stack).getCategory();
+        //#elseif MC >= 1.21.4
+        //$$ Minecraft client = Minecraft.getInstance();
+        //$$ if (client.level == null) return null;
+        //$$ MobCategory category = egg.getType(client.level.registryAccess(), stack).getCategory();
+        //#else
+        //$$ MobCategory category = egg.getType(stack).getCategory();
+        //#endif
         if (category == MobCategory.MONSTER) return "type:monster_spawn_eggs";
         if (category == MobCategory.MISC) return "type:misc_spawn_eggs";
         return "type:creature_spawn_eggs";
@@ -373,7 +390,11 @@ public final class CondensedCreativeManager
 
     private static String tabId(CreativeModeTab tab)
     {
-        ResourceLocation id = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab);
+        //#if MC >= 1.21.11
+        Identifier id = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab);
+        //#else
+        //$$ ResourceLocation id = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab);
+        //#endif
         return id != null ? id.getPath() : "unknown";
     }
 

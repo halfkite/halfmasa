@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.waypoint;
+package io.github.halfmasa.xaerobinding.waypoint;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

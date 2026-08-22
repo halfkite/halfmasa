@@ -2,6 +2,8 @@ package io.github.halfmasa.xaerobinding.feature;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
+
+import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
 import fi.dy.masa.malilib.interfaces.IClientTickHandler;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
@@ -17,9 +19,9 @@ public final class FastLoadingController implements IClientTickHandler
     public void onClientTick(Minecraft client)
     {
         if (Configs.FAST_WORLD_LOADING_SCREEN.getBooleanValue() &&
-            client.screen instanceof LevelLoadingScreen && client.level != null && client.player != null)
+            MinecraftClientCompat.getScreen(client) instanceof LevelLoadingScreen && client.level != null && client.player != null)
         {
-            client.setScreen(null);
+            MinecraftClientCompat.setScreen(client, null);
         }
     }
 }

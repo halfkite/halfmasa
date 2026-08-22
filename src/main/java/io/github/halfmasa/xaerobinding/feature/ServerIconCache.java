@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.feature;
+package io.github.halfmasa.xaerobinding.feature;
 
 import java.io.Reader;
 import java.io.Writer;
@@ -21,12 +21,15 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ConfirmScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.network.chat.Component;
 
 import io.github.halfmasa.xaerobinding.XaeroWorldBinding;
 import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
 import io.github.halfmasa.xaerobinding.config.ServerIconMatchMode;
 
 public final class ServerIconCache
@@ -36,6 +39,21 @@ public final class ServerIconCache
     private static CacheIndex index;
 
     private ServerIconCache() {}
+
+    public static boolean requestClear()
+    {
+        Minecraft client = Minecraft.getInstance();
+        Screen parent = MinecraftClientCompat.getScreen(client);
+        MinecraftClientCompat.setScreen(client, new ConfirmScreen(confirmed -> {
+            if (confirmed)
+            {
+                clear();
+            }
+            MinecraftClientCompat.setScreen(client, parent);
+        }, Component.translatable("halfmasa.feature.server_icon_cache.clear_confirm_title"),
+                Component.translatable("halfmasa.feature.server_icon_cache.clear_confirm")));
+        return true;
+    }
 
     public static synchronized void synchronize(ServerData server)
     {
@@ -274,7 +292,11 @@ public final class ServerIconCache
         Minecraft client = Minecraft.getInstance();
         if (client.player != null)
         {
-            client.player.displayClientMessage(Component.translatable(translationKey), false);
+            //#if MC >= 26.1
+            client.player.sendSystemMessage(Component.translatable(translationKey));
+            //#else
+            //$$ client.player.displayClientMessage(Component.translatable(translationKey), false);
+            //#endif
         }
     }
 

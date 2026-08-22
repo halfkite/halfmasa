@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.feature;
+package io.github.halfmasa.xaerobinding.feature;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -15,6 +15,7 @@ import net.minecraft.client.Minecraft;
 import fi.dy.masa.malilib.interfaces.IClientTickHandler;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
 import io.github.halfmasa.xaerobinding.gui.KeybindPieScreen;
 import io.github.halfmasa.xaerobinding.mixin.KeyMappingAccessor;
 import io.github.halfmasa.xaerobinding.mixin.MinecraftInputAccessor;
@@ -62,7 +63,7 @@ public final class KeybindPieManager implements IClientTickHandler
         }
 
         Minecraft client = Minecraft.getInstance();
-        if (client.screen != null)
+        if (MinecraftClientCompat.getScreen(client) != null)
         {
             return false;
         }
@@ -79,7 +80,7 @@ public final class KeybindPieManager implements IClientTickHandler
         }
         this.activeKey = key;
         this.activeScreen = new KeybindPieScreen(key, conflicts);
-        client.setScreen(this.activeScreen);
+        MinecraftClientCompat.setScreen(client, this.activeScreen);
         return true;
     }
 
@@ -98,7 +99,7 @@ public final class KeybindPieManager implements IClientTickHandler
         this.activeKey = null;
         this.activeScreen = null;
         Minecraft client = Minecraft.getInstance();
-        client.setScreen(null);
+        MinecraftClientCompat.setScreen(client, null);
 
         if (mapping == null || key == null)
         {

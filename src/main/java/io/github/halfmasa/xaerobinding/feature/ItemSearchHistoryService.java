@@ -20,10 +20,17 @@ import com.google.gson.JsonParser;
 
 import fi.dy.masa.malilib.interfaces.IClientTickHandler;
 
-import net.minecraft.Util;
+//#if MC >= 1.21.11
+import net.minecraft.util.Util;
+//#else
+//$$ import net.minecraft.Util;
+//#endif
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+//#if MC >= 1.21.8
+import net.minecraft.nbt.NbtOps;
+//#endif
 import net.minecraft.nbt.TagParser;
 import net.minecraft.world.item.ItemStack;
 
@@ -182,8 +189,14 @@ public final class ItemSearchHistoryService implements IClientTickHandler
                     }
                     try
                     {
-                        CompoundTag tag = TagParser.parseTag(element.getAsString());
-                        ItemStack stack = ItemStack.parseOptional(this.provider, tag);
+                        //#if MC >= 1.21.8
+                        CompoundTag tag = TagParser.parseCompoundFully(element.getAsString());
+                        ItemStack stack = ItemStack.CODEC.parse(
+                                this.provider.createSerializationContext(NbtOps.INSTANCE), tag).getOrThrow();
+                        //#else
+                        //$$ CompoundTag tag = TagParser.parseTag(element.getAsString());
+                        //$$ ItemStack stack = ItemStack.parseOptional(this.provider, tag);
+                        //#endif
                         if (!stack.isEmpty())
                         {
                             stack.setCount(1);
@@ -232,7 +245,13 @@ public final class ItemSearchHistoryService implements IClientTickHandler
                 JsonArray array = new JsonArray();
                 for (ItemStack entry : this.entries)
                 {
-                    array.add(entry.copyWithCount(1).save(this.provider).toString());
+                    //#if MC >= 1.21.8
+                    array.add(ItemStack.CODEC.encodeStart(
+                            this.provider.createSerializationContext(NbtOps.INSTANCE),
+                            entry.copyWithCount(1)).getOrThrow().toString());
+                    //#else
+                    //$$ array.add(entry.copyWithCount(1).save(this.provider).toString());
+                    //#endif
                 }
                 root.add("entries", array);
                 try (BufferedWriter writer = Files.newBufferedWriter(temporary, StandardCharsets.UTF_8))

@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.config;
+package io.github.halfmasa.xaerobinding.config;
 
 import fi.dy.masa.malilib.config.IConfigOptionListEntry;
 import fi.dy.masa.malilib.util.StringUtils;

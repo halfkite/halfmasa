@@ -21,7 +21,11 @@ public abstract class KeepModMenuScrollMixin
     {
         if (Configs.KEEP_MOD_MENU_SCROLL.getBooleanValue() && this.modList != null)
         {
-            ConfigScrollMemory.saveModMenu(this.modList.getScrollAmount());
+            //#if MC >= 1.21.4
+            ConfigScrollMemory.saveModMenu(this.modList.scrollAmount());
+            //#else
+            //$$ ConfigScrollMemory.saveModMenu(this.modList.getScrollAmount());
+            //#endif
         }
     }
 

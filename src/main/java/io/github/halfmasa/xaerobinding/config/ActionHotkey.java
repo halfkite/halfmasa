@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.config;
+package io.github.halfmasa.xaerobinding.config;
 
 import java.util.function.BooleanSupplier;
 

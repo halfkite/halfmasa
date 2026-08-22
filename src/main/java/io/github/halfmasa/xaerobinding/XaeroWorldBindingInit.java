@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding;
+package io.github.halfmasa.xaerobinding;
 
 import fi.dy.masa.malilib.config.ConfigManager;
 import fi.dy.masa.malilib.event.InputEventHandler;
@@ -11,6 +11,7 @@ import fi.dy.masa.malilib.registry.Registry;
 import fi.dy.masa.malilib.util.data.ModInfo;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
 import io.github.halfmasa.xaerobinding.config.ActionHotkey;
 import io.github.halfmasa.xaerobinding.feature.GiveFullInventory;
 import io.github.halfmasa.xaerobinding.feature.ElytraTimeService;
@@ -24,6 +25,7 @@ import io.github.halfmasa.xaerobinding.feature.EntityRenderAggregation;
 import io.github.halfmasa.xaerobinding.feature.ConfigScrollMemory;
 import io.github.halfmasa.xaerobinding.feature.ItemSearchHistoryService;
 import io.github.halfmasa.xaerobinding.feature.ItemManagerHistoryOverlay;
+import io.github.halfmasa.xaerobinding.feature.bridging.BridgingAssist;
 import io.github.halfmasa.xaerobinding.gui.HalfMasaConfigScreen;
 import io.github.halfmasa.xaerobinding.gui.KeybindCustomizationScreen;
 import io.github.halfmasa.xaerobinding.waypoint.WaypointChatSender;
@@ -61,12 +63,15 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
             return true;
         });
         registerTrigger(Configs.RELOAD_KEYBIND_DATA, KeybindCustomizationStore.getInstance()::reload);
-        registerTrigger(Configs.CLEAR_SERVER_ICON_CACHE, ServerIconCache::clear);
+        registerTrigger(Configs.CLEAR_SERVER_ICON_CACHE, ServerIconCache::requestClear);
         registerTrigger(Configs.CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION, ItemManagerHistoryOverlay::cyclePosition);
         Configs.CONTINGAME_IME.getKeybind().setCallback((action, key) -> ImeService.getInstance().onModeHotkey());
         Configs.KEEP_MOD_MENU_SCROLL.setValueChangeCallback(config -> {
             if (!Configs.KEEP_MOD_MENU_SCROLL.getBooleanValue()) ConfigScrollMemory.clear();
         });
+        Configs.CJK_LATIN_SPACING.setValueChangeCallback(config -> Minecraft.getInstance().reloadResourcePacks());
+        Configs.CJK_LATIN_SPACING_TRANSLATIONS.setValueChangeCallback(
+                config -> Minecraft.getInstance().reloadResourcePacks());
         Configs.DISABLE_FLUID_RENDERING.setValueChangeCallback(config -> refreshWorldRendering());
         Configs.DISABLE_NON_SOURCE_FLUID_RENDERING.setValueChangeCallback(config -> refreshWorldRendering());
         Configs.ENTITY_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
@@ -90,6 +95,7 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         TickHandler.getInstance().registerClientTickHandler(KeybindPieManager.getInstance());
         TickHandler.getInstance().registerClientTickHandler(ImeService.getInstance());
         TickHandler.getInstance().registerClientTickHandler(CooldownAutoAttack.getInstance());
+        TickHandler.getInstance().registerClientTickHandler(BridgingAssist.getInstance());
         TickHandler.getInstance().registerClientTickHandler(FastLoadingController.getInstance());
         TickHandler.getInstance().registerClientTickHandler(EntityRenderAggregation.getInstance());
         TickHandler.getInstance().registerClientTickHandler(ItemSearchHistoryService.getInstance());
@@ -124,7 +130,7 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         Minecraft client = Minecraft.getInstance();
         if (client.level != null)
         {
-            client.levelRenderer.allChanged();
+            MinecraftClientCompat.reloadLevelRenderer(client);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.feature;
+package io.github.halfmasa.xaerobinding.feature;
 
 import java.util.Optional;
 import java.util.function.Function;

@@ -6,6 +6,7 @@ run/
 .reference/
 versions/*/build/
 versions/*/run/
+versions/*/run-test/
 versions/*/bin/
 versions/*/out/
 versions/*/src/

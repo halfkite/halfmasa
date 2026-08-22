@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.feature;
+package io.github.halfmasa.xaerobinding.feature;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
@@ -10,6 +10,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import fi.dy.masa.malilib.interfaces.IClientTickHandler;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
 
 /** Performs the normal attack action when the attack key is held and cooldown is ready */
 public final class CooldownAutoAttack implements IClientTickHandler
@@ -27,7 +28,7 @@ public final class CooldownAutoAttack implements IClientTickHandler
     public void onClientTick(Minecraft client)
     {
         if (!Configs.COOLDOWN_AUTO_ATTACK.getBooleanValue() || client.player == null ||
-            client.gameMode == null || client.screen != null || client.level == null ||
+            client.gameMode == null || MinecraftClientCompat.getScreen(client) != null || client.level == null ||
             client.player.isSpectator() || !client.options.keyAttack.isDown() ||
             client.player.isUsingItem())
         {

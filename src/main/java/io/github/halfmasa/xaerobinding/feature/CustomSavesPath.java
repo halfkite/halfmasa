@@ -1,25 +1,29 @@
-﻿package io.github.halfmasa.xaerobinding.feature;
+package io.github.halfmasa.xaerobinding.feature;
 
 import java.io.IOException;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import fi.dy.masa.malilib.config.ConfigManager;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
+import net.minecraft.client.gui.screens.worldselection.WorldSelectionList;
+import net.minecraft.world.level.storage.LevelStorageSource;
 
 import io.github.halfmasa.xaerobinding.XaeroWorldBinding;
+import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.mixin.SelectWorldScreenAccessor;
+import io.github.halfmasa.xaerobinding.mixin.WorldSelectionListAccessor;
 
 public final class CustomSavesPath
 {
-    private static final String CONFIG_FILE_NAME = "halfmasa.json";
-    private static final String CONFIG_CATEGORY = "Ported";
-    private static final String LEGACY_CONFIG_CATEGORY = "Generic";
-    private static final String CONFIG_KEY = "customSavesPath";
+    private static Path currentPath;
 
     private CustomSavesPath()
     {
@@ -27,88 +31,275 @@ public final class CustomSavesPath
 
     public static Path replaceDefault(Path original)
     {
-        Path gameDirectory = FabricLoader.getInstance().getGameDir().toAbsolutePath().normalize();
-        Path defaultSaves = gameDirectory.resolve("saves").normalize();
-        if (!original.toAbsolutePath().normalize().equals(defaultSaves))
+        Path defaultSaves = getDefaultPath();
+        if (!normalize(original).equals(defaultSaves))
         {
             return original;
         }
 
-        String configured = readConfiguredPath();
-        if (configured == null || configured.isBlank())
+        Path selected = resolveInitialPath();
+        if (selected == null)
         {
+            currentPath = defaultSaves;
             return original;
         }
 
         try
         {
-            Path replacement = Path.of(configured.trim());
-            if (!replacement.isAbsolute())
-            {
-                replacement = gameDirectory.resolve(replacement);
-            }
-            replacement = replacement.toAbsolutePath().normalize();
-            Files.createDirectories(replacement);
-            XaeroWorldBinding.LOGGER.info("Using custom saves directory {}", replacement);
-            return replacement;
+            ensureDirectory(selected);
+            currentPath = selected;
+            XaeroWorldBinding.LOGGER.info("Using saves directory {}", selected);
+            return selected;
         }
-        catch (InvalidPathException | IOException | SecurityException exception)
+        catch (IOException | SecurityException exception)
         {
-            XaeroWorldBinding.LOGGER.error(
-                    "Invalid or inaccessible custom saves directory '{}'; using {}",
-                    configured,
-                    original,
-                    exception);
+            XaeroWorldBinding.LOGGER.error("Unable to use saves directory {}; using {}", selected, original, exception);
+            currentPath = defaultSaves;
             return original;
         }
     }
 
-    private static String readConfiguredPath()
+    public static Path getDefaultPath()
     {
-        Path configDirectory = FabricLoader.getInstance().getConfigDir();
-        Path configFile = configDirectory.resolve("halfmasa").resolve(CONFIG_FILE_NAME);
-        if (!Files.isReadable(configFile))
+        return normalize(FabricLoader.getInstance().getGameDir().resolve("saves"));
+    }
+
+    public static Path getCurrentPath()
+    {
+        if (currentPath != null)
         {
-            configFile = configDirectory.resolve(CONFIG_FILE_NAME);
+            return currentPath;
         }
-        if (!Files.isReadable(configFile))
+
+        Path active = resolveConfiguredPath(Configs.CUSTOM_SAVES_ACTIVE_PATH.getStringValue());
+        return active != null ? active : getDefaultPath();
+    }
+
+    public static List<PathOption> getOptions()
+    {
+        List<PathOption> options = new ArrayList<>();
+        Set<Path> seen = new HashSet<>();
+        Path defaultPath = getDefaultPath();
+        options.add(new PathOption(defaultPath, defaultPath, true, true));
+        seen.add(defaultPath);
+
+        List<String> configured = new ArrayList<>(Configs.CUSTOM_SAVES_PATHS.getStrings());
+        String legacy = Configs.CUSTOM_SAVES_PATH.getStringValue();
+        if (configured.isEmpty() && legacy != null && !legacy.isBlank())
+        {
+            configured.add(legacy);
+        }
+
+        for (String value : configured)
+        {
+            if (value == null || value.isBlank())
+            {
+                continue;
+            }
+
+            Path path = resolveConfiguredPath(value);
+            if (path != null && !seen.add(path))
+            {
+                continue;
+            }
+            options.add(new PathOption(path, path, isAvailable(path), false, value));
+        }
+        return options;
+    }
+
+    public static boolean switchTo(Path path)
+    {
+        Path normalized = normalize(path);
+        try
+        {
+            ensureDirectory(normalized);
+            LevelStorageSource source = Minecraft.getInstance().getLevelSource();
+            ((LevelStorageSourceAccess) (Object) source).halfmasa$setBaseDir(normalized);
+            currentPath = normalized;
+            String configured = normalized.equals(getDefaultPath()) ? "" : normalized.toString();
+            Configs.CUSTOM_SAVES_ACTIVE_PATH.setValueFromString(configured);
+            ConfigManager.getInstance().onConfigsChanged(XaeroWorldBinding.MOD_ID);
+            XaeroWorldBinding.LOGGER.info("Switched saves directory to {}", normalized);
+            return true;
+        }
+        catch (IOException | RuntimeException exception)
+        {
+            XaeroWorldBinding.LOGGER.error("Unable to switch saves directory to {}", normalized, exception);
+            return false;
+        }
+    }
+
+    public static boolean addConfiguredPath(String value)
+    {
+        if (value == null || value.isBlank())
+        {
+            return false;
+        }
+
+        String configured = value.trim();
+        Path path = resolveConfiguredPath(configured);
+        if (path == null)
+        {
+            return false;
+        }
+
+        for (PathOption option : getOptions())
+        {
+            if (option.path() != null && option.path().equals(path))
+            {
+                return false;
+            }
+        }
+
+        List<String> paths = new ArrayList<>(Configs.CUSTOM_SAVES_PATHS.getStrings());
+        paths.add(configured);
+        Configs.CUSTOM_SAVES_PATHS.setStrings(paths);
+        ConfigManager.getInstance().onConfigsChanged(XaeroWorldBinding.MOD_ID);
+        return true;
+    }
+
+    public static boolean removeConfiguredPath(PathOption option)
+    {
+        if (option == null || option.defaultPath())
+        {
+            return false;
+        }
+
+        Path target = option.path();
+        if (target != null && target.equals(getCurrentPath()) && !switchTo(getDefaultPath()))
+        {
+            return false;
+        }
+
+        List<String> paths = new ArrayList<>(Configs.CUSTOM_SAVES_PATHS.getStrings());
+        boolean changed = paths.removeIf(value -> {
+            Path path = resolveConfiguredPath(value);
+            return target == null ? value.trim().equals(option.configuredValue()) : target.equals(path);
+        });
+
+        String legacy = Configs.CUSTOM_SAVES_PATH.getStringValue();
+        if (legacy != null && !legacy.isBlank())
+        {
+            Path legacyPath = resolveConfiguredPath(legacy);
+            if (legacy.trim().equals(option.configuredValue()) || target != null && target.equals(legacyPath))
+            {
+                Configs.CUSTOM_SAVES_PATH.setValueFromString("");
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            Configs.CUSTOM_SAVES_PATHS.setStrings(paths);
+            ConfigManager.getInstance().onConfigsChanged(XaeroWorldBinding.MOD_ID);
+        }
+        return changed;
+    }
+
+    public static void refreshWorldList(SelectWorldScreen screen)
+    {
+        SelectWorldScreenAccessor screenAccessor = (SelectWorldScreenAccessor) (Object) screen;
+        WorldSelectionList list = screenAccessor.halfmasa$getWorldList();
+        if (list != null)
+        {
+            ((WorldSelectionListAccessor) (Object) list).halfmasa$reloadWorldList();
+        }
+        //#if MC >= 1.21.11
+        screen.resize(screen.width, screen.height);
+        //#else
+        //$$ screen.resize(Minecraft.getInstance(), screen.width, screen.height);
+        //#endif
+    }
+
+    private static Path resolveInitialPath()
+    {
+        if (Configs.hasPersistedCustomSavesActivePath())
+        {
+            String active = Configs.CUSTOM_SAVES_ACTIVE_PATH.getStringValue();
+            if (active == null || active.isBlank())
+            {
+                return getDefaultPath();
+            }
+
+            Path configured = resolveConfiguredPath(active);
+            if (configured != null && isAvailable(configured))
+            {
+                return configured;
+            }
+        }
+
+        for (PathOption option : getOptions())
+        {
+            if (!option.defaultPath() && option.available())
+            {
+                return option.path();
+            }
+        }
+        return getDefaultPath();
+    }
+
+    private static Path resolveConfiguredPath(String configured)
+    {
+        if (configured == null || configured.isBlank())
         {
             return null;
         }
 
-        try (Reader reader = Files.newBufferedReader(configFile, StandardCharsets.UTF_8))
+        try
         {
-            JsonElement rootElement = JsonParser.parseReader(reader);
-            if (!rootElement.isJsonObject())
+            Path path = Path.of(configured.trim());
+            if (!path.isAbsolute())
             {
-                return null;
+                path = FabricLoader.getInstance().getGameDir().resolve(path);
             }
-            JsonObject root = rootElement.getAsJsonObject();
-            JsonObject category = root.getAsJsonObject(CONFIG_CATEGORY);
-            if (category == null)
-            {
-                category = root.getAsJsonObject(LEGACY_CONFIG_CATEGORY);
-            }
-            if (category == null)
-            {
-                return null;
-            }
-            JsonElement value = category.get(CONFIG_KEY);
-            if (value != null && value.isJsonPrimitive()) return value.getAsString();
-            JsonElement paths = category.get("customSavesPaths");
-            if (paths != null && paths.isJsonArray())
-            {
-                for (JsonElement entry : paths.getAsJsonArray())
-                {
-                    if (entry.isJsonPrimitive() && !entry.getAsString().isBlank()) return entry.getAsString();
-                }
-            }
+            return normalize(path);
+        }
+        catch (InvalidPathException exception)
+        {
             return null;
         }
-        catch (IOException | RuntimeException exception)
+    }
+
+    private static boolean isAvailable(Path path)
+    {
+        if (path == null)
         {
-            XaeroWorldBinding.LOGGER.warn("Unable to read custom saves directory from {}", configFile, exception);
-            return null;
+            return false;
+        }
+        try
+        {
+            return !Files.exists(path) || Files.isDirectory(path);
+        }
+        catch (SecurityException exception)
+        {
+            return false;
+        }
+    }
+
+    private static void ensureDirectory(Path path) throws IOException
+    {
+        Files.createDirectories(path);
+        if (!Files.isDirectory(path))
+        {
+            throw new IOException("Path is not a directory: " + path);
+        }
+    }
+
+    private static Path normalize(Path path)
+    {
+        return path.toAbsolutePath().normalize();
+    }
+
+    public record PathOption(Path resolvedPath, Path path, boolean available, boolean defaultPath, String configuredValue)
+    {
+        public PathOption(Path resolvedPath, Path path, boolean available, boolean defaultPath)
+        {
+            this(resolvedPath, path, available, defaultPath, "");
+        }
+
+        public boolean invalid()
+        {
+            return resolvedPath == null;
         }
     }
 }

@@ -1,7 +1,10 @@
-﻿package io.github.halfmasa.xaerobinding.mixin.draggable.packs;
+package io.github.halfmasa.xaerobinding.mixin.draggable.packs;
 
 import io.github.halfmasa.xaerobinding.draggable.duck.ResourcePackOrganizerDuckProvider;
 import net.minecraft.client.gui.screens.packs.PackSelectionModel;
+//#if MC >= 1.21.10
+import java.util.function.Consumer;
+//#endif
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -10,10 +13,18 @@ import org.spongepowered.asm.mixin.Shadow;
 public abstract class PackSelectionModelMixin implements ResourcePackOrganizerDuckProvider {
     @Shadow
     @Final
-    Runnable onListChanged;
+    //#if MC >= 1.21.10
+    Consumer<PackSelectionModel.EntryBase> onListChanged;
+    //#else
+    //$$ Runnable onListChanged;
+    //#endif
 
     @Override
     public void draggable_lists$updateSelectedList() {
-        onListChanged.run();
+        //#if MC >= 1.21.10
+        onListChanged.accept(null);
+        //#else
+        //$$ onListChanged.run();
+        //#endif
     }
 }

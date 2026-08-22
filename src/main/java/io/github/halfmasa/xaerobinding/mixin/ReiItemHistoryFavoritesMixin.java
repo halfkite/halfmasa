@@ -1,3 +1,4 @@
+//#if MC < 26.1
 package io.github.halfmasa.xaerobinding.mixin;
 
 import org.objectweb.asm.Opcodes;
@@ -32,3 +33,4 @@ public abstract class ReiItemHistoryFavoritesMixin
         ItemManagerHistoryOverlay.reserveReiFavoritesArea(this);
     }
 }
+//#endif

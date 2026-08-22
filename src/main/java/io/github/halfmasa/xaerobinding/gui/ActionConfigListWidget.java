@@ -1,5 +1,9 @@
-﻿package io.github.halfmasa.xaerobinding.gui;
+package io.github.halfmasa.xaerobinding.gui;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.gui.GuiConfigsBase.ConfigOptionWrapper;
 import fi.dy.masa.malilib.gui.widgets.WidgetConfigOption;
 import fi.dy.masa.malilib.gui.widgets.WidgetListConfigOptions;
@@ -8,6 +12,42 @@ import io.github.halfmasa.xaerobinding.config.Configs;
 
 public final class ActionConfigListWidget extends WidgetListConfigOptions
 {
+    @Override
+    protected List<String> getEntryStringsForFilter(ConfigOptionWrapper entry)
+    {
+        List<String> strings = new ArrayList<>(super.getEntryStringsForFilter(entry));
+        IConfigBase config = entry.getConfig();
+        if (config == null)
+        {
+            return strings;
+        }
+
+        IConfigBase parent = Configs.getExpansionParent(config);
+        if (parent != null)
+        {
+            addSearchStrings(strings, parent);
+        }
+        for (IConfigBase child : Configs.getExpansionChildren(config))
+        {
+            addSearchStrings(strings, child);
+        }
+        return strings;
+    }
+
+    private static void addSearchStrings(List<String> strings, IConfigBase config)
+    {
+        String name = config.getName().toLowerCase();
+        String translated = config.getConfigGuiDisplayName().toLowerCase();
+        if (!strings.contains(name))
+        {
+            strings.add(name);
+        }
+        if (!name.equals(translated) && !strings.contains(translated))
+        {
+            strings.add(translated);
+        }
+    }
+
     @Override
     public int getMaxNameLengthWrapped(java.util.List<ConfigOptionWrapper> wrappers)
     {
@@ -21,9 +61,7 @@ public final class ActionConfigListWidget extends WidgetListConfigOptions
                 continue;
             }
 
-            int indent = Configs.isExpandedChild(config)
-                    ? 28
-                    : Configs.getExpansionConfig(config) != null ? 18 : 0;
+            int indent = 18 + (Configs.isExpandedChild(config) ? 28 : 0);
             width = Math.max(width,
                     this.getStringWidth(config.getConfigGuiDisplayName()) + indent + 16);
         }

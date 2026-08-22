@@ -9,13 +9,18 @@ import java.util.List;
 import java.util.Optional;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+//#if MC >= 26.1
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+//#else
+//$$ import net.minecraft.client.gui.GuiGraphics;
+//#endif
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 import io.github.halfmasa.xaerobinding.XaeroWorldBinding;
 import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
 import io.github.halfmasa.xaerobinding.config.ItemManagerHistoryPosition;
 import io.github.halfmasa.xaerobinding.feature.ItemSearchHistoryService.Channel;
 
@@ -39,7 +44,11 @@ public final class ItemManagerHistoryOverlay
 
     private ItemManagerHistoryOverlay() {}
 
-    public static void renderRei(Object entryList, GuiGraphics graphics, int mouseX, int mouseY)
+    //#if MC >= 26.1
+    public static void renderRei(Object entryList, GuiGraphicsExtractor graphics, int mouseX, int mouseY)
+    //#else
+    //$$ public static void renderRei(Object entryList, GuiGraphics graphics, int mouseX, int mouseY)
+    //#endif
     {
         render(Channel.REI, graphics, mouseX, mouseY);
     }
@@ -53,7 +62,7 @@ public final class ItemManagerHistoryOverlay
         }
 
         PanelState state = STATES.get(Channel.REI);
-        Screen screen = Minecraft.getInstance().screen;
+        Screen screen = MinecraftClientCompat.getScreen(Minecraft.getInstance());
         ItemManagerHistoryPosition position = currentPosition();
         int configuredRows = Configs.ITEM_MANAGER_RECIPE_HISTORY_ROWS.getIntegerValue();
         if (state.owner == entryList && state.screen == screen &&
@@ -91,7 +100,11 @@ public final class ItemManagerHistoryOverlay
         return true;
     }
 
-    public static void renderJei(Object ingredientListOverlay, GuiGraphics graphics, int mouseX, int mouseY)
+    //#if MC >= 26.1
+    public static void renderJei(Object ingredientListOverlay, GuiGraphicsExtractor graphics, int mouseX, int mouseY)
+    //#else
+    //$$ public static void renderJei(Object ingredientListOverlay, GuiGraphics graphics, int mouseX, int mouseY)
+    //#endif
     {
         try
         {
@@ -121,7 +134,7 @@ public final class ItemManagerHistoryOverlay
     {
         PanelState state = STATES.get(Channel.JEI);
         Minecraft client = Minecraft.getInstance();
-        if (state.screen != client.screen)
+        if (state.screen != MinecraftClientCompat.getScreen(client))
         {
             return false;
         }
@@ -145,7 +158,7 @@ public final class ItemManagerHistoryOverlay
             }
             int maxColumns = readJeiMaxColumns(overlay, original.width / SLOT_SIZE);
             PanelState state = STATES.get(Channel.JEI);
-            Rect searchArea = state.screen == Minecraft.getInstance().screen
+            Rect searchArea = state.screen == MinecraftClientCompat.getScreen(Minecraft.getInstance())
                     ? state.searchArea
                     : Rect.EMPTY;
             if (searchArea.empty())
@@ -209,7 +222,7 @@ public final class ItemManagerHistoryOverlay
     public static void reserveReiFavoritesArea(Object favoritesList)
     {
         PanelState state = STATES.get(Channel.REI);
-        if (!enabled() || state.screen != Minecraft.getInstance().screen || state.area.empty())
+        if (!enabled() || state.screen != MinecraftClientCompat.getScreen(Minecraft.getInstance()) || state.area.empty())
         {
             return;
         }
@@ -243,7 +256,7 @@ public final class ItemManagerHistoryOverlay
                     search.width + JEI_CONFIG_BUTTON_WIDTH, search.height);
 
             PanelState state = STATES.get(Channel.JEI);
-            Screen screen = Minecraft.getInstance().screen;
+            Screen screen = MinecraftClientCompat.getScreen(Minecraft.getInstance());
             boolean changed = state.screen != screen || !search.equals(state.searchArea);
             state.searchArea = search;
             state.screen = screen;
@@ -265,7 +278,7 @@ public final class ItemManagerHistoryOverlay
                 {
                     state.relayoutPending = false;
                     if (enabled() && state.owner == overlay &&
-                            state.screen == Minecraft.getInstance().screen)
+                            state.screen == MinecraftClientCompat.getScreen(Minecraft.getInstance()))
                     {
                         refreshNativeLayout(Channel.JEI, state);
                     }
@@ -294,7 +307,7 @@ public final class ItemManagerHistoryOverlay
             }
             jeiObstacles = updatedObstacles;
             PanelState state = STATES.get(Channel.JEI);
-            if (state.screen == Minecraft.getInstance().screen && !state.available.empty())
+            if (state.screen == MinecraftClientCompat.getScreen(Minecraft.getInstance()) && !state.available.empty())
             {
                 Layout layout = createLayout(Channel.JEI, state.available, state.searchArea,
                         state.nativeGridArea, state.expanded, state.slotSize, state.configuredColumns);
@@ -310,7 +323,7 @@ public final class ItemManagerHistoryOverlay
     public static int[] getJeiHistoryExclusionArea()
     {
         PanelState state = STATES.get(Channel.JEI);
-        if (!enabled() || state.screen != Minecraft.getInstance().screen || state.area.empty())
+        if (!enabled() || state.screen != MinecraftClientCompat.getScreen(Minecraft.getInstance()) || state.area.empty())
         {
             return null;
         }
@@ -353,7 +366,7 @@ public final class ItemManagerHistoryOverlay
                 {
                     state.relayoutPending = false;
                     if (enabled() && state.owner == overlay &&
-                            state.screen == Minecraft.getInstance().screen)
+                            state.screen == MinecraftClientCompat.getScreen(Minecraft.getInstance()))
                     {
                         refreshNativeLayout(Channel.JEI, state);
                     }
@@ -414,7 +427,7 @@ public final class ItemManagerHistoryOverlay
     {
         PanelState state = STATES.get(channel);
         state.owner = owner;
-        state.screen = Minecraft.getInstance().screen;
+        state.screen = MinecraftClientCompat.getScreen(Minecraft.getInstance());
         Layout layout = createLayout(channel, nativeArea, searchArea, state.nativeGridArea,
                 state.expanded, slotSize, configuredColumns);
         state.area = layout.panel;
@@ -449,17 +462,25 @@ public final class ItemManagerHistoryOverlay
                 Math.max(0, excluded.y - available.y));
     }
 
-    private static void render(Channel channel, GuiGraphics graphics, int mouseX, int mouseY)
+    //#if MC >= 26.1
+    private static void render(Channel channel, GuiGraphicsExtractor graphics, int mouseX, int mouseY)
+    //#else
+    //$$ private static void render(Channel channel, GuiGraphics graphics, int mouseX, int mouseY)
+    //#endif
     {
         PanelState state = STATES.get(channel);
-        if (!enabled() || state.screen != Minecraft.getInstance().screen || state.area.empty())
+        if (!enabled() || state.screen != MinecraftClientCompat.getScreen(Minecraft.getInstance()) || state.area.empty())
         {
             return;
         }
         draw(channel, state, graphics, mouseX, mouseY);
     }
 
-    private static void draw(Channel channel, PanelState state, GuiGraphics graphics, int mouseX, int mouseY)
+    //#if MC >= 26.1
+    private static void draw(Channel channel, PanelState state, GuiGraphicsExtractor graphics, int mouseX, int mouseY)
+    //#else
+    //$$ private static void draw(Channel channel, PanelState state, GuiGraphics graphics, int mouseX, int mouseY)
+    //#endif
     {
         Layout layout = new Layout(state.area, state.columns, state.rows, state.buttonCell, state.slotSize);
         List<ItemStack> history = ItemSearchHistoryService.getInstance().get(channel);
@@ -472,12 +493,21 @@ public final class ItemManagerHistoryOverlay
             int y = layout.panel.y + cell / layout.columns * layout.slotSize;
             int itemOffset = Math.max(0, (layout.slotSize - 16) / 2);
             ItemStack stack = history.get(index);
-            graphics.renderItem(stack, x + itemOffset, y + itemOffset);
-            graphics.renderItemDecorations(Minecraft.getInstance().font, stack, x + itemOffset, y + itemOffset);
+            //#if MC >= 26.1
+            graphics.item(stack, x + itemOffset, y + itemOffset);
+            graphics.itemDecorations(Minecraft.getInstance().font, stack, x + itemOffset, y + itemOffset);
+            //#else
+            //$$ graphics.renderItem(stack, x + itemOffset, y + itemOffset);
+            //$$ graphics.renderItemDecorations(Minecraft.getInstance().font, stack, x + itemOffset, y + itemOffset);
+            //#endif
             if (mouseX >= x && mouseX < x + layout.slotSize && mouseY >= y && mouseY < y + layout.slotSize &&
-                    Minecraft.getInstance().screen != null)
+                    MinecraftClientCompat.getScreen(Minecraft.getInstance()) != null)
             {
-                Minecraft.getInstance().screen.setTooltipForNextRenderPass(stack.getHoverName());
+                //#if MC >= 1.21.8
+                graphics.setTooltipForNextFrame(Minecraft.getInstance().font, stack, mouseX, mouseY);
+                //#else
+                //$$ Minecraft.getInstance().screen.setTooltipForNextRenderPass(stack.getHoverName());
+                //#endif
             }
         }
 
@@ -490,7 +520,11 @@ public final class ItemManagerHistoryOverlay
         drawToggle(graphics, buttonX, buttonY, layout.slotSize, state.expanded, mouseX, mouseY);
     }
 
-    private static void drawDashedBorder(GuiGraphics graphics, Rect panel)
+    //#if MC >= 26.1
+    private static void drawDashedBorder(GuiGraphicsExtractor graphics, Rect panel)
+    //#else
+    //$$ private static void drawDashedBorder(GuiGraphics graphics, Rect panel)
+    //#endif
     {
         int color = 0xB0FFFFFF;
         for (int x = panel.x; x < panel.x + panel.width; x += 6)
@@ -506,13 +540,22 @@ public final class ItemManagerHistoryOverlay
     }
 
     private static void drawToggle(
-            GuiGraphics graphics, int x, int y, int slotSize, boolean expanded, int mouseX, int mouseY)
+            //#if MC >= 26.1
+            GuiGraphicsExtractor graphics,
+            //#else
+            //$$ GuiGraphics graphics,
+            //#endif
+            int x, int y, int slotSize, boolean expanded, int mouseX, int mouseY)
     {
         String label = expanded ? "[-]" : "[+]";
         int textX = x + (slotSize - Minecraft.getInstance().font.width(label)) / 2;
         int textY = y + (slotSize - 8) / 2;
         int color = inside(mouseX, mouseY, x, y, slotSize, slotSize) ? 0xFFFFFFFF : 0xFFE0E0E0;
-        graphics.drawString(Minecraft.getInstance().font, label, textX, textY, color, true);
+        //#if MC >= 26.1
+        graphics.text(Minecraft.getInstance().font, label, textX, textY, color, true);
+        //#else
+        //$$ graphics.drawString(Minecraft.getInstance().font, label, textX, textY, color, true);
+        //#endif
     }
 
     private static boolean handleClick(Channel channel, Rect area, double mouseX, double mouseY, int button)
@@ -966,7 +1009,12 @@ public final class ItemManagerHistoryOverlay
             Class<?> helperClass = Class.forName("me.shedaniel.rei.api.client.ClientHelper");
             Object helper = findMethod(helperClass, "getInstance", 0).invoke(null);
             boolean cheating = (boolean) findMethod(helper.getClass(), "isCheating", 0).invoke(helper);
-            if (cheating && !Screen.hasControlDown())
+            //#if MC >= 1.21.10
+            boolean controlDown = Minecraft.getInstance().hasControlDown();
+            //#else
+            //$$ boolean controlDown = Screen.hasControlDown();
+            //#endif
+            if (cheating && !controlDown)
             {
                 return (boolean) findMethod(helper.getClass(), "tryCheatingEntry", 1).invoke(helper, entry);
             }

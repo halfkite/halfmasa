@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.config;
+package io.github.halfmasa.xaerobinding.config;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,7 +40,7 @@ public final class Configs implements IConfigHandler
 {
     private static final String CONFIG_DIRECTORY_NAME = "halfmasa";
     private static final String CONFIG_FILE_NAME = "halfmasa.json";
-    private static final int CONFIG_VERSION = 21;
+    private static final int CONFIG_VERSION = 30;
     private static final String GENERIC_KEY = "halfmasa.config.generic";
 
     public static final ConfigHotkey OPEN_TOOLS = new ConfigHotkey(
@@ -120,6 +120,19 @@ public final class Configs implements IConfigHandler
             "").apply(PORTED_KEY);
     public static final ConfigStringList CUSTOM_SAVES_PATHS = new ConfigStringList(
             "customSavesPaths", ImmutableList.of()).apply(PORTED_KEY);
+    public static final ConfigBoolean KEEP_WORLD_SELECTION_ON_EMPTY = new ConfigBoolean(
+            "keepWorldSelectionOnEmpty", false).apply(PORTED_KEY);
+    /** Internal state used by the world-selection saves path switcher. */
+    public static final ConfigString CUSTOM_SAVES_ACTIVE_PATH = new ConfigString(
+            "activeCustomSavesPath", "").apply(PORTED_KEY);
+    public static final ConfigInteger CUSTOM_SAVES_BUTTON_X = new ConfigInteger(
+            "customSavesButtonX", -1, -1, 10000, true).apply(PORTED_KEY);
+    public static final ConfigInteger CUSTOM_SAVES_BUTTON_Y = new ConfigInteger(
+            "customSavesButtonY", -1, -1, 10000, true).apply(PORTED_KEY);
+    private static final List<IConfigBase> CUSTOM_SAVES_INTERNAL = List.of(
+            CUSTOM_SAVES_ACTIVE_PATH,
+            CUSTOM_SAVES_BUTTON_X,
+            CUSTOM_SAVES_BUTTON_Y);
     public static final ConfigBoolean CUSTOM_SAVES_PATHS_EXPANDED = new ConfigBoolean(
             "customSavesPathsExpanded", false).apply(PORTED_KEY);
     public static final ConfigGroupHeader CUSTOM_SAVES_PATHS_GROUP = new ConfigGroupHeader(
@@ -132,6 +145,12 @@ public final class Configs implements IConfigHandler
             "elytraTimeTooltip", false, "").apply(PORTED_KEY);
     public static final ActionHotkey REPORT_ELYTRA_TIME = new ActionHotkey(
             "reportElytraTime", "").applyTranslationKey(PORTED_KEY);
+    public static final ConfigBoolean NIGHT_VISION_FADE = new ConfigBoolean(
+            "nightVisionFade", true).apply(PORTED_KEY);
+    public static final ConfigInteger NIGHT_VISION_FADE_SECONDS = new ConfigInteger(
+            "nightVisionFadeSeconds", 5, 0, 60, true).apply(PORTED_KEY);
+    public static final ConfigBoolean NIGHT_VISION_FADE_EXPANDED = new ConfigBoolean(
+            "nightVisionFadeExpanded", false).apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed BOAT_VIEW_360 = new ConfigBooleanHotkeyed(
             "boatView360", false, "").apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed BOAT_ITEM_VIEW = new ConfigBooleanHotkeyed(
@@ -158,8 +177,54 @@ public final class Configs implements IConfigHandler
             "draggableHideServerArrows", true).apply(PORTED_KEY);
     public static final ConfigBoolean DRAGGABLE_LISTS_EXPANDED = new ConfigBoolean(
             "draggableListsExpanded", false).apply(PORTED_KEY);
-    public static final ConfigGroupHeader DRAGGABLE_LISTS_GROUP = new ConfigGroupHeader(
-            "draggableListsGroup", PORTED_KEY, DRAGGABLE_LISTS_EXPANDED);
+    public static final ConfigBoolean FAST_SCROLLING = new ConfigBoolean(
+            "fastScrolling", false).apply(PORTED_KEY);
+    public static final ConfigBoolean FAST_SCROLLING_PRIMARY_ENABLED = new ConfigBoolean(
+            "fastScrollingPrimaryEnabled", true).apply(PORTED_KEY);
+    public static final ConfigHotkey FAST_SCROLLING_PRIMARY_HOTKEY = new ConfigHotkey(
+            "fastScrollingPrimaryHotkey", "LEFT_CONTROL", KeybindSettings.MODIFIER_GUI).apply(PORTED_KEY);
+    public static final ConfigInteger FAST_SCROLLING_PRIMARY_MULTIPLIER = new ConfigInteger(
+            "fastScrollingPrimaryMultiplier", 2, 1, 32, true).apply(PORTED_KEY);
+    public static final ConfigBoolean FAST_SCROLLING_SECONDARY_ENABLED = new ConfigBoolean(
+            "fastScrollingSecondaryEnabled", true).apply(PORTED_KEY);
+    public static final ConfigHotkey FAST_SCROLLING_SECONDARY_HOTKEY = new ConfigHotkey(
+            "fastScrollingSecondaryHotkey", "LEFT_CONTROL,LEFT_SHIFT", KeybindSettings.MODIFIER_GUI).apply(PORTED_KEY);
+    public static final ConfigInteger FAST_SCROLLING_SECONDARY_MULTIPLIER = new ConfigInteger(
+            "fastScrollingSecondaryMultiplier", 6, 1, 32, true).apply(PORTED_KEY);
+    public static final ConfigBoolean FAST_SCROLLING_EXPANDED = new ConfigBoolean(
+            "fastScrollingExpanded", false).apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed BRIDGING_ASSIST = new ConfigBooleanHotkeyed(
+            "bridgingAssist", false, "").apply(PORTED_KEY);
+    public static final ConfigInteger BRIDGING_MINIMUM_DISTANCE = new ConfigInteger(
+            "bridgingMinimumDistance", 20, 0, 100, true).apply(PORTED_KEY);
+    public static final ConfigBoolean BRIDGING_ONLY_WHEN_CROUCHING = new ConfigBoolean(
+            "bridgingOnlyWhenCrouching", false).apply(PORTED_KEY);
+    public static final ConfigOptionList BRIDGING_AXES = new ConfigOptionList(
+            "bridgingAxes", BridgingAxisMode.BOTH).apply(PORTED_KEY);
+    public static final ConfigOptionList BRIDGING_CROUCHING_AXES = new ConfigOptionList(
+            "bridgingCrouchingAxes", BridgingAxisOverride.SAME_AS_DEFAULT).apply(PORTED_KEY);
+    public static final ConfigInteger BRIDGING_PLACEMENT_DELAY = new ConfigInteger(
+            "bridgingPlacementDelay", 4, 0, 20, true).apply(PORTED_KEY);
+    public static final ConfigBoolean BRIDGING_SHOW_CROSSHAIR = new ConfigBoolean(
+            "bridgingShowCrosshair", true).apply(PORTED_KEY);
+    public static final ConfigBoolean BRIDGING_SHOW_OUTLINE = new ConfigBoolean(
+            "bridgingShowOutline", true).apply(PORTED_KEY);
+    public static final ConfigColor BRIDGING_OUTLINE_COLOR = new ConfigColor(
+            "bridgingOutlineColor", "#66000000").apply(PORTED_KEY);
+    public static final ConfigBoolean BRIDGING_SLAB_ASSIST = new ConfigBoolean(
+            "bridgingSlabAssist", true).apply(PORTED_KEY);
+    public static final ConfigBoolean BRIDGING_SKIP_TORCHES = new ConfigBoolean(
+            "bridgingSkipTorches", true).apply(PORTED_KEY);
+    public static final ConfigBoolean BRIDGING_REPLACE_NON_SOLID = new ConfigBoolean(
+            "bridgingReplaceNonSolid", true).apply(PORTED_KEY);
+    public static final ConfigOptionList BRIDGING_PERSPECTIVE = new ConfigOptionList(
+            "bridgingPerspective", BridgingPerspectiveMode.AUTO).apply(PORTED_KEY);
+    public static final ConfigDouble BRIDGING_SNAP_STRENGTH = new ConfigDouble(
+            "bridgingSnapStrength", 1.0D, 0.0D, 1.0D, true).apply(PORTED_KEY);
+    public static final ConfigOptionList BRIDGING_ADJACENCY = new ConfigOptionList(
+            "bridgingAdjacency", BridgingAdjacencyMode.CORNERS).apply(PORTED_KEY);
+    public static final ConfigBoolean BRIDGING_EXPANDED = new ConfigBoolean(
+            "bridgingExpanded", false).apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed KEYBIND_PIE_MENU = new ConfigBooleanHotkeyed(
             "keybindPieMenu", false, "").apply(PORTED_KEY);
     public static final ConfigBoolean KEYBIND_WHEEL_EXPANDED = new ConfigBoolean(
@@ -212,6 +277,16 @@ public final class Configs implements IConfigHandler
             "reloadKeybindPieData", "").applyTranslationKey(PORTED_KEY);
     public static final ConfigBooleanHotkeyed CLICK_AND_SEND = new ConfigBooleanHotkeyed(
             "clickAndSend", false, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed CJK_LATIN_SPACING = new ConfigBooleanHotkeyed(
+            "cjkLatinSpacing", false, "").apply(PORTED_KEY);
+    public static final ConfigBoolean CJK_LATIN_SPACING_TRANSLATIONS = new ConfigBoolean(
+            "cjkLatinSpacingTranslations", true).apply(PORTED_KEY);
+    public static final ConfigBoolean CJK_LATIN_SPACING_SIGNS = new ConfigBoolean(
+            "cjkLatinSpacingSigns", true).apply(PORTED_KEY);
+    public static final ConfigBoolean CJK_LATIN_SPACING_BOOKS = new ConfigBoolean(
+            "cjkLatinSpacingBooks", true).apply(PORTED_KEY);
+    public static final ConfigBoolean CJK_LATIN_SPACING_EXPANDED = new ConfigBoolean(
+            "cjkLatinSpacingExpanded", false).apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed MAP_IN_SLOT = new ConfigBooleanHotkeyed(
             "mapInSlot", false, "").apply(PORTED_KEY);
     public static final ConfigBoolean MAP_IN_HOTBAR = new ConfigBoolean(
@@ -220,10 +295,8 @@ public final class Configs implements IConfigHandler
             "mapInInventory", true).apply(PORTED_KEY);
     public static final ConfigBoolean MAP_IN_SLOT_EXPANDED = new ConfigBoolean(
             "mapInSlotExpanded", false).apply(PORTED_KEY);
-    public static final ConfigGroupHeader MAP_SERVER_GROUP = new ConfigGroupHeader(
-            "mapServerGroup", "halfmasa.config.map_server", MAP_IN_SLOT_EXPANDED);
     public static final ConfigBooleanHotkeyed SERVER_ICON_CACHE = new ConfigBooleanHotkeyed(
-            "serverIconCache", false, "").apply(PORTED_KEY);
+            "serverIconCache", true, "").apply(PORTED_KEY);
     public static final ConfigOptionList SERVER_ICON_MATCH_MODE = new ConfigOptionList(
             "serverIconMatchMode", ServerIconMatchMode.NAME_AND_IP).apply(PORTED_KEY);
     public static final ConfigInteger SERVER_ICON_CACHE_LIMIT = new ConfigInteger(
@@ -289,6 +362,12 @@ public final class Configs implements IConfigHandler
             ITEM_MANAGER_RECIPE_HISTORY_ROWS,
             ITEM_MANAGER_RECIPE_HISTORY_POSITION,
             CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION);
+    private static final List<IConfigBase> ITEM_MANAGER_RECIPE_HISTORY_CONFIGS = List.of(
+            ITEM_MANAGER_RECIPE_HISTORY,
+            ITEM_MANAGER_RECIPE_HISTORY_ROWS,
+            ITEM_MANAGER_RECIPE_HISTORY_POSITION,
+            CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION,
+            ITEM_MANAGER_RECIPE_HISTORY_EXPANDED);
 
     private static final List<IConfigBase> KEYBIND_PIE_SETTINGS = List.of(
             KEYBIND_REPEAT_COOLDOWN,
@@ -318,13 +397,47 @@ public final class Configs implements IConfigHandler
             IME_DISABLE_IN_COMMAND_MODE,
             IME_AUTO_REPLACE_SLASH,
             IME_SLASH_CHARACTERS);
+    private static final List<IConfigBase> FAST_SCROLLING_CHILDREN = List.of(
+            FAST_SCROLLING_PRIMARY_ENABLED,
+            FAST_SCROLLING_PRIMARY_HOTKEY,
+            FAST_SCROLLING_PRIMARY_MULTIPLIER,
+            FAST_SCROLLING_SECONDARY_ENABLED,
+            FAST_SCROLLING_SECONDARY_HOTKEY,
+            FAST_SCROLLING_SECONDARY_MULTIPLIER);
+    private static final List<IConfigBase> CJK_LATIN_SPACING_CHILDREN = List.of(
+            CJK_LATIN_SPACING_TRANSLATIONS,
+            CJK_LATIN_SPACING_SIGNS,
+            CJK_LATIN_SPACING_BOOKS);
+    private static final List<IConfigBase> BRIDGING_CHILDREN = List.of(
+            BRIDGING_MINIMUM_DISTANCE,
+            BRIDGING_ONLY_WHEN_CROUCHING,
+            BRIDGING_AXES,
+            BRIDGING_CROUCHING_AXES,
+            BRIDGING_PLACEMENT_DELAY,
+            BRIDGING_SHOW_CROSSHAIR,
+            BRIDGING_SHOW_OUTLINE,
+            BRIDGING_OUTLINE_COLOR,
+            BRIDGING_SLAB_ASSIST,
+            BRIDGING_SKIP_TORCHES,
+            BRIDGING_REPLACE_NON_SOLID,
+            BRIDGING_PERSPECTIVE,
+            BRIDGING_SNAP_STRENGTH,
+            BRIDGING_ADJACENCY);
+    private static final List<IConfigBase> SAVES_RELATED_CONFIGS = List.of(
+            ENABLE_WORLD_BINDING,
+            CUSTOM_SAVES_PATHS,
+            KEEP_WORLD_SELECTION_ON_EMPTY);
 
     public static final List<IConfigBase> PORTED = Stream.of(List.of(
             CUSTOM_SAVES_PATHS,
+            KEEP_WORLD_SELECTION_ON_EMPTY,
             SCREENSHOT_TO_CLIPBOARD,
             SKIP_RESOURCE_PACK_COMPATIBILITY_CHECK,
             ELYTRA_TIME_TOOLTIP,
             REPORT_ELYTRA_TIME,
+            NIGHT_VISION_FADE,
+            NIGHT_VISION_FADE_SECONDS,
+            NIGHT_VISION_FADE_EXPANDED,
             BOAT_VIEW_360,
             BOAT_ITEM_VIEW,
             INVENTORY_MOVE,
@@ -338,11 +451,23 @@ public final class Configs implements IConfigHandler
             DRAG_HIDE_RESOURCE_ARROWS,
             DRAG_HIDE_SERVER_ARROWS,
             DRAGGABLE_LISTS_EXPANDED,
+            FAST_SCROLLING,
+            FAST_SCROLLING_EXPANDED),
+            FAST_SCROLLING_CHILDREN,
+            List.of(
+            BRIDGING_ASSIST,
+            BRIDGING_EXPANDED),
+            BRIDGING_CHILDREN,
+            List.of(
             KEYBIND_PIE_MENU,
             KEYBIND_WHEEL_EXPANDED),
             KEYBIND_PIE_SETTINGS,
             List.of(
             CLICK_AND_SEND,
+            CJK_LATIN_SPACING,
+            CJK_LATIN_SPACING_EXPANDED),
+            CJK_LATIN_SPACING_CHILDREN,
+            List.of(
             MAP_IN_SLOT,
             MAP_IN_HOTBAR,
             MAP_IN_INVENTORY,
@@ -359,13 +484,10 @@ public final class Configs implements IConfigHandler
             KEEP_MOD_MENU_SCROLL,
             CONDENSED_CREATIVE_EXPANDED,
             ITEM_SEARCH_HISTORY,
-            ITEM_SEARCH_HISTORY_EXPANDED,
-            ITEM_MANAGER_RECIPE_HISTORY,
-            ITEM_MANAGER_RECIPE_HISTORY_EXPANDED),
+            ITEM_SEARCH_HISTORY_EXPANDED),
             IME_CHILDREN,
             CONDENSED_CREATIVE_CHILDREN,
             ITEM_SEARCH_HISTORY_CHILDREN,
-            ITEM_MANAGER_RECIPE_HISTORY_CHILDREN,
             List.of(
             ENABLE_GIVE_FULL_INVENTORY,
             GIVE_FULL_INVENTORY,
@@ -374,6 +496,8 @@ public final class Configs implements IConfigHandler
             GIVE_FULL_INVENTORY_EXPANDED))
             .flatMap(list -> list.stream().map(config -> (IConfigBase) config))
             .toList();
+
+    private static boolean customSavesActivePathPersisted;
 
     private static final String CLIENT_KEY = "halfmasa.config.client";
     public static final ConfigBooleanHotkeyed DISABLE_PAUSED_ITEM_TRAJECTORY_PREDICTION = new ConfigBooleanHotkeyed(
@@ -404,26 +528,7 @@ public final class Configs implements IConfigHandler
             .flatMap(list -> list.stream().map(config -> (IConfigBase) config))
             .toList();
 
-    private static final String EXTENSIONS_KEY = "halfmasa.config.extensions";
-    public static final ConfigBooleanHotkeyed FREE_CAMERA_INTERACTION = new ConfigBooleanHotkeyed(
-            "freeCameraInteraction", false, "").apply(EXTENSIONS_KEY);
-    public static final ConfigBoolean FREE_CAMERA_INTERACTION_EXPANDED = new ConfigBoolean(
-            "freeCameraInteractionExpanded", false).apply(EXTENSIONS_KEY);
-    public static final ConfigBooleanHotkeyed FREE_CAMERA_CONTAINER_INTERACTION = new ConfigBooleanHotkeyed(
-            "freeCameraContainerInteraction", false, "").apply(EXTENSIONS_KEY);
-    public static final ConfigBooleanHotkeyed FREE_CAMERA_ITEM_USE = new ConfigBooleanHotkeyed(
-            "freeCameraItemUse", false, "").apply(EXTENSIONS_KEY);
-    public static final ConfigBooleanHotkeyed FREE_CAMERA_MINING = new ConfigBooleanHotkeyed(
-            "freeCameraMining", false, "").apply(EXTENSIONS_KEY);
-    public static final ConfigBooleanHotkeyed FREE_CAMERA_LITEMATICA_EASY_PLACE = new ConfigBooleanHotkeyed(
-            "freeCameraLitematicaEasyPlace", false, "").apply(EXTENSIONS_KEY);
-    public static final List<IConfigBase> EXTENSIONS = List.of(
-            FREE_CAMERA_INTERACTION,
-            FREE_CAMERA_CONTAINER_INTERACTION,
-            FREE_CAMERA_ITEM_USE,
-            FREE_CAMERA_MINING,
-            FREE_CAMERA_LITEMATICA_EASY_PLACE,
-            FREE_CAMERA_INTERACTION_EXPANDED);
+    public static final List<IConfigBase> EXTENSIONS = ITEM_MANAGER_RECIPE_HISTORY_CONFIGS;
 
     private static final String DISABLED_KEY = "halfmasa.config.disabled";
     public static final ConfigBooleanHotkeyed DISABLE_FLUID_RENDERING = new ConfigBooleanHotkeyed(
@@ -467,20 +572,47 @@ public final class Configs implements IConfigHandler
             ENTITY_AGGREGATION_BLACKLIST,
             ENTITY_RENDER_AGGREGATION_EXPANDED);
 
-    public static final List<IConfigBase> RECOMMENDED = List.of(
+    public static final List<IConfigBase> RECOMMENDED = Stream.of(List.of(
             ELYTRA_TIME_TOOLTIP,
             REPORT_ELYTRA_TIME,
+            NIGHT_VISION_FADE,
+            NIGHT_VISION_FADE_SECONDS,
+            NIGHT_VISION_FADE_EXPANDED,
             BOAT_VIEW_360,
             BOAT_ITEM_VIEW,
             KEYBIND_PIE_MENU,
+            KEYBIND_WHEEL_EXPANDED),
+            KEYBIND_PIE_SETTINGS,
+            List.of(
             CLICK_AND_SEND,
             MAP_IN_SLOT,
+            MAP_IN_HOTBAR,
+            MAP_IN_INVENTORY,
+            MAP_IN_SLOT_EXPANDED,
+            SERVER_ICON_CACHE,
+            SERVER_ICON_MATCH_MODE,
+            SERVER_ICON_CACHE_LIMIT,
+            CLEAR_SERVER_ICON_CACHE,
             TOAST_KILLER,
             SERVER_PINGER_FIX,
             CONTINGAME_IME,
+            IME_SETTINGS_EXPANDED),
+            IME_CHILDREN,
+            List.of(
             DRAGGABLE_LISTS,
+            DRAG_RESOURCE_MODE,
+            DRAG_SERVER_MODE,
+            DRAG_HIDE_RESOURCE_ARROWS,
+            DRAG_HIDE_SERVER_ARROWS,
+            DRAGGABLE_LISTS_EXPANDED,
+            FAST_SCROLLING,
+            FAST_SCROLLING_EXPANDED),
+            FAST_SCROLLING_CHILDREN,
+            List.of(
             SCREENSHOT_TO_CLIPBOARD,
-            SKIP_RESOURCE_PACK_COMPATIBILITY_CHECK);
+            SKIP_RESOURCE_PACK_COMPATIBILITY_CHECK))
+            .flatMap(list -> list.stream().map(config -> (IConfigBase) config))
+            .toList();
 
     public static final List<IConfigBase> ALL = Stream.of(GENERIC, WAYPOINT, CREATIVE, PORTED, CLIENT, EXTENSIONS, DISABLED)
             .flatMap(List::stream)
@@ -506,11 +638,6 @@ public final class Configs implements IConfigHandler
             BOAT_ITEM_VIEW,
             INVENTORY_MOVE,
             DISABLE_PAUSED_ITEM_TRAJECTORY_PREDICTION,
-            FREE_CAMERA_CONTAINER_INTERACTION,
-            FREE_CAMERA_ITEM_USE,
-            FREE_CAMERA_MINING,
-            FREE_CAMERA_LITEMATICA_EASY_PLACE,
-            FREE_CAMERA_INTERACTION,
             DISABLE_FLUID_RENDERING,
             DISABLE_NON_SOURCE_FLUID_RENDERING,
             ENTITY_RENDER_AGGREGATION,
@@ -520,10 +647,14 @@ public final class Configs implements IConfigHandler
             BETTER_SAVED_HOTBARS,
             COOLDOWN_AUTO_ATTACK,
             DRAGGABLE_LISTS,
+            BRIDGING_ASSIST,
+            FAST_SCROLLING_PRIMARY_HOTKEY,
+            FAST_SCROLLING_SECONDARY_HOTKEY,
             KEYBIND_PIE_MENU,
             OPEN_KEYBIND_EDITOR,
             RELOAD_KEYBIND_DATA,
             CLICK_AND_SEND,
+            CJK_LATIN_SPACING,
             MAP_IN_SLOT,
             SERVER_ICON_CACHE,
             CLEAR_SERVER_ICON_CACHE,
@@ -540,6 +671,7 @@ public final class Configs implements IConfigHandler
     @Override
     public void load()
     {
+        customSavesActivePathPersisted = false;
         migrateLegacyConfig();
         Path file = getHalfMasaDirectory().resolve(CONFIG_FILE_NAME);
         if (!Files.isReadable(file))
@@ -551,6 +683,8 @@ public final class Configs implements IConfigHandler
         if (element != null && element.isJsonObject())
         {
             JsonObject root = element.getAsJsonObject();
+            JsonObject ported = root.getAsJsonObject("Ported");
+            customSavesActivePathPersisted = ported != null && ported.has(CUSTOM_SAVES_ACTIVE_PATH.getName());
             int configVersion = root.has("ConfigVersion") ? root.get("ConfigVersion").getAsInt() : 1;
             if (configVersion < 5)
             {
@@ -570,6 +704,8 @@ public final class Configs implements IConfigHandler
             ConfigUtils.readConfigBase(root, "Waypoint", WAYPOINT);
             ConfigUtils.readConfigBase(root, "Creative", CREATIVE);
             ConfigUtils.readConfigBase(root, "Ported", PORTED);
+            ConfigUtils.readConfigBase(root, "Ported", ITEM_MANAGER_RECIPE_HISTORY_CONFIGS);
+            ConfigUtils.readConfigBase(root, "Ported", CUSTOM_SAVES_INTERNAL);
             ConfigUtils.readConfigBase(root, "Client", CLIENT);
             ConfigUtils.readConfigBase(root, "Extensions", EXTENSIONS);
             ConfigUtils.readConfigBase(root, "Disabled", DISABLED);
@@ -592,6 +728,18 @@ public final class Configs implements IConfigHandler
 
             if (configVersion < CONFIG_VERSION)
             {
+                if (configVersion == 25)
+                {
+                    FAST_SCROLLING.setBooleanValue(false);
+                    if (FAST_SCROLLING_PRIMARY_MULTIPLIER.getIntegerValue() == 3)
+                    {
+                        FAST_SCROLLING_PRIMARY_MULTIPLIER.setIntegerValue(2);
+                    }
+                    if (FAST_SCROLLING_SECONDARY_MULTIPLIER.getIntegerValue() == 8)
+                    {
+                        FAST_SCROLLING_SECONDARY_MULTIPLIER.setIntegerValue(6);
+                    }
+                }
                 if (configVersion < 21)
                 {
                     KeybindSettings current = CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION.getKeybind().getSettings();
@@ -645,6 +793,7 @@ public final class Configs implements IConfigHandler
         ConfigUtils.writeConfigBase(root, "Waypoint", WAYPOINT);
         ConfigUtils.writeConfigBase(root, "Creative", CREATIVE);
         ConfigUtils.writeConfigBase(root, "Ported", PORTED);
+        ConfigUtils.writeConfigBase(root, "Ported", CUSTOM_SAVES_INTERNAL);
         ConfigUtils.writeConfigBase(root, "Client", CLIENT);
         ConfigUtils.writeConfigBase(root, "Extensions", EXTENSIONS);
         ConfigUtils.writeConfigBase(root, "Disabled", DISABLED);
@@ -653,6 +802,12 @@ public final class Configs implements IConfigHandler
         {
             XaeroWorldBinding.LOGGER.error("Failed to write config file {}", file.toAbsolutePath());
         }
+        customSavesActivePathPersisted = true;
+    }
+
+    public static boolean hasPersistedCustomSavesActivePath()
+    {
+        return customSavesActivePathPersisted;
     }
 
     private static Path getConfigDirectory()
@@ -671,61 +826,90 @@ public final class Configs implements IConfigHandler
 
     public static List<IConfigBase> getPortedView()
     {
-        return groupedPortedView();
+        return keepSavesRelatedConfigsTogether(groupedPortedView());
     }
 
     public static List<IConfigBase> getClientView()
     {
-        return groupedView(CLIENT, MAP_SERVER_GROUP, Configs::isMapServerChild);
+        return keepSavesRelatedConfigsTogether(visibleConfigs(CLIENT));
     }
 
     public static List<IConfigBase> getAllView()
     {
-        return Stream.of(GENERIC, getWaypointView(), getCreativeView(), getPortedView(), getClientView(), getExtensionsView(), getDisabledView())
+        List<IConfigBase> configs = Stream.of(GENERIC, getWaypointView(), getCreativeView(), getPortedView(), getClientView(), getExtensionsView(), getDisabledView())
                 .flatMap(List::stream)
                 .distinct()
                 .toList();
+        return keepSavesRelatedConfigsTogether(configs);
     }
 
     public static List<IConfigBase> getRecommendedView()
     {
-        return RECOMMENDED;
+        return keepSavesRelatedConfigsTogether(visibleConfigs(RECOMMENDED));
     }
 
     public static List<IConfigBase> getExtensionsView()
     {
-        return visibleConfigs(EXTENSIONS);
+        return keepSavesRelatedConfigsTogether(visibleConfigs(EXTENSIONS));
     }
 
     public static List<IConfigBase> getDisabledView()
     {
-        return visibleConfigs(DISABLED);
+        return keepSavesRelatedConfigsTogether(visibleConfigs(DISABLED));
     }
 
     public static List<IConfigBase> getWaypointView()
     {
-        return groupedView(WAYPOINT, WAYPOINT_SHARING_GROUP, Configs::isWaypointSharingChild);
+        return keepSavesRelatedConfigsTogether(
+                groupedView(WAYPOINT, WAYPOINT_SHARING_GROUP, Configs::isWaypointSharingChild));
     }
 
     public static List<IConfigBase> getCreativeView()
     {
-        return visibleConfigs(Stream.concat(
+        return keepSavesRelatedConfigsTogether(visibleConfigs(Stream.concat(
                 CREATIVE.stream(),
                 Stream.concat(
                         Stream.of(CONDENSED_CREATIVE, CONDENSED_CREATIVE_EXPANDED),
                         CONDENSED_CREATIVE_CHILDREN.stream()))
-                .toList());
+                .toList()));
+    }
+
+    private static List<IConfigBase> keepSavesRelatedConfigsTogether(List<IConfigBase> configs)
+    {
+        java.util.ArrayList<IConfigBase> result = new java.util.ArrayList<>();
+        boolean inserted = false;
+        for (IConfigBase config : configs)
+        {
+            if (SAVES_RELATED_CONFIGS.contains(config))
+            {
+                if (!inserted)
+                {
+                    SAVES_RELATED_CONFIGS.stream()
+                            .filter(configs::contains)
+                            .forEach(result::add);
+                    inserted = true;
+                }
+            }
+            else
+            {
+                result.add(config);
+            }
+        }
+        return List.copyOf(result);
     }
 
     public static ConfigBoolean getExpansionConfig(IConfigBase config)
     {
         if (config == KEYBIND_PIE_MENU) return KEYBIND_WHEEL_EXPANDED;
+        if (config == NIGHT_VISION_FADE) return NIGHT_VISION_FADE_EXPANDED;
+        if (config == FAST_SCROLLING) return FAST_SCROLLING_EXPANDED;
+        if (config == CJK_LATIN_SPACING) return CJK_LATIN_SPACING_EXPANDED;
+        if (config == BRIDGING_ASSIST) return BRIDGING_EXPANDED;
         if (config == CONTINGAME_IME) return IME_SETTINGS_EXPANDED;
         if (config == ENABLE_GIVE_FULL_INVENTORY) return GIVE_FULL_INVENTORY_EXPANDED;
         if (config == WAYPOINT_SHARING_GROUP) return WAYPOINT_SHARING_EXPANDED;
-        if (config == MAP_SERVER_GROUP) return MAP_IN_SLOT_EXPANDED;
-        if (config == DRAGGABLE_LISTS_GROUP) return DRAGGABLE_LISTS_EXPANDED;
-        if (config == FREE_CAMERA_INTERACTION) return FREE_CAMERA_INTERACTION_EXPANDED;
+        if (config == MAP_IN_SLOT) return MAP_IN_SLOT_EXPANDED;
+        if (config == DRAGGABLE_LISTS) return DRAGGABLE_LISTS_EXPANDED;
         if (config == ENTITY_RENDER_AGGREGATION) return ENTITY_RENDER_AGGREGATION_EXPANDED;
         if (config == CONDENSED_CREATIVE) return CONDENSED_CREATIVE_EXPANDED;
         if (config == ITEM_SEARCH_HISTORY) return ITEM_SEARCH_HISTORY_EXPANDED;
@@ -736,13 +920,43 @@ public final class Configs implements IConfigHandler
     public static boolean isExpandedChild(IConfigBase config)
     {
         return KEYBIND_PIE_SETTINGS.contains(config) ||
+                config == NIGHT_VISION_FADE_SECONDS ||
+                FAST_SCROLLING_CHILDREN.contains(config) ||
+                CJK_LATIN_SPACING_CHILDREN.contains(config) ||
+                BRIDGING_CHILDREN.contains(config) ||
                 IME_CHILDREN.contains(config) ||
                 isMapServerChild(config) ||
                 config == GIVE_FULL_INVENTORY || config == BUNDLE_FILL || config == FILL_SAFETY ||
-                isWaypointSharingChild(config) || isDraggableChild(config) || isFreeCameraChild(config) ||
+                isWaypointSharingChild(config) || isDraggableChild(config) ||
                 isEntityAggregationChild(config) || CONDENSED_CREATIVE_CHILDREN.contains(config) ||
                 ITEM_SEARCH_HISTORY_CHILDREN.contains(config) ||
                 ITEM_MANAGER_RECIPE_HISTORY_CHILDREN.contains(config);
+    }
+
+    public static IConfigBase getExpansionParent(IConfigBase config)
+    {
+        if (KEYBIND_PIE_SETTINGS.contains(config)) return KEYBIND_PIE_MENU;
+        if (config == NIGHT_VISION_FADE_SECONDS) return NIGHT_VISION_FADE;
+        if (FAST_SCROLLING_CHILDREN.contains(config)) return FAST_SCROLLING;
+        if (CJK_LATIN_SPACING_CHILDREN.contains(config)) return CJK_LATIN_SPACING;
+        if (BRIDGING_CHILDREN.contains(config)) return BRIDGING_ASSIST;
+        if (IME_CHILDREN.contains(config)) return CONTINGAME_IME;
+        if (isMapServerChild(config)) return MAP_IN_SLOT;
+        if (config == GIVE_FULL_INVENTORY || config == BUNDLE_FILL || config == FILL_SAFETY) return ENABLE_GIVE_FULL_INVENTORY;
+        if (isWaypointSharingChild(config)) return WAYPOINT_SHARING_GROUP;
+        if (isDraggableChild(config)) return DRAGGABLE_LISTS;
+        if (isEntityAggregationChild(config)) return ENTITY_RENDER_AGGREGATION;
+        if (CONDENSED_CREATIVE_CHILDREN.contains(config)) return CONDENSED_CREATIVE;
+        if (ITEM_SEARCH_HISTORY_CHILDREN.contains(config)) return ITEM_SEARCH_HISTORY;
+        if (ITEM_MANAGER_RECIPE_HISTORY_CHILDREN.contains(config)) return ITEM_MANAGER_RECIPE_HISTORY;
+        return null;
+    }
+
+    public static List<IConfigBase> getExpansionChildren(IConfigBase config)
+    {
+        return ALL.stream()
+                .filter(candidate -> getExpansionParent(candidate) == config)
+                .toList();
     }
 
     private static List<IConfigBase> visibleConfigs(List<IConfigBase> configs)
@@ -750,6 +964,10 @@ public final class Configs implements IConfigHandler
         return configs.stream()
                 .filter(config -> config != IME_SETTINGS_EXPANDED &&
                         config != KEYBIND_WHEEL_EXPANDED &&
+                        config != NIGHT_VISION_FADE_EXPANDED &&
+                        config != FAST_SCROLLING_EXPANDED &&
+                        config != CJK_LATIN_SPACING_EXPANDED &&
+                        config != BRIDGING_EXPANDED &&
                         config != MAP_IN_SLOT_EXPANDED &&
                         config != DRAGGABLE_LISTS_EXPANDED &&
                         config != GIVE_FULL_INVENTORY_EXPANDED &&
@@ -758,25 +976,21 @@ public final class Configs implements IConfigHandler
                         config != ITEM_SEARCH_HISTORY_EXPANDED &&
                         config != ITEM_MANAGER_RECIPE_HISTORY_EXPANDED)
                 .filter(config -> !KEYBIND_PIE_SETTINGS.contains(config) || KEYBIND_WHEEL_EXPANDED.getBooleanValue())
+                .filter(config -> config != NIGHT_VISION_FADE_SECONDS || NIGHT_VISION_FADE_EXPANDED.getBooleanValue())
+                .filter(config -> !FAST_SCROLLING_CHILDREN.contains(config) || FAST_SCROLLING_EXPANDED.getBooleanValue())
+                .filter(config -> !CJK_LATIN_SPACING_CHILDREN.contains(config) || CJK_LATIN_SPACING_EXPANDED.getBooleanValue())
+                .filter(config -> !BRIDGING_CHILDREN.contains(config) || BRIDGING_EXPANDED.getBooleanValue())
                 .filter(config -> !IME_CHILDREN.contains(config) || IME_SETTINGS_EXPANDED.getBooleanValue())
                 .filter(config -> !isMapServerChild(config) || MAP_IN_SLOT_EXPANDED.getBooleanValue())
                 .filter(config -> (config != GIVE_FULL_INVENTORY && config != BUNDLE_FILL && config != FILL_SAFETY) || GIVE_FULL_INVENTORY_EXPANDED.getBooleanValue())
                 .filter(config -> !isWaypointSharingChild(config) || WAYPOINT_SHARING_EXPANDED.getBooleanValue())
                 .filter(config -> !isDraggableChild(config) || DRAGGABLE_LISTS_EXPANDED.getBooleanValue())
-                .filter(config -> config != FREE_CAMERA_INTERACTION_EXPANDED)
-                .filter(config -> !isFreeCameraChild(config) || FREE_CAMERA_INTERACTION_EXPANDED.getBooleanValue())
                 .filter(config -> config != ENTITY_RENDER_AGGREGATION_EXPANDED)
                 .filter(config -> !isEntityAggregationChild(config) || ENTITY_RENDER_AGGREGATION_EXPANDED.getBooleanValue())
                 .filter(config -> !CONDENSED_CREATIVE_CHILDREN.contains(config) || CONDENSED_CREATIVE_EXPANDED.getBooleanValue())
                 .filter(config -> !ITEM_SEARCH_HISTORY_CHILDREN.contains(config) || ITEM_SEARCH_HISTORY_EXPANDED.getBooleanValue())
                 .filter(config -> !ITEM_MANAGER_RECIPE_HISTORY_CHILDREN.contains(config) || ITEM_MANAGER_RECIPE_HISTORY_EXPANDED.getBooleanValue())
                 .toList();
-    }
-
-    private static boolean isFreeCameraChild(IConfigBase config)
-    {
-        return config == FREE_CAMERA_CONTAINER_INTERACTION || config == FREE_CAMERA_ITEM_USE ||
-                config == FREE_CAMERA_MINING || config == FREE_CAMERA_LITEMATICA_EASY_PLACE;
     }
 
     private static boolean isDraggableChild(IConfigBase config)
@@ -796,15 +1010,16 @@ public final class Configs implements IConfigHandler
     private static List<IConfigBase> groupedPortedView()
     {
         java.util.ArrayList<IConfigBase> result = new java.util.ArrayList<>();
-        boolean mapInserted = false;
-        boolean dragInserted = false;
         for (IConfigBase config : PORTED)
         {
             if (config == MAP_IN_SLOT_EXPANDED || config == DRAGGABLE_LISTS_EXPANDED ||
+                    config == NIGHT_VISION_FADE_EXPANDED ||
+                    config == FAST_SCROLLING_EXPANDED ||
+                    config == CJK_LATIN_SPACING_EXPANDED ||
+                    config == BRIDGING_EXPANDED ||
                     config == KEYBIND_WHEEL_EXPANDED || config == IME_SETTINGS_EXPANDED ||
                     config == GIVE_FULL_INVENTORY_EXPANDED || config == CUSTOM_SAVES_PATHS_EXPANDED ||
-                    config == CONDENSED_CREATIVE_EXPANDED || config == ITEM_SEARCH_HISTORY_EXPANDED ||
-                    config == ITEM_MANAGER_RECIPE_HISTORY_EXPANDED)
+                    config == CONDENSED_CREATIVE_EXPANDED || config == ITEM_SEARCH_HISTORY_EXPANDED)
             {
                 continue;
             }
@@ -818,24 +1033,12 @@ public final class Configs implements IConfigHandler
             {
                 continue;
             }
-            if (config == ITEM_MANAGER_RECIPE_HISTORY)
-            {
-                result.add(config);
-                if (ITEM_MANAGER_RECIPE_HISTORY_EXPANDED.getBooleanValue()) result.addAll(ITEM_MANAGER_RECIPE_HISTORY_CHILDREN);
-                continue;
-            }
-            if (ITEM_MANAGER_RECIPE_HISTORY_CHILDREN.contains(config))
-            {
-                continue;
-            }
             if (isMapServerChild(config))
             {
-                if (!mapInserted) { result.add(MAP_SERVER_GROUP); mapInserted = true; }
                 if (MAP_IN_SLOT_EXPANDED.getBooleanValue()) result.add(config);
             }
             else if (isDraggableChild(config))
             {
-                if (!dragInserted) { result.add(DRAGGABLE_LISTS_GROUP); dragInserted = true; }
                 if (DRAGGABLE_LISTS_EXPANDED.getBooleanValue()) result.add(config);
             }
             else if (!isExpandedChild(config) || isGenericExpandedChildVisible(config))
@@ -848,7 +1051,7 @@ public final class Configs implements IConfigHandler
 
     private static boolean isMapServerChild(IConfigBase config)
     {
-        return config == MAP_IN_SLOT || config == MAP_IN_HOTBAR || config == MAP_IN_INVENTORY ||
+        return config == MAP_IN_HOTBAR || config == MAP_IN_INVENTORY ||
                 config == SERVER_ICON_CACHE || config == SERVER_ICON_MATCH_MODE ||
                 config == SERVER_ICON_CACHE_LIMIT || config == CLEAR_SERVER_ICON_CACHE;
     }
@@ -898,6 +1101,22 @@ public final class Configs implements IConfigHandler
 
     private static boolean isGenericExpandedChildVisible(IConfigBase config)
     {
+        if (config == NIGHT_VISION_FADE_SECONDS)
+        {
+            return NIGHT_VISION_FADE_EXPANDED.getBooleanValue();
+        }
+        if (FAST_SCROLLING_CHILDREN.contains(config))
+        {
+            return FAST_SCROLLING_EXPANDED.getBooleanValue();
+        }
+        if (CJK_LATIN_SPACING_CHILDREN.contains(config))
+        {
+            return CJK_LATIN_SPACING_EXPANDED.getBooleanValue();
+        }
+        if (BRIDGING_CHILDREN.contains(config))
+        {
+            return BRIDGING_EXPANDED.getBooleanValue();
+        }
         if (KEYBIND_PIE_SETTINGS.contains(config))
         {
             return KEYBIND_WHEEL_EXPANDED.getBooleanValue();
@@ -983,11 +1202,6 @@ public final class Configs implements IConfigHandler
         BOAT_VIEW_360.setBooleanValue(false);
         BOAT_ITEM_VIEW.setBooleanValue(false);
         INVENTORY_MOVE.setBooleanValue(false);
-        FREE_CAMERA_CONTAINER_INTERACTION.setBooleanValue(false);
-        FREE_CAMERA_ITEM_USE.setBooleanValue(false);
-        FREE_CAMERA_MINING.setBooleanValue(false);
-        FREE_CAMERA_LITEMATICA_EASY_PLACE.setBooleanValue(false);
-        FREE_CAMERA_INTERACTION.setBooleanValue(false);
         DISABLE_FLUID_RENDERING.setBooleanValue(false);
         DISABLE_NON_SOURCE_FLUID_RENDERING.setBooleanValue(false);
         ENTITY_RENDER_AGGREGATION.setBooleanValue(false);
@@ -996,10 +1210,12 @@ public final class Configs implements IConfigHandler
         BETTER_SAVED_HOTBARS.setBooleanValue(false);
         COOLDOWN_AUTO_ATTACK.setBooleanValue(false);
         DRAGGABLE_LISTS.setBooleanValue(false);
+        BRIDGING_ASSIST.setBooleanValue(false);
         KEYBIND_PIE_MENU.setBooleanValue(false);
         CLICK_AND_SEND.setBooleanValue(false);
+        CJK_LATIN_SPACING.setBooleanValue(false);
         MAP_IN_SLOT.setBooleanValue(false);
-        SERVER_ICON_CACHE.setBooleanValue(false);
+        SERVER_ICON_CACHE.setBooleanValue(true);
         TOAST_KILLER.setBooleanValue(false);
         SERVER_PINGER_FIX.setBooleanValue(false);
         CONTINGAME_IME.setBooleanValue(false);

@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.mixin;
+package io.github.halfmasa.xaerobinding.mixin;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -12,7 +12,11 @@ import io.github.halfmasa.xaerobinding.draggable.Cursor;
 @Mixin(Minecraft.class)
 public abstract class DraggableListsMinecraftMixin
 {
-    @Inject(method = "setScreen", at = @At("HEAD"))
+    //#if MC >= 26.2
+    @Inject(method = "setScreenAndShow", at = @At("HEAD"))
+    //#else
+    //$$ @Inject(method = "setScreen", at = @At("HEAD"))
+    //#endif
     private void halfmasa_resetDragCursor(Screen screen, CallbackInfo ci)
     {
         Cursor.reset();

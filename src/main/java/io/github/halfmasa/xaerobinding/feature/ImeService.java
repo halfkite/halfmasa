@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.feature;
+package io.github.halfmasa.xaerobinding.feature;
 
 import java.util.List;
 
@@ -10,6 +10,7 @@ import fi.dy.masa.malilib.interfaces.IClientTickHandler;
 
 import city.windmill.ingameime.client.jni.ExternalBaseIME;
 import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
 import io.github.halfmasa.xaerobinding.mixin.KeyboardHandlerAccessor;
 
 public final class ImeService implements IClientTickHandler
@@ -149,7 +150,13 @@ public final class ImeService implements IClientTickHandler
             KeyboardHandlerAccessor keyboard = (KeyboardHandlerAccessor) client.keyboardHandler;
             for (int codePoint : result.codePoints().toArray())
             {
-                keyboard.halfmasa$charTyped(window, codePoint, 0);
+                //#if MC >= 26.1
+                keyboard.halfmasa$charTyped(window, new net.minecraft.client.input.CharacterEvent(codePoint));
+                //#elseif MC >= 1.21.10
+                //$$ keyboard.halfmasa$charTyped(window, new net.minecraft.client.input.CharacterEvent(codePoint, 0));
+                //#else
+                //$$ keyboard.halfmasa$charTyped(window, codePoint, 0);
+                //#endif
             }
             if (this.mode == Mode.TEMPORARY)
             {
@@ -238,7 +245,7 @@ public final class ImeService implements IClientTickHandler
     private boolean commandModeDisabled()
     {
         if (!Configs.IME_DISABLE_IN_COMMAND_MODE.getBooleanValue() || this.focusedEdit == null ||
-            !(Minecraft.getInstance().screen instanceof ChatScreen))
+            !(MinecraftClientCompat.getScreen(Minecraft.getInstance()) instanceof ChatScreen))
         {
             return false;
         }

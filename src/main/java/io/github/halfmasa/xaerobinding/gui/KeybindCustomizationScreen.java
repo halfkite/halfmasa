@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.gui;
+package io.github.halfmasa.xaerobinding.gui;
 
 import java.util.ArrayList;
 import java.util.Arrays;

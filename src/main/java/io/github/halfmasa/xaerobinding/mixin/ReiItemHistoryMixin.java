@@ -1,3 +1,4 @@
+//#if MC < 26.1
 package io.github.halfmasa.xaerobinding.mixin;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -59,3 +60,4 @@ public abstract class ReiItemHistoryMixin
         }
     }
 }
+//#endif

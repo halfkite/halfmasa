@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.draggable.duck;
+package io.github.halfmasa.xaerobinding.draggable.duck;
 
 import io.github.halfmasa.xaerobinding.draggable.DragItem;
 import net.minecraft.client.gui.screens.multiplayer.ServerSelectionList;

@@ -3,13 +3,21 @@ package io.github.halfmasa.xaerobinding.mixin;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.client.gui.GuiGraphics;
+//#if MC >= 26.1
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+//#else
+//$$ import net.minecraft.client.gui.GuiGraphics;
+//#endif
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
-import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.ClickType;
+//#if MC >= 26.1
+import net.minecraft.world.inventory.ContainerInput;
+//#else
+//$$ import net.minecraft.world.inventory.ClickType;
+//#endif
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
@@ -28,7 +36,7 @@ import io.github.halfmasa.xaerobinding.feature.CreativeItemSearchHistory;
 import io.github.halfmasa.xaerobinding.feature.ItemSearchHistoryService;
 
 @Mixin(CreativeModeInventoryScreen.class)
-public abstract class CondensedCreativeMixin extends EffectRenderingInventoryScreen<CreativeModeInventoryScreen.ItemPickerMenu>
+public abstract class CondensedCreativeMixin extends AbstractContainerScreen<CreativeModeInventoryScreen.ItemPickerMenu>
 {
     @Shadow private static CreativeModeTab selectedTab;
     @Shadow private float scrollOffs;
@@ -102,7 +110,13 @@ public abstract class CondensedCreativeMixin extends EffectRenderingInventoryScr
 
     @Inject(method = "slotClicked", at = @At("HEAD"), cancellable = true)
     private void halfmasa_toggleCondensedEntry(
-            Slot slot, int slotId, int button, ClickType clickType, CallbackInfo ci)
+            Slot slot, int slotId, int button,
+            //#if MC >= 26.1
+            ContainerInput clickType,
+            //#else
+            //$$ ClickType clickType,
+            //#endif
+            CallbackInfo ci)
     {
         this.halfmasa$pendingHistoryStack = ItemStack.EMPTY;
         if (slot == null)
@@ -129,8 +143,13 @@ public abstract class CondensedCreativeMixin extends EffectRenderingInventoryScr
         }
 
         if (!slot.getItem().isEmpty() && this.searchBox != null && !this.searchBox.getValue().trim().isEmpty() &&
-                (clickType == ClickType.PICKUP || clickType == ClickType.QUICK_MOVE ||
-                        clickType == ClickType.SWAP || clickType == ClickType.CLONE))
+                //#if MC >= 26.1
+                (clickType == ContainerInput.PICKUP || clickType == ContainerInput.QUICK_MOVE ||
+                        clickType == ContainerInput.SWAP || clickType == ContainerInput.CLONE))
+                //#else
+                //$$ (clickType == ClickType.PICKUP || clickType == ClickType.QUICK_MOVE ||
+                //$$         clickType == ClickType.SWAP || clickType == ClickType.CLONE))
+                //#endif
         {
             this.halfmasa$pendingHistoryStack = slot.getItem().copyWithCount(1);
         }
@@ -138,7 +157,13 @@ public abstract class CondensedCreativeMixin extends EffectRenderingInventoryScr
 
     @Inject(method = "slotClicked", at = @At("RETURN"))
     private void halfmasa_recordCreativeHistory(
-            Slot slot, int slotId, int button, ClickType clickType, CallbackInfo ci)
+            Slot slot, int slotId, int button,
+            //#if MC >= 26.1
+            ContainerInput clickType,
+            //#else
+            //$$ ClickType clickType,
+            //#endif
+            CallbackInfo ci)
     {
         if (this.halfmasa$pendingHistoryStack.isEmpty())
         {
@@ -170,9 +195,15 @@ public abstract class CondensedCreativeMixin extends EffectRenderingInventoryScr
         }
     }
 
-    @Inject(method = "render", at = @At("TAIL"))
+    //#if MC >= 26.1
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void halfmasa_renderCondensedMarkers(
-            GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci)
+            GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci)
+    //#else
+    //$$ @Inject(method = "render", at = @At("TAIL"))
+    //$$ private void halfmasa_renderCondensedMarkers(
+    //$$         GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci)
+    //#endif
     {
         int color = Configs.CONDENSED_CREATIVE_BORDER_COLOR.getIntegerValue();
         CreativeModeInventoryScreen screen = (CreativeModeInventoryScreen) (Object) this;
@@ -197,7 +228,11 @@ public abstract class CondensedCreativeMixin extends EffectRenderingInventoryScr
             }
             if (visual.parent())
             {
-                graphics.drawString(this.font, visual.expanded() ? "-" : "+", x + 10, y + 8, 0xFFFFFFFF, true);
+                //#if MC >= 26.1
+                graphics.text(this.font, visual.expanded() ? "-" : "+", x + 10, y + 8, 0xFFFFFFFF, true);
+                //#else
+                //$$ graphics.drawString(this.font, visual.expanded() ? "-" : "+", x + 10, y + 8, 0xFFFFFFFF, true);
+                //#endif
             }
         }
 

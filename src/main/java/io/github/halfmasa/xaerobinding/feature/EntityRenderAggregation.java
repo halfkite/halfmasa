@@ -112,6 +112,7 @@ public final class EntityRenderAggregation implements IClientTickHandler
             Group group = this.groupsByEntityId.get(entity.getId());
             if (group == null || group.preferredRepresentativeId == entity.getId())
             {
+                if (group != null) group.representativeId = entity.getId();
                 filtered.add(entity);
             }
         }

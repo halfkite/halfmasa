@@ -1,9 +1,9 @@
-﻿package io.github.halfmasa.xaerobinding.feature;
+package io.github.halfmasa.xaerobinding.feature;
 
 import java.util.Arrays;
 
 import net.minecraft.client.Minecraft;
-//#if MC >= 26.2
+//#if MC >= 26.1
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 //#else
 //$$ import net.minecraft.client.gui.GuiGraphics;
@@ -63,7 +63,7 @@ public final class ImeOverlay
         showAlphaUntil = 0L;
     }
 
-    //#if MC >= 26.2
+    //#if MC >= 26.1
     public static void render(GuiGraphicsExtractor graphics)
     //#else
     //$$ public static void render(GuiGraphics graphics)
@@ -90,7 +90,7 @@ public final class ImeOverlay
             int caret = Math.min(compositionCaret, composing.length());
             String left = composing.substring(0, caret);
             String right = composing.substring(caret);
-            //#if MC >= 26.2
+            //#if MC >= 26.1
             graphics.text(client.font, left, x + 3, y + 2, 0xFFFFFFFF, false);
             int caretDrawX = x + 3 + client.font.width(left);
             graphics.text(client.font, right, caretDrawX + 3, y + 2, 0xFFFFFFFF, false);
@@ -121,7 +121,7 @@ public final class ImeOverlay
             int width = client.font.width(text) + 8;
             int drawX = Math.min(x, Math.max(0, client.getWindow().getGuiScaledWidth() - width));
             graphics.fill(drawX, candidateY, drawX + width, candidateY + client.font.lineHeight + 6, 0xE0202020);
-            //#if MC >= 26.2
+            //#if MC >= 26.1
             graphics.text(client.font, text, drawX + 4, candidateY + 3, 0xFFFFFFFF, false);
             //#else
             //$$ graphics.drawString(client.font, text, drawX + 4, candidateY + 3, 0xFFFFFFFF, false);
@@ -133,7 +133,7 @@ public final class ImeOverlay
             String mode = alphaMode ? "A" : "中";
             int modeX = Math.max(0, x - 18);
             graphics.fill(modeX, y, modeX + 16, y + 16, 0xE0202020);
-            //#if MC >= 26.2
+            //#if MC >= 26.1
             graphics.text(client.font, mode, modeX + 4, y + 4, 0xFFFFFFFF, false);
             //#else
             //$$ graphics.drawString(client.font, mode, modeX + 4, y + 4, 0xFFFFFFFF, false);

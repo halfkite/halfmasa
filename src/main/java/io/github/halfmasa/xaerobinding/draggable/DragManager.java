@@ -1,9 +1,21 @@
-﻿package io.github.halfmasa.xaerobinding.draggable;
+package io.github.halfmasa.xaerobinding.draggable;
 
-import net.minecraft.Util;
-import net.minecraft.client.gui.GuiGraphics;
+//#if MC >= 1.21.11
+import net.minecraft.util.Util;
+//#else
+//$$ import net.minecraft.Util;
+//#endif
+//#if MC >= 26.1
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+//#else
+//$$ import net.minecraft.client.gui.GuiGraphics;
+//#endif
 import net.minecraft.client.gui.components.ObjectSelectionList;
-import net.minecraft.util.FastColor;
+//#if MC >= 1.21.4
+import net.minecraft.util.ARGB;
+//#else
+//$$ import net.minecraft.util.FastColor;
+//#endif
 import net.minecraft.util.Mth;
 
 public class DragManager<T, E extends ObjectSelectionList.Entry<?>> {
@@ -77,7 +89,11 @@ public class DragManager<T, E extends ObjectSelectionList.Entry<?>> {
         return selectedItem != null;
     }
 
-    public void renderListItems(GuiGraphics guiGraphics, int mouseX, int mouseY, float tickDelta) {
+    //#if MC >= 26.1
+    public void renderListItems(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float tickDelta) {
+    //#else
+    //$$ public void renderListItems(GuiGraphics guiGraphics, int mouseX, int mouseY, float tickDelta) {
+    //#endif
         int rowLeft = (int) dragList.draggable_lists$getRowLeft();
         int rowWidth = dragList.draggable_lists$getRowWidth();
         int rowHeight = dragList.draggable_lists$getItemHeight() - 4;
@@ -105,7 +121,11 @@ public class DragManager<T, E extends ObjectSelectionList.Entry<?>> {
     }
 
 
-    public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+    //#if MC >= 26.1
+    public void renderWidget(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float delta) {
+    //#else
+    //$$ public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+    //#endif
         if (selectedItem == null) return;
 
         int z = Mth.floor(mouseY + draggingOffsetY);
@@ -114,11 +134,13 @@ public class DragManager<T, E extends ObjectSelectionList.Entry<?>> {
         int entryHeight = dragList.draggable_lists$getItemHeight() - 4;
         int entryWidth = dragList.draggable_lists$getRowWidth();
 
-        guiGraphics.pose().pushPose();
         float shaderColorValue = 191f / 255f;
-        guiGraphics.fill(x - 1, y - 1, x + entryWidth - 2, y + entryHeight + 1, FastColor.ARGB32.color(128, 191, 191, 191));
+        //#if MC >= 1.21.4
+        guiGraphics.fill(x - 1, y - 1, x + entryWidth - 2, y + entryHeight + 1, ARGB.color(128, 191, 191, 191));
+        //#else
+        //$$ guiGraphics.fill(x - 1, y - 1, x + entryWidth - 2, y + entryHeight + 1, FastColor.ARGB32.color(128, 191, 191, 191));
+        //#endif
         selectedItem.draggable_lists$render(guiGraphics, 0, y, x, entryWidth, entryHeight, mouseX, mouseY, false, delta);
-        guiGraphics.pose().popPose();
 
         if (y < z) {
             if (softScrollingTimer == 0) {

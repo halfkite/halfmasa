@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.mixin.draggable.server;
+package io.github.halfmasa.xaerobinding.mixin.draggable.server;
 
 import io.github.halfmasa.xaerobinding.draggable.DragItem;
 import io.github.halfmasa.xaerobinding.draggable.duck.ServerListDuckProvider;

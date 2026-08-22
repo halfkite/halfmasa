@@ -1,6 +1,6 @@
-﻿package io.github.halfmasa.xaerobinding.mixin;
+package io.github.halfmasa.xaerobinding.mixin;
 
-//#if MC >= 26.2
+//#if MC >= 26.1
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 //#else
 //$$ import net.minecraft.client.gui.GuiGraphics;
@@ -38,7 +38,7 @@ public abstract class ToastKillerMixin
         }
     }
 
-    //#if MC >= 26.2
+    //#if MC >= 26.1
     @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
     private void halfmasa_hideToasts(GuiGraphicsExtractor graphics, CallbackInfo ci)
     //#else

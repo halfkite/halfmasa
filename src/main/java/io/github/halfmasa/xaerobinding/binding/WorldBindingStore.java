@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.binding;
+package io.github.halfmasa.xaerobinding.binding;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -23,7 +23,8 @@ import io.github.halfmasa.xaerobinding.config.Configs;
 
 public final class WorldBindingStore
 {
-    public static final String FILE_NAME = ".halfmasa-xaero-binding.json";
+    public static final String FILE_NAME = "xaero-world-binding.json";
+    private static final String LEGACY_FILE_NAME = ".halfmasa-xaero-binding.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<Path, BindingFile> CACHE = new HashMap<>();
 
@@ -87,21 +88,30 @@ public final class WorldBindingStore
     {
         try
         {
-            Path file = worldRoot.resolve(FILE_NAME);
-            if (!Files.exists(file))
+            Path file = bindingFile(worldRoot);
+            Path legacyFile = worldRoot.resolve(LEGACY_FILE_NAME);
+            boolean migrateLegacyFile = !Files.exists(file) && Files.exists(legacyFile);
+            Path source = migrateLegacyFile ? legacyFile : file;
+            if (!Files.exists(source))
             {
                 return new BindingFile();
             }
 
-            try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8))
+            BindingFile binding;
+            try (Reader reader = Files.newBufferedReader(source, StandardCharsets.UTF_8))
             {
-                BindingFile binding = GSON.fromJson(reader, BindingFile.class);
+                binding = GSON.fromJson(reader, BindingFile.class);
                 if (binding == null || binding.schema != 1)
                 {
                     throw new IOException("Unsupported or empty binding file");
                 }
-                return binding;
             }
+
+            if (migrateLegacyFile)
+            {
+                migrateLegacyFile(worldRoot, legacyFile, binding);
+            }
+            return binding;
         }
         catch (IOException exception)
         {
@@ -111,9 +121,9 @@ public final class WorldBindingStore
 
     private static void save(Path worldRoot, BindingFile binding) throws IOException
     {
-        Files.createDirectories(worldRoot);
-        Path file = worldRoot.resolve(FILE_NAME);
-        Path temporary = worldRoot.resolve(FILE_NAME + ".tmp");
+        Path file = bindingFile(worldRoot);
+        Files.createDirectories(file.getParent());
+        Path temporary = file.resolveSibling(FILE_NAME + ".tmp");
 
         try (Writer writer = Files.newBufferedWriter(temporary, StandardCharsets.UTF_8))
         {
@@ -127,6 +137,25 @@ public final class WorldBindingStore
         catch (AtomicMoveNotSupportedException ignored)
         {
             Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private static Path bindingFile(Path worldRoot)
+    {
+        return worldRoot.resolve("config").resolve("halfmasa").resolve(FILE_NAME);
+    }
+
+    private static void migrateLegacyFile(Path worldRoot, Path legacyFile, BindingFile binding)
+    {
+        try
+        {
+            save(worldRoot, binding);
+            Files.deleteIfExists(legacyFile);
+            XaeroWorldBinding.LOGGER.info("Migrated {} to {}", legacyFile, bindingFile(worldRoot));
+        }
+        catch (IOException exception)
+        {
+            XaeroWorldBinding.LOGGER.warn("Failed to migrate legacy world binding file {}", legacyFile, exception);
         }
     }
 

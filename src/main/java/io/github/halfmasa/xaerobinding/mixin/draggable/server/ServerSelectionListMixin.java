@@ -1,4 +1,4 @@
-﻿package io.github.halfmasa.xaerobinding.mixin.draggable.server;
+package io.github.halfmasa.xaerobinding.mixin.draggable.server;
 
 import io.github.halfmasa.xaerobinding.draggable.DragItem;
 import io.github.halfmasa.xaerobinding.draggable.DragList;
@@ -8,10 +8,17 @@ import io.github.halfmasa.xaerobinding.draggable.duck.ServerListDuckProvider;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+//#if MC >= 26.1
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+//#else
+//$$ import net.minecraft.client.gui.GuiGraphics;
+//#endif
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.gui.screens.multiplayer.ServerSelectionList;
+//#if MC >= 1.21.10
+import net.minecraft.client.input.MouseButtonEvent;
+//#endif
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.ServerList;
 import org.jetbrains.annotations.Nullable;
@@ -43,22 +50,41 @@ public abstract class ServerSelectionListMixin extends ObjectSelectionList<Serve
         super(minecraftClient, i, j, k, l);
     }
 
+    //#if MC >= 26.1
     @Override
-    protected void renderListItems(GuiGraphics guiGraphics, int mouseX, int mouseY, float tickDelta) {
+    protected void extractListItems(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float tickDelta) {
+    //#else
+    //$$ @Override
+    //$$ protected void renderListItems(GuiGraphics guiGraphics, int mouseX, int mouseY, float tickDelta) {
+    //#endif
         draggable_lists$dragManager.renderListItems(guiGraphics, mouseX, mouseY, tickDelta);
     }
 
+    //#if MC >= 1.21.10
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (draggable_lists$dragManager.mouseReleased(mouseX, mouseY, button)) return true;
-        return super.mouseReleased(mouseX, mouseY, button);
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (draggable_lists$dragManager.mouseReleased(event.x(), event.y(), event.button())) return true;
+        return super.mouseReleased(event);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if ((io.github.halfmasa.xaerobinding.config.Configs.DRAGGABLE_LISTS.getBooleanValue() && (((io.github.halfmasa.xaerobinding.config.DragMode) io.github.halfmasa.xaerobinding.config.Configs.DRAG_SERVER_MODE.getOptionListValue()) == io.github.halfmasa.xaerobinding.config.DragMode.ENABLED || ((io.github.halfmasa.xaerobinding.config.DragMode) io.github.halfmasa.xaerobinding.config.Configs.DRAG_SERVER_MODE.getOptionListValue()) == io.github.halfmasa.xaerobinding.config.DragMode.REQUIRES_MODIFIER && net.minecraft.client.gui.screens.Screen.hasShiftDown())) && draggable_lists$dragManager.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) return true;
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        if ((io.github.halfmasa.xaerobinding.config.Configs.DRAGGABLE_LISTS.getBooleanValue() && (((io.github.halfmasa.xaerobinding.config.DragMode) io.github.halfmasa.xaerobinding.config.Configs.DRAG_SERVER_MODE.getOptionListValue()) == io.github.halfmasa.xaerobinding.config.DragMode.ENABLED || ((io.github.halfmasa.xaerobinding.config.DragMode) io.github.halfmasa.xaerobinding.config.Configs.DRAG_SERVER_MODE.getOptionListValue()) == io.github.halfmasa.xaerobinding.config.DragMode.REQUIRES_MODIFIER && event.hasShiftDown())) && draggable_lists$dragManager.mouseDragged(event.x(), event.y(), event.button(), deltaX, deltaY)) return true;
+        return super.mouseDragged(event, deltaX, deltaY);
     }
+    //#else
+    //$$ @Override
+    //$$ public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    //$$     if (draggable_lists$dragManager.mouseReleased(mouseX, mouseY, button)) return true;
+    //$$     return super.mouseReleased(mouseX, mouseY, button);
+    //$$ }
+    //$$
+    //$$ @Override
+    //$$ public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+    //$$     if ((io.github.halfmasa.xaerobinding.config.Configs.DRAGGABLE_LISTS.getBooleanValue() && (((io.github.halfmasa.xaerobinding.config.DragMode) io.github.halfmasa.xaerobinding.config.Configs.DRAG_SERVER_MODE.getOptionListValue()) == io.github.halfmasa.xaerobinding.config.DragMode.ENABLED || ((io.github.halfmasa.xaerobinding.config.DragMode) io.github.halfmasa.xaerobinding.config.Configs.DRAG_SERVER_MODE.getOptionListValue()) == io.github.halfmasa.xaerobinding.config.DragMode.REQUIRES_MODIFIER && net.minecraft.client.gui.screens.Screen.hasShiftDown())) && draggable_lists$dragManager.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) return true;
+    //$$     return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    //$$ }
+    //#endif
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
@@ -66,9 +92,15 @@ public abstract class ServerSelectionListMixin extends ObjectSelectionList<Serve
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
 
+    //#if MC >= 26.1
     @Override
-    public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        super.renderWidget(guiGraphics, mouseX, mouseY, delta);
+    public void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float delta) {
+        super.extractWidgetRenderState(guiGraphics, mouseX, mouseY, delta);
+    //#else
+    //$$ @Override
+    //$$ public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+    //$$     super.renderWidget(guiGraphics, mouseX, mouseY, delta);
+    //#endif
         draggable_lists$dragManager.renderWidget(guiGraphics, mouseX, mouseY, delta);
     }
 
@@ -90,7 +122,11 @@ public abstract class ServerSelectionListMixin extends ObjectSelectionList<Serve
     }
 
     public int draggable_lists$getHeaderHeight() {
-        return headerHeight;
+        //#if MC >= 1.21.10
+        return 0;
+        //#else
+        //$$ return headerHeight;
+        //#endif
     }
 
     public int draggable_lists$getY() {
@@ -102,7 +138,11 @@ public abstract class ServerSelectionListMixin extends ObjectSelectionList<Serve
     }
 
     public int draggable_lists$getItemHeight() {
-        return itemHeight;
+        //#if MC >= 1.21.10
+        return defaultEntryHeight;
+        //#else
+        //$$ return itemHeight;
+        //#endif
     }
 
     public int draggable_lists$getRowTop(int i) {
@@ -122,7 +162,11 @@ public abstract class ServerSelectionListMixin extends ObjectSelectionList<Serve
     }
 
     public double draggable_lists$getScrollAmount() {
-        return getScrollAmount();
+        //#if MC >= 1.21.4
+        return scrollAmount();
+        //#else
+        //$$ return getScrollAmount();
+        //#endif
     }
 
     public void draggable_lists$setScrollAmount(double v) {
@@ -142,7 +186,17 @@ public abstract class ServerSelectionListMixin extends ObjectSelectionList<Serve
         return getItemCount();
     }
 
-    public void draggable_lists$renderItem(GuiGraphics guiGraphics, int mouseX, int mouseY, float tickDelta, int i, int rowLeft, int rowTop, int rowWidth, int rowHeight) {
-        renderItem(guiGraphics, mouseX, mouseY, tickDelta, i, rowLeft, rowTop, rowWidth, rowHeight);
+    //#if MC >= 26.1
+    public void draggable_lists$renderItem(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float tickDelta, int i, int rowLeft, int rowTop, int rowWidth, int rowHeight) {
+        extractItem(guiGraphics, mouseX, mouseY, tickDelta, children().get(i));
     }
+    //#else
+    //$$ public void draggable_lists$renderItem(GuiGraphics guiGraphics, int mouseX, int mouseY, float tickDelta, int i, int rowLeft, int rowTop, int rowWidth, int rowHeight) {
+        //#if MC >= 1.21.10 && MC < 26.1
+        //$$ renderItem(guiGraphics, mouseX, mouseY, tickDelta, children().get(i));
+        //#else
+        //$$ renderItem(guiGraphics, mouseX, mouseY, tickDelta, i, rowLeft, rowTop, rowWidth, rowHeight);
+        //#endif
+    //$$ }
+    //#endif
 }

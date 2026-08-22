@@ -1,6 +1,10 @@
-﻿package io.github.halfmasa.xaerobinding.draggable;
+package io.github.halfmasa.xaerobinding.draggable;
 
-import net.minecraft.client.gui.GuiGraphics;
+//#if MC >= 26.1
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+//#else
+//$$ import net.minecraft.client.gui.GuiGraphics;
+//#endif
 import net.minecraft.client.gui.components.ObjectSelectionList;
 
 public interface DragItem<T, E extends ObjectSelectionList.Entry<?>> {
@@ -8,7 +12,11 @@ public interface DragItem<T, E extends ObjectSelectionList.Entry<?>> {
 
     E draggable_lists$getUnderlyingEntry();
 
-    void draggable_lists$render(GuiGraphics guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta);
+    //#if MC >= 26.1
+    void draggable_lists$render(GuiGraphicsExtractor guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta);
+    //#else
+    //$$ void draggable_lists$render(GuiGraphics guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta);
+    //#endif
 
     void draggable_lists$setBeingDragged(boolean v);
 }

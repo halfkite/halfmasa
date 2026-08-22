@@ -20,11 +20,11 @@
   },
   "tabAssignments": {
     "A": "all",
-    "B": "4,5,6,10,11,12,13,14,15,18,19,20,21",
+    "B": "4,5,6,10,11,12,13,14,15,18,19,20,21,31,32",
     "C": "2",
     "D": "3,27,29",
     "E": "auto",
-    "F": "16",
+    "F": "30",
     "G": "25,26"
   },
   "features": {
@@ -53,10 +53,10 @@
     "13": { "key": "toast_killer", "status": "implemented" },
     "14": { "key": "server_pinger_fix", "status": "implemented" },
     "15": { "key": "contingame_ime", "status": "implemented" },
-    "16-A": { "key": "free_camera_container", "status": "implemented" },
-    "16-B": { "key": "free_camera_item_use", "status": "implemented" },
-    "16-C": { "key": "free_camera_mining", "status": "implemented" },
-    "16-D": { "key": "free_camera_litematica_easy_place", "status": "implemented" },
+    "16-A": { "key": "free_camera_container", "status": "removed" },
+    "16-B": { "key": "free_camera_item_use", "status": "removed" },
+    "16-C": { "key": "free_camera_mining", "status": "removed" },
+    "16-D": { "key": "free_camera_litematica_easy_place", "status": "removed" },
     "17-A": { "key": "container_through_sign", "status": "planned" },
     "17-B": { "key": "container_through_item_frame", "status": "planned" },
     "18": { "key": "mini_effects", "status": "planned" },
@@ -72,6 +72,11 @@
     "27": { "key": "condensed_creative_inventory", "status": "implemented" },
     "28": { "key": "keep_mod_menu_scroll", "status": "implemented" },
     "29": { "key": "creative_search_history", "status": "implemented" },
-    "30": { "key": "item_manager_recipe_history", "status": "implemented" }
+    "30": { "key": "item_manager_recipe_history", "status": "implemented" },
+    "31": { "key": "night_vision_fade", "status": "implemented" },
+    "32": { "key": "fast_interface_scrolling", "status": "implemented" },
+    "33": { "key": "keep_world_selection_on_empty", "status": "implemented" },
+    "34": { "key": "reach_around_bridging_assist", "status": "implemented" },
+    "35": { "key": "cjk_latin_spacing", "status": "implemented" }
   }
 }

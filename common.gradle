@@ -73,6 +73,18 @@ loom {
 }
 
 processResources {
+    def jeiHistoryLayoutMixins = [
+            '"JeiItemHistoryMixin"',
+            '"JeiItemHistoryBookmarkMixin"'
+    ]
+    def legacyBookEditMixins = [
+            '"BookEditScreenMixin"',
+            '"BookEditDisplayCacheMixin"'
+    ]
+    def legacyReiLayoutMixins = [
+            '"ReiItemHistoryMixin"',
+            '"ReiItemHistoryFavoritesMixin"'
+    ]
     def properties = [
             mod_version: project.version,
             minecraft_dependency: project.minecraft_dependency,
@@ -82,7 +94,25 @@ processResources {
     inputs.properties(properties)
     filesMatching('fabric.mod.json') { expand properties }
     filesMatching('halfmasa.mixins.json') {
-        filter { line -> line.replace('{{COMPATIBILITY_LEVEL}}', properties.compatibility_level) }
+        filter { line ->
+            if (!project.hasProperty('jei_compile_version') &&
+                    jeiHistoryLayoutMixins.any { line.contains(it) }) {
+                return null
+            }
+            if (project.mcVersion >= 1_21_08 && legacyBookEditMixins.any { line.contains(it) }) {
+                return null
+            }
+            if (project.mcVersion >= 1_21_05 && line.contains('"ClickAndSendMixin"')) {
+                return null
+            }
+            if (project.mcVersion < 1_21_08 && line.contains('"BookEditMultiLineMixin"')) {
+                return null
+            }
+            if (project.mcVersion >= 26_01_00 && legacyReiLayoutMixins.any { line.contains(it) }) {
+                return null
+            }
+            line.replace('{{COMPATIBILITY_LEVEL}}', properties.compatibility_level)
+        }
     }
 }
 
@@ -103,6 +133,22 @@ java {
     sourceCompatibility = javaVersion
     targetCompatibility = javaVersion
     withSourcesJar()
+}
+
+sourceSets {
+    main {
+        java {
+            if (project.mcVersion >= 26_02_00) {
+                exclude 'io/github/halfmasa/xaerobinding/mixin/BookEditScreenMixin.java'
+                exclude 'io/github/halfmasa/xaerobinding/mixin/BookEditDisplayCacheMixin.java'
+                exclude 'io/github/halfmasa/xaerobinding/mixin/ClickAndSendMixin.java'
+                exclude 'io/github/halfmasa/xaerobinding/mixin/JeiItemHistoryMixin.java'
+                exclude 'io/github/halfmasa/xaerobinding/mixin/JeiItemHistoryBookmarkMixin.java'
+                exclude 'io/github/halfmasa/xaerobinding/mixin/ReiItemHistoryMixin.java'
+                exclude 'io/github/halfmasa/xaerobinding/mixin/ReiItemHistoryFavoritesMixin.java'
+            }
+        }
+    }
 }
 
 jar {
