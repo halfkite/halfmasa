@@ -33,6 +33,11 @@ on:
         options:
           - release
           - beta
+      publish_modrinth:
+        description: Publish this release to Modrinth
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -83,6 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Verify Modrinth access
+        if: inputs.publish_modrinth
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_API_TOKEN }}
           MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID || '9ZHJ1Ue9' }}
@@ -240,11 +246,9 @@ jobs:
           "jar=$publishedPath" >> $env:GITHUB_OUTPUT
           "version=$env:RELEASE_TAG-mc$env:MC_VERSION" >> $env:GITHUB_OUTPUT
 
-      - name: Publish to GitHub, Modrinth, and CurseForge
+      - name: Publish to GitHub and CurseForge
         uses: Kira-NT/mc-publish@v3.3.1
         with:
-          modrinth-id: ${{ vars.MODRINTH_PROJECT_ID || '9ZHJ1Ue9' }}
-          modrinth-token: ${{ secrets.MODRINTH_API_TOKEN }}
           curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID || '1661919' }}
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
           github-token: ${{ github.token }}
@@ -259,6 +263,26 @@ jobs:
           game-versions: ${{ matrix.mc_version }}
           java: ${{ startsWith(matrix.mc_version, '26.') && '25' || '21' }}
           dependencies: |
-            malilib(required){modrinth:GcWjdA9I}{curseforge:303119}
+            malilib(required){curseforge:303119}
+          retry-attempts: 3
+          retry-delay: 15000
+
+      - name: Publish to Modrinth
+        if: inputs.publish_modrinth
+        uses: Kira-NT/mc-publish@v3.3.1
+        with:
+          modrinth-id: ${{ vars.MODRINTH_PROJECT_ID || '9ZHJ1Ue9' }}
+          modrinth-token: ${{ secrets.MODRINTH_API_TOKEN }}
+          files: ${{ steps.artifact.outputs.jar }}
+          name: ${{ needs.validate.outputs.release_tag }}
+          version: ${{ steps.artifact.outputs.version }}
+          version-type: ${{ inputs.release_type }}
+          changelog-file: release-notes/RELEASE_NOTES.md
+          loaders: fabric
+          environment: client
+          game-versions: ${{ matrix.mc_version }}
+          java: ${{ startsWith(matrix.mc_version, '26.') && '25' || '21' }}
+          dependencies: |
+            malilib(required){modrinth:GcWjdA9I}
           retry-attempts: 3
           retry-delay: 15000
