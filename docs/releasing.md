@@ -12,6 +12,7 @@ halfmasa 使用 GitHub Actions 构建和发布 Minecraft `1.21.1`、`1.21.4`、`
 
 1. 完成目标版本的静默构建、启动日志检查和必要的游戏内验证。
 2. 更新根目录 `gradle.properties` 中的 `mod_version`，并同步 README 与功能文档版本。
+   如果新版本相对最近正式版跨越一个以上次版本号，例如从 `1.1.x` 跳到 `1.4.x`，必须先提醒并确认，避免误发版本。
 3. 提交并推送全部发布源码。
 4. 在 GitHub Actions 手动运行 `Release halfmasa`，输入与 `mod_version` 完全相同的版本号。
 5. 选择 `all` 发布全部支持版本，或选择一个 Minecraft 版本进行单版本发布。

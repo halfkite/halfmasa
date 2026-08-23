@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Release version; must match mod_version, for example 1.4.5
+        description: Release version; must match mod_version, for example 1.1.5
         required: true
         type: string
       target_subproject:
