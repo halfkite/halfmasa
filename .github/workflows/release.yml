@@ -280,7 +280,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
           RELEASE_JAR: ${{ steps.artifact.outputs.jar }}
-        run: gh release upload "$RELEASE_TAG" "$RELEASE_JAR" --clobber
+          GH_REPOSITORY: ${{ github.repository }}
+        run: gh release upload "$RELEASE_TAG" "$RELEASE_JAR" --clobber --repo "$GH_REPOSITORY"
 
       - name: Publish to Modrinth
         if: inputs.publish_modrinth
