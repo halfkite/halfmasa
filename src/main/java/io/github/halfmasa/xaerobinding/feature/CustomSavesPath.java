@@ -129,6 +129,29 @@ public final class CustomSavesPath
         }
     }
 
+    public static void applyLoadedSelection()
+    {
+        Minecraft client = Minecraft.getInstance();
+        if (client.level != null || client.getSingleplayerServer() != null)
+        {
+            return;
+        }
+
+        Path selected = resolveInitialPath();
+        try
+        {
+            ensureDirectory(selected);
+            LevelStorageSource source = client.getLevelSource();
+            ((LevelStorageSourceAccess) (Object) source).halfmasa$setBaseDir(selected);
+            currentPath = selected;
+            XaeroWorldBinding.LOGGER.info("Restored saves directory {}", selected);
+        }
+        catch (IOException | RuntimeException exception)
+        {
+            XaeroWorldBinding.LOGGER.error("Unable to restore saves directory {}; using the current directory", selected, exception);
+        }
+    }
+
     public static boolean addConfiguredPath(String value)
     {
         if (value == null || value.isBlank())
@@ -154,6 +177,69 @@ public final class CustomSavesPath
         List<String> paths = new ArrayList<>(Configs.CUSTOM_SAVES_PATHS.getStrings());
         paths.add(configured);
         Configs.CUSTOM_SAVES_PATHS.setStrings(paths);
+        ConfigManager.getInstance().onConfigsChanged(XaeroWorldBinding.MOD_ID);
+        return true;
+    }
+
+    public static boolean editConfiguredPath(PathOption option, String value)
+    {
+        if (option == null || option.defaultPath() || value == null || value.isBlank())
+        {
+            return false;
+        }
+
+        String configured = value.trim();
+        Path replacement = resolveConfiguredPath(configured);
+        if (replacement == null)
+        {
+            return false;
+        }
+
+        for (PathOption existing : getOptions())
+        {
+            if (existing != option && !existing.defaultPath() && existing.path() != null &&
+                    existing.path().equals(replacement) && !sameOption(existing, option))
+            {
+                return false;
+            }
+        }
+
+        Path target = option.path();
+        if (target != null && target.equals(getCurrentPath()) && !switchTo(replacement))
+        {
+            return false;
+        }
+
+        List<String> paths = new ArrayList<>(Configs.CUSTOM_SAVES_PATHS.getStrings());
+        int index = paths.indexOf(option.configuredValue());
+        if (index < 0 && target != null)
+        {
+            for (int candidate = 0; candidate < paths.size(); candidate++)
+            {
+                if (target.equals(resolveConfiguredPath(paths.get(candidate))))
+                {
+                    index = candidate;
+                    break;
+                }
+            }
+        }
+
+        if (index >= 0)
+        {
+            paths.set(index, configured);
+            Configs.CUSTOM_SAVES_PATHS.setStrings(paths);
+        }
+        else
+        {
+            String legacy = Configs.CUSTOM_SAVES_PATH.getStringValue();
+            if (legacy == null || legacy.isBlank() ||
+                    !(legacy.trim().equals(option.configuredValue()) || target != null && target.equals(resolveConfiguredPath(legacy))))
+            {
+                return false;
+            }
+            Configs.CUSTOM_SAVES_PATH.setValueFromString(configured);
+        }
+
         ConfigManager.getInstance().onConfigsChanged(XaeroWorldBinding.MOD_ID);
         return true;
     }
@@ -236,6 +322,12 @@ public final class CustomSavesPath
             }
         }
         return getDefaultPath();
+    }
+
+    private static boolean sameOption(PathOption first, PathOption second)
+    {
+        return first.configuredValue().equals(second.configuredValue()) &&
+                (first.path() == null ? second.path() == null : first.path().equals(second.path()));
     }
 
     private static Path resolveConfiguredPath(String configured)

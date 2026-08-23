@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Release version; must match mod_version, for example 1.1.1
+        description: Release version; must match mod_version, for example 1.4.5
         required: true
         type: string
       target_subproject:
@@ -35,6 +35,11 @@ on:
           - beta
       publish_modrinth:
         description: Publish this release to Modrinth
+        required: false
+        type: boolean
+        default: true
+      publish_curseforge:
+        description: Publish this release to CurseForge
         required: false
         type: boolean
         default: true
@@ -105,6 +110,7 @@ jobs:
             "https://api.modrinth.com/v2/project/$MODRINTH_PROJECT_ID" >/dev/null
 
       - name: Verify CurseForge upload access
+        if: inputs.publish_curseforge
         env:
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
         run: |
@@ -247,6 +253,7 @@ jobs:
           "version=$env:RELEASE_TAG-mc$env:MC_VERSION" >> $env:GITHUB_OUTPUT
 
       - name: Publish to GitHub and CurseForge
+        if: inputs.publish_curseforge
         uses: Kira-NT/mc-publish@v3.3.1
         with:
           curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID || '1661919' }}
@@ -266,6 +273,14 @@ jobs:
             malilib(required){curseforge:303119}
           retry-attempts: 3
           retry-delay: 15000
+
+      - name: Publish to GitHub
+        if: ${{ !inputs.publish_curseforge }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+          RELEASE_JAR: ${{ steps.artifact.outputs.jar }}
+        run: gh release upload "$RELEASE_TAG" "$RELEASE_JAR" --clobber
 
       - name: Publish to Modrinth
         if: inputs.publish_modrinth

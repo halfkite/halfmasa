@@ -17,13 +17,21 @@ import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
 public final class CustomSavesPathAddScreen extends Screen
 {
     private final CustomSavesPathScreen parent;
+    private final CustomSavesPath.PathOption editing;
     private EditBox pathBox;
     private Component error;
 
     public CustomSavesPathAddScreen(CustomSavesPathScreen parent)
     {
-        super(Component.translatable("halfmasa.custom_saves.add_title"));
+        this(parent, null);
+    }
+
+    public CustomSavesPathAddScreen(CustomSavesPathScreen parent, CustomSavesPath.PathOption editing)
+    {
+        super(Component.translatable(editing == null ?
+                "halfmasa.custom_saves.add_title" : "halfmasa.custom_saves.edit_title"));
         this.parent = parent;
+        this.editing = editing;
     }
 
     @Override
@@ -37,7 +45,12 @@ public final class CustomSavesPathAddScreen extends Screen
                 20,
                 Component.translatable("halfmasa.custom_saves.path_hint")));
         this.pathBox.setMaxLength(1024);
-        this.addRenderableWidget(Button.builder(Component.translatable("halfmasa.custom_saves.add"), button -> this.addPath())
+        if (this.editing != null)
+        {
+            this.pathBox.setValue(this.editing.configuredValue());
+        }
+        this.addRenderableWidget(Button.builder(Component.translatable(this.editing == null ?
+                        "halfmasa.custom_saves.add" : "halfmasa.custom_saves.save"), button -> this.savePath())
                 .bounds(this.width / 2 - 156, this.height - 36, 100, 20)
                 .build());
         this.addRenderableWidget(Button.builder(CommonComponents.GUI_BACK, button -> this.onClose())
@@ -83,11 +96,15 @@ public final class CustomSavesPathAddScreen extends Screen
         }
     }
 
-    private void addPath()
+    private void savePath()
     {
-        if (!CustomSavesPath.addConfiguredPath(this.pathBox.getValue()))
+        boolean saved = this.editing == null
+                ? CustomSavesPath.addConfiguredPath(this.pathBox.getValue())
+                : CustomSavesPath.editConfiguredPath(this.editing, this.pathBox.getValue());
+        if (!saved)
         {
-            this.error = Component.translatable("halfmasa.custom_saves.add_failed");
+            this.error = Component.translatable(this.editing == null ?
+                    "halfmasa.custom_saves.add_failed" : "halfmasa.custom_saves.edit_failed");
             return;
         }
 

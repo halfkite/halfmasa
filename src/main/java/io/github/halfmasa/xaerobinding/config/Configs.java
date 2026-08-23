@@ -35,13 +35,15 @@ import fi.dy.masa.malilib.util.data.json.JsonUtils;
 //#endif
 
 import io.github.halfmasa.xaerobinding.XaeroWorldBinding;
+import io.github.halfmasa.xaerobinding.feature.CustomSavesPath;
 
 public final class Configs implements IConfigHandler
 {
     private static final String CONFIG_DIRECTORY_NAME = "halfmasa";
     private static final String CONFIG_FILE_NAME = "halfmasa.json";
-    private static final int CONFIG_VERSION = 30;
+    private static final int CONFIG_VERSION = 31;
     private static final String GENERIC_KEY = "halfmasa.config.generic";
+    private static volatile boolean configLoaded;
 
     public static final ConfigHotkey OPEN_TOOLS = new ConfigHotkey(
             "openWaypointTools",
@@ -54,27 +56,33 @@ public final class Configs implements IConfigHandler
             "enableWorldBinding",
             false,
             "").apply(WAYPOINT_KEY);
-    public static final ActionHotkey COPY_WAYPOINT_BUNDLE = new ActionHotkey("copyWaypointBundle", "").applyTranslationKey(WAYPOINT_KEY);
-    public static final ActionHotkey IMPORT_WAYPOINT_BUNDLE = new ActionHotkey("importWaypointBundle", "").applyTranslationKey(WAYPOINT_KEY);
-    public static final ActionHotkey SHARE_CURRENT_SET = new ActionHotkey("shareCurrentWaypointSet", "").applyTranslationKey(WAYPOINT_KEY);
-    public static final ActionHotkey SHARE_ALL_WAYPOINTS = new ActionHotkey("shareAllWaypoints", "").applyTranslationKey(WAYPOINT_KEY);
-    public static final ActionHotkey DEDUPE_CURRENT_SET = new ActionHotkey("dedupeCurrentWaypointSet", "").applyTranslationKey(WAYPOINT_KEY);
-    public static final ActionHotkey DEDUPE_ALL_WAYPOINTS = new ActionHotkey("dedupeAllWaypoints", "").applyTranslationKey(WAYPOINT_KEY);
-    public static final ConfigInteger CHAT_SEND_INTERVAL = new ConfigInteger(
-            "waypointChatInterval", 10, 1, 100, true).apply(WAYPOINT_KEY);
+    public static final ActionConfig IMPORT_WAYPOINT_BUNDLE = new ActionConfig(
+            "importWaypointBundle", "halfmasa.gui.import").applyTranslationKey(WAYPOINT_KEY);
+    public static final ActionConfig EXPORT_ALL_DIMENSIONS = new ActionConfig(
+            "exportAllDimensions", "halfmasa.gui.export_text", "halfmasa.gui.export_file").applyTranslationKey(WAYPOINT_KEY);
+    public static final ActionConfig EXPORT_CURRENT_DIMENSION = new ActionConfig(
+            "exportCurrentDimension", "halfmasa.gui.export_text", "halfmasa.gui.export_file").applyTranslationKey(WAYPOINT_KEY);
+    public static final ActionConfig EXPORT_CURRENT_SET = new ActionConfig(
+            "exportCurrentWaypointSet", "halfmasa.gui.export_text", "halfmasa.gui.export_file").applyTranslationKey(WAYPOINT_KEY);
+    public static final ActionConfig DEDUPE_WAYPOINTS = new ActionConfig(
+            "dedupeWaypoints", "halfmasa.gui.merge_current", "halfmasa.gui.merge_all").applyTranslationKey(WAYPOINT_KEY);
+    public static final ActionConfig WAYPOINT_HISTORY = new ActionConfig(
+            "waypointHistory", "halfmasa.gui.undo", "halfmasa.gui.redo").applyTranslationKey(WAYPOINT_KEY);
     public static final ConfigBoolean WAYPOINT_SHARING_EXPANDED = new ConfigBoolean(
             "waypointSharingExpanded", false).apply(WAYPOINT_KEY);
     public static final ConfigGroupHeader WAYPOINT_SHARING_GROUP = new ConfigGroupHeader(
             "waypointSharingGroup", "halfmasa.config.waypoint", WAYPOINT_SHARING_EXPANDED);
     public static final List<IConfigBase> WAYPOINT = List.of(
             ENABLE_WORLD_BINDING,
-            COPY_WAYPOINT_BUNDLE,
             IMPORT_WAYPOINT_BUNDLE,
-            SHARE_ALL_WAYPOINTS,
-            SHARE_CURRENT_SET,
-            CHAT_SEND_INTERVAL,
-            DEDUPE_CURRENT_SET,
-            DEDUPE_ALL_WAYPOINTS,
+            EXPORT_ALL_DIMENSIONS,
+            EXPORT_CURRENT_DIMENSION,
+            EXPORT_CURRENT_SET,
+            DEDUPE_WAYPOINTS,
+            WAYPOINT_HISTORY,
+            WAYPOINT_SHARING_EXPANDED);
+    private static final List<IConfigBase> WAYPOINT_PERSISTED = List.of(
+            ENABLE_WORLD_BINDING,
             WAYPOINT_SHARING_EXPANDED);
 
     private static final String CREATIVE_KEY = "halfmasa.config.creative";
@@ -632,12 +640,6 @@ public final class Configs implements IConfigHandler
 
     public static final List<IHotkey> HOTKEYS = List.of(
             OPEN_TOOLS,
-            COPY_WAYPOINT_BUNDLE,
-            IMPORT_WAYPOINT_BUNDLE,
-            SHARE_CURRENT_SET,
-            SHARE_ALL_WAYPOINTS,
-            DEDUPE_CURRENT_SET,
-            DEDUPE_ALL_WAYPOINTS,
             GIVE_FULL_INVENTORY,
             REPORT_ELYTRA_TIME,
             ENABLE_WORLD_BINDING,
@@ -682,11 +684,25 @@ public final class Configs implements IConfigHandler
     @Override
     public void load()
     {
+        configLoaded = false;
+        try
+        {
+            loadFromFile();
+        }
+        finally
+        {
+            configLoaded = true;
+        }
+    }
+
+    private void loadFromFile()
+    {
         customSavesActivePathPersisted = false;
         migrateLegacyConfig();
         Path file = getHalfMasaDirectory().resolve(CONFIG_FILE_NAME);
         if (!Files.isReadable(file))
         {
+            CustomSavesPath.applyLoadedSelection();
             return;
         }
 
@@ -712,7 +728,7 @@ public final class Configs implements IConfigHandler
             }
 
             ConfigUtils.readConfigBase(root, "Generic", GENERIC);
-            ConfigUtils.readConfigBase(root, "Waypoint", WAYPOINT);
+            ConfigUtils.readConfigBase(root, "Waypoint", WAYPOINT_PERSISTED);
             ConfigUtils.readConfigBase(root, "Creative", CREATIVE);
             ConfigUtils.readConfigBase(root, "Ported", PORTED);
             ConfigUtils.readConfigBase(root, "Ported", ITEM_MANAGER_RECIPE_HISTORY_CONFIGS);
@@ -790,6 +806,12 @@ public final class Configs implements IConfigHandler
         {
             XaeroWorldBinding.LOGGER.error("Failed to parse config file {}", file.toAbsolutePath());
         }
+        CustomSavesPath.applyLoadedSelection();
+    }
+
+    public static boolean isConfigLoaded()
+    {
+        return configLoaded;
     }
 
     @Override
@@ -801,7 +823,7 @@ public final class Configs implements IConfigHandler
         JsonObject root = new JsonObject();
         root.addProperty("ConfigVersion", CONFIG_VERSION);
         ConfigUtils.writeConfigBase(root, "Generic", GENERIC);
-        ConfigUtils.writeConfigBase(root, "Waypoint", WAYPOINT);
+        ConfigUtils.writeConfigBase(root, "Waypoint", WAYPOINT_PERSISTED);
         ConfigUtils.writeConfigBase(root, "Creative", CREATIVE);
         ConfigUtils.writeConfigBase(root, "Ported", PORTED);
         ConfigUtils.writeConfigBase(root, "Ported", CUSTOM_SAVES_INTERNAL);
@@ -1080,10 +1102,9 @@ public final class Configs implements IConfigHandler
 
     private static boolean isWaypointSharingChild(IConfigBase config)
     {
-        return config == COPY_WAYPOINT_BUNDLE || config == IMPORT_WAYPOINT_BUNDLE ||
-                config == SHARE_ALL_WAYPOINTS || config == SHARE_CURRENT_SET ||
-                config == CHAT_SEND_INTERVAL || config == DEDUPE_CURRENT_SET ||
-                config == DEDUPE_ALL_WAYPOINTS;
+        return config == IMPORT_WAYPOINT_BUNDLE || config == EXPORT_ALL_DIMENSIONS ||
+                config == EXPORT_CURRENT_DIMENSION || config == EXPORT_CURRENT_SET ||
+                config == DEDUPE_WAYPOINTS || config == WAYPOINT_HISTORY;
     }
 
     private static List<IConfigBase> groupedView(

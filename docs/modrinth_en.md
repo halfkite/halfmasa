@@ -8,7 +8,7 @@ It combines practical client features in one MaLiLib-style configuration screen.
 
 - Bind singleplayer worlds to Xaero Minimap and Xaero World Map roots. The binding follows renamed, moved, and restored worlds.
 - Switch between multiple singleplayer saves directories from the world-selection screen. The button can be moved by holding it for one second and dragging.
-- Share, import, and deduplicate Xaero waypoint bundles using the `XWB1:` format.
+- Import and export multi-dimension Xaero waypoint bundles as `XWB2:` clipboard text or files, with legacy `XWB1:` support, deduplication, undo, and redo.
 - Fill shulker boxes, chests, offhand containers, and bundles in creative mode.
 - Keep separate JEI and REI recipe and usage lookup histories with a configurable four-corner overlay.
 - Preview filled maps in hotbar, inventory, and container slots.
@@ -26,7 +26,7 @@ The project currently provides builds for Minecraft `1.21.1`, `1.21.4`, `1.21.8`
 
 Required dependencies:
 
-- Fabric Loader `0.16.14` or newer
+- Fabric Loader `0.17.3` or newer for Minecraft 1.21.x; `0.18.4` or newer for Minecraft 26.x
 - MaLiLib matching the Minecraft version
 
 Optional integrations include Xaero's Minimap, Xaero's World Map, Mod Menu, Carpet, Tweakeroo, REI, and JEI.

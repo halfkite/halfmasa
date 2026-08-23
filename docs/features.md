@@ -1,6 +1,6 @@
 # halfmasa 功能与配置
 
-> 文档版本：`1.1.4`
+> 文档版本：`1.4.5`
 
 按 `X + H` 打开配置界面，也可以从 Mod Menu 进入。除特别说明外，功能默认关闭；热键为空表示默认不绑定按键。
 
@@ -11,14 +11,14 @@
 | `enableWorldBinding` | `false` | 在默认 Windows 游戏目录的绝对路径 `C:\Users\<username>\AppData\Roaming\.minecraft\saves\<world>\config\halfmasa\xaero-world-binding.json` 保存 Xaero Minimap 与 World Map 的根目录 ID，使改名、移动和备份恢复后的存档继续使用同一路径点与地图数据；旧版 `C:\Users\<username>\AppData\Roaming\.minecraft\saves\<world>\.halfmasa-xaero-binding.json` 会自动迁移。 |
 | `customSavesPaths` | 空列表 | 自定义存档路径列表；支持绝对路径和相对游戏目录的路径。在单人游戏的“选择世界”界面左上角点击当前路径即可即时切换，原版 `saves` 始终可选。 |
 | `keepWorldSelectionOnEmpty` | `false` | 开启后，当前存档路径没有世界时点击“单人游戏”仍显示世界选择界面，不再自动跳转到创建世界界面。 |
-| `copyWaypointBundle` | 空热键 | 将当前 Xaero 世界中的普通路径点和分类压缩为 `XWB1:` 文本并复制到剪贴板。 |
-| `importWaypointBundle` | 空热键 | 从剪贴板导入完整的 `XWB1:` 分享包到当前 Xaero 世界。 |
-| `shareCurrentWaypointSet` | 空热键 | 使用 Xaero 原生聊天格式分享当前路径点分类。 |
-| `shareAllWaypoints` | 空热键 | 分批分享当前 Xaero 世界中的全部普通路径点。 |
-| `dedupeCurrentWaypointSet` / `dedupeAllWaypoints` | 空热键 | 按坐标和名称去重，并保留每个分类中较早的路径点。 |
-| `waypointChatInterval` | `10` tick | 控制连续路径点聊天消息的发送间隔。 |
+| `importWaypointBundle` | 操作按钮 | 自动识别剪贴板中的 `XWB1:`/`XWB2:` 文本或复制的第一个文本文件；旧 `XWB1` 导入当前维度，`XWB2` 保持原维度与分类。 |
+| `exportAllDimensions` | 操作按钮 | 将当前 Xaero 世界根容器中的全部维度、全部分类导出为 `XWB2:` 文本或 UTF-8 `.txt` 文件；包括 VC 等模组创建的额外维度，不限于主世界、下界和末地。每个维度同时保存正式维度 ID、Xaero 等效维度 ID、完整容器节点、完整世界路径、本地世界键、Xaero 维度名和自定义名称。 |
+| `exportCurrentDimension` | 操作按钮 | 将当前维度的全部分类导出为文本或文件。 |
+| `exportCurrentWaypointSet` | 操作按钮 | 将当前维度的当前分类导出为文本或文件。 |
+| `dedupeWaypoints` | 操作按钮 | “合并当前”处理当前分类，“合并全部”分别处理本维度全部分类；按坐标和名称去重并保留较早的路径点。 |
+| `waypointHistory` | 操作按钮 | 撤回或反撤回当前游戏会话内最近的导入与去重操作，最多保留 5 步；切换 Xaero 世界后清空。 |
 
-临时路径点、服务器路径点和第三方动态路径点不会进入分享包。Xaero's World Map 未安装时只处理 Minimap 数据。
+文件导出默认命名为 `halfmasa-xaero-yyyyMMdd-HHmm.txt`，保存成功后同一内容也会复制到剪贴板。临时路径点、服务器路径点和第三方动态路径点不会进入分享包。导入和去重操作会保存完整的 Xaero 路径点快照用于撤回，导出不会进入操作历史。导入 `XWB2:` 时按正式维度 ID、Xaero 等效维度 ID、完整容器节点和本地世界键逐级匹配，避免多个 VC 维度因共享 `waypoints` 节点而合并。
 
 ## 创造模式工具
 

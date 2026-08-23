@@ -14,6 +14,7 @@ import fi.dy.masa.malilib.gui.widgets.WidgetListConfigOptionsBase;
 import fi.dy.masa.malilib.util.StringUtils;
 
 import io.github.halfmasa.xaerobinding.config.ActionHotkey;
+import io.github.halfmasa.xaerobinding.config.ActionConfig;
 import io.github.halfmasa.xaerobinding.config.Configs;
 import io.github.halfmasa.xaerobinding.config.ConfigGroupHeader;
 
@@ -23,6 +24,7 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
     private static final int EXPAND_BUTTON_WIDTH = 18;
     private static final int EXPAND_BUTTON_LEFT_OFFSET = -6;
     private static final int CHILD_INDENT = 28;
+    private static final int RESET_BUTTON_GAP = 5;
 
     public ActionConfigOptionWidget(
             int x,
@@ -122,7 +124,13 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
             return;
         }
 
-        if (!(config instanceof ActionHotkey action))
+        if (config instanceof ActionConfig action)
+        {
+            this.addActionConfig(x, y, labelWidth, configWidth, action, expansion, expandButtonX);
+            return;
+        }
+
+        if (!(config instanceof ActionHotkey actionHotkey))
         {
             //#if MC >= 1.21.10
             super.addConfigOption(x, y, labelWidth, configWidth, config);
@@ -152,7 +160,7 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
                 TRIGGER_WIDTH,
                 20,
                 "");
-        this.addButton(trigger, (button, mouseButton) -> action.trigger());
+        this.addButton(trigger, (button, mouseButton) -> actionHotkey.trigger());
         this.addLabel(
                 x + (TRIGGER_WIDTH - this.getStringWidth(triggerText)) / 2,
                 y + 7,
@@ -163,7 +171,52 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
 
         int hotkeyX = x + TRIGGER_WIDTH + 2;
         int hotkeyWidth = configWidth - TRIGGER_WIDTH - 2;
-        this.addHotkeyConfigElements(hotkeyX, y, hotkeyWidth, config.getName(), action);
+        this.addHotkeyConfigElements(hotkeyX, y, hotkeyWidth, config.getName(), actionHotkey);
+    }
+
+    private void addActionConfig(
+            int x,
+            int y,
+            int labelWidth,
+            int configWidth,
+            ActionConfig action,
+            ConfigBoolean expansion,
+            int expandButtonX)
+    {
+        y += 1;
+        this.addLabel(x, y + 7, labelWidth, 8, 0xFFFFFFFF, action.getConfigGuiDisplayName());
+        this.addExpandButton(expandButtonX, y, expansion);
+
+        IConfigInfoProvider infoProvider = this.host.getHoverInfoProvider();
+        String comment = infoProvider != null ? infoProvider.getHoverInfo(action) : action.getComment();
+        if (comment != null)
+        {
+            this.addConfigComment(x, y + 5, labelWidth, 12, comment);
+        }
+
+        var buttons = action.getButtons();
+        int buttonX = x + labelWidth + 10;
+        int buttonAreaX = buttonX;
+        int gap = 2;
+        int buttonWidth = buttons.size() == 1
+                ? configWidth
+                : Math.max(40, (configWidth - gap * (buttons.size() - 1)) / buttons.size());
+        for (ActionConfig.ActionButton actionButton : buttons)
+        {
+            ButtonGeneric button = new ButtonGeneric(
+                    buttonX,
+                    y,
+                    buttonWidth,
+                    20,
+                    StringUtils.translate(actionButton.translationKey()));
+            this.addButton(button, (pressed, mouseButton) -> actionButton.trigger());
+            buttonX += buttonWidth + gap;
+        }
+
+        DisabledResetButton reset = new DisabledResetButton(
+                buttonAreaX + configWidth + RESET_BUTTON_GAP,
+                y);
+        this.addButton(reset, (button, mouseButton) -> {});
     }
 
     private void addExpandButton(

@@ -12,9 +12,18 @@ import io.github.halfmasa.xaerobinding.binding.WorldBindingStore;
 @Mixin(value = MinimapWorldStateUpdater.class, remap = false)
 public abstract class MinimapWorldStateUpdaterMixin
 {
-    @Inject(method = "getAutoRootContainerPath", at = @At("RETURN"), cancellable = true, remap = false)
-    private void xaeroWorldBinding$bindMinimapRoot(CallbackInfoReturnable<XaeroPath> cir)
+    @Inject(
+            method = "getAutoRootContainerPath(I)Lxaero/hud/path/XaeroPath;",
+            at = @At("RETURN"),
+            cancellable = true,
+            remap = false)
+    private void xaeroWorldBinding$bindMinimapRoot(int mode, CallbackInfoReturnable<XaeroPath> cir)
     {
+        if (mode != 4)
+        {
+            return;
+        }
+
         XaeroPath original = cir.getReturnValue();
         if (original != null)
         {

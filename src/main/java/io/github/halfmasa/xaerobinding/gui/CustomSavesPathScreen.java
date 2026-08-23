@@ -33,6 +33,7 @@ public final class CustomSavesPathScreen extends Screen
 {
     private final Screen parent;
     private PathList list;
+    private Button editButton;
     private Button deleteButton;
     private Component error;
 
@@ -48,16 +49,20 @@ public final class CustomSavesPathScreen extends Screen
         this.list = this.addRenderableWidget(new PathList(this, this.minecraft, this.width, this.height - 96, 42, 32));
         this.addRenderableWidget(Button.builder(Component.translatable("halfmasa.custom_saves.add"), button ->
                         MinecraftClientCompat.setScreen(this.minecraft, new CustomSavesPathAddScreen(this)))
-                .bounds(this.width / 2 - 156, this.height - 36, 100, 20)
+                .bounds(this.width / 2 - 158, this.height - 36, 76, 20)
+                .build());
+        this.editButton = this.addRenderableWidget(Button.builder(Component.translatable("halfmasa.custom_saves.edit"), button ->
+                        this.editSelected())
+                .bounds(this.width / 2 - 78, this.height - 36, 76, 20)
                 .build());
         this.deleteButton = this.addRenderableWidget(Button.builder(Component.translatable("halfmasa.custom_saves.delete"), button ->
                         this.deleteSelected())
-                .bounds(this.width / 2 - 50, this.height - 36, 100, 20)
+                .bounds(this.width / 2 + 2, this.height - 36, 76, 20)
                 .build());
         this.addRenderableWidget(Button.builder(CommonComponents.GUI_BACK, button -> this.onClose())
-                .bounds(this.width / 2 + 56, this.height - 36, 100, 20)
+                .bounds(this.width / 2 + 82, this.height - 36, 76, 20)
                 .build());
-        this.updateDeleteButton();
+        this.updateSelectionButtons();
     }
 
     @Override
@@ -112,12 +117,26 @@ public final class CustomSavesPathScreen extends Screen
         MinecraftClientCompat.setScreen(this.minecraft, this.parent);
     }
 
-    private void updateDeleteButton()
+    private void updateSelectionButtons()
     {
+        CustomSavesPath.PathOption option = this.list.getSelectedOption();
+        boolean editable = option != null && !option.defaultPath();
+        if (this.editButton != null)
+        {
+            this.editButton.active = editable;
+        }
         if (this.deleteButton != null)
         {
-            CustomSavesPath.PathOption option = this.list.getSelectedOption();
-            this.deleteButton.active = option != null && !option.defaultPath();
+            this.deleteButton.active = editable;
+        }
+    }
+
+    private void editSelected()
+    {
+        CustomSavesPath.PathOption option = this.list.getSelectedOption();
+        if (option != null && !option.defaultPath())
+        {
+            MinecraftClientCompat.setScreen(this.minecraft, new CustomSavesPathAddScreen(this, option));
         }
     }
 
@@ -157,15 +176,17 @@ public final class CustomSavesPathScreen extends Screen
             super(minecraft, width, height, top, itemHeight);
             this.screen = screen;
             Path current = CustomSavesPath.getCurrentPath();
+            PathEntry initialSelection = null;
             for (CustomSavesPath.PathOption option : CustomSavesPath.getOptions())
             {
                 PathEntry entry = new PathEntry(this.screen, option, current.equals(option.path()));
                 this.addEntry(entry);
                 if (entry.current)
                 {
-                    this.setSelected(entry);
+                    initialSelection = entry;
                 }
             }
+            super.setSelected(initialSelection);
         }
 
         @Override
@@ -185,7 +206,7 @@ public final class CustomSavesPathScreen extends Screen
         public void setSelected(@Nullable PathEntry entry)
         {
             super.setSelected(entry);
-            this.screen.updateDeleteButton();
+            this.screen.updateSelectionButtons();
         }
     }
 

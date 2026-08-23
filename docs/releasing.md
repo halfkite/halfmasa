@@ -16,7 +16,7 @@ halfmasa 使用 GitHub Actions 构建和发布 Minecraft `1.21.1`、`1.21.4`、`
 4. 在 GitHub Actions 手动运行 `Release halfmasa`，输入与 `mod_version` 完全相同的版本号。
 5. 选择 `all` 发布全部支持版本，或选择一个 Minecraft 版本进行单版本发布。
 
-默认同时发布 GitHub、Modrinth 和 CurseForge。Modrinth 暂时不可用时，可以关闭 `publish_modrinth`；GitHub 和 CurseForge 会继续发布，之后再单独补发 Modrinth。
+默认同时发布 GitHub、Modrinth 和 CurseForge。可以分别关闭 `publish_modrinth` 和 `publish_curseforge`；两者都关闭时仅发布 GitHub Release，之后仍可单独补发其他平台。
 
 发布工作流会先完成全部目标构建，之后创建同名 Git 标签和 GitHub Release，再将 JAR 发布到 GitHub、Modrinth 和 CurseForge。正式版公开文件名为 `halfmasa-fabric-<版本>-mc<Minecraft版本>.jar`，不含构建时间戳。GitHub Release 标题只显示模组版本号，并且只上传可安装 JAR。
 

@@ -1,6 +1,6 @@
 # halfmasa Features and Configuration
 
-> Documentation version: `1.1.4`
+> Documentation version: `1.4.5`
 
 Press `X + H` to open the configuration screen, or use Mod Menu. Unless noted otherwise, features are disabled by default. An empty hotkey means that no key is bound by default.
 
@@ -11,13 +11,14 @@ Press `X + H` to open the configuration screen, or use Mod Menu. Unless noted ot
 | `enableWorldBinding` | `false` | Stores the selected Xaero Minimap and World Map root IDs in `C:\Users\<username>\AppData\Roaming\.minecraft\saves\<world>\config\halfmasa\xaero-world-binding.json` so renamed, moved, or restored worlds can keep using the same waypoint and map data. The legacy `C:\Users\<username>\AppData\Roaming\.minecraft\saves\<world>\.halfmasa-xaero-binding.json` is migrated automatically. |
 | `customSavesPaths` | empty list | Custom saves path list. Absolute paths and paths relative to the game directory are supported. Click the current path in the top-left of the singleplayer world selection screen to switch immediately; the vanilla `saves` directory is always available. |
 | `keepWorldSelectionOnEmpty` | `false` | When enabled, clicking Singleplayer with no worlds in the current saves path stays on world selection instead of opening world creation automatically. |
-| `copyWaypointBundle` | unbound | Compresses normal waypoints and sets from the current Xaero world into an `XWB1:` string and copies it to the clipboard. |
-| `importWaypointBundle` | unbound | Imports a complete `XWB1:` bundle from the clipboard into the current Xaero world. |
-| `shareCurrentWaypointSet` / `shareAllWaypoints` | unbound | Sends the current set or all normal waypoints through chat using Xaero's native share format. |
-| `dedupeCurrentWaypointSet` / `dedupeAllWaypoints` | unbound | Removes later waypoints with matching coordinates and names within each set. |
-| `waypointChatInterval` | `10` ticks | Controls the delay between queued waypoint chat messages. |
+| `importWaypointBundle` | action button | Automatically imports `XWB1:`/`XWB2:` clipboard text or the first copied text file. Legacy XWB1 data targets the current dimension; XWB2 preserves dimensions and sets. |
+| `exportAllDimensions` | action buttons | Exports every dimension and set in the current Xaero root container as `XWB2:` text or a UTF-8 `.txt` file, including extra dimensions created by VC and similar mods rather than only the overworld, Nether, and End. Each dimension also stores its formal dimension ID, Xaero equivalent dimension ID, complete container nodes, full world path, local world key, Xaero dimension name, and custom name. |
+| `exportCurrentDimension` | action buttons | Exports every set in the current dimension as text or a file. |
+| `exportCurrentWaypointSet` | action buttons | Exports the current set in the current dimension as text or a file. |
+| `dedupeWaypoints` | action buttons | Merge Current processes the current set; Merge All processes every set in this dimension independently, removing later waypoints with matching coordinates and names. |
+| `waypointHistory` | action buttons | Undoes or redoes the latest import and deduplication operations in the current game session, up to 5 steps; cleared when the Xaero world changes. |
 
-Temporary, server-provided, and third-party dynamic waypoints are excluded from bundles. World Map data is handled only when Xaero's World Map is installed.
+File exports default to `halfmasa-xaero-yyyyMMdd-HHmm.txt` and also copy the same content to the clipboard after saving. Temporary, server-provided, and third-party dynamic waypoints are excluded from bundles. Import and deduplication operations keep complete Xaero waypoint snapshots for undo; exports are not added to the operation history. XWB2 imports match dimensions in order by formal dimension ID, Xaero equivalent dimension ID, complete container nodes, and local world key, preventing VC dimensions that share the `waypoints` world node from being merged.
 
 ## Creative Tools
 

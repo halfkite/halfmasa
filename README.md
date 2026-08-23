@@ -6,7 +6,7 @@ halfmasa（半马萨）是一个面向 Minecraft Fabric 客户端的 Xaero 与 M
 
 ## 支持版本
 
-当前版本为 `1.1.4`，构建配置支持 Minecraft `1.21.1`、`1.21.4`、`1.21.8`、`1.21.10`、`1.21.11`、`26.1.2` 和 `26.2`。
+当前版本为 `1.4.5`，构建配置支持 Minecraft `1.21.1`、`1.21.4`、`1.21.8`、`1.21.10`、`1.21.11`、`26.1.2` 和 `26.2`。
 
 ## 文档
 
@@ -18,7 +18,7 @@ halfmasa（半马萨）是一个面向 Minecraft Fabric 客户端的 Xaero 与 M
 ## 功能概览
 
 - 绑定单人存档与 Xaero 路径点、地图目录，存档改名、移动或恢复备份后仍可复用原有数据。
-- 导入、导出和分享压缩的 `XWB1:` 路径点文本包，并按 Xaero 原生格式分批发送路径点。
+- 通过剪贴板或文本文件导入、导出 `XWB2:` 多维度路径点包，兼容旧版 `XWB1:`，并支持去重、撤回和反撤回。
 - 创造模式容器填充、创造搜索历史和可展开的合并创造物品条目。
 - JEI/REI 配方与用途查询历史，支持首次打开初始化、四角定位、原生列表避让和位置切换快捷键。
 - 截图复制到剪贴板、鞘翅飞行时间、夜视平滑淡出、资源包检查跳过、服务器图标缓存和地图物品预览。
@@ -29,13 +29,13 @@ halfmasa（半马萨）是一个面向 Minecraft Fabric 客户端的 Xaero 与 M
 
 ## 重要说明
 
-Fabric Loader `0.16.14+` 和 MaLiLib 是必需依赖。Xaero's Minimap、Xaero's World Map、Mod Menu、Carpet、REI 和 JEI 为可选联动模组，不会打进 halfmasa JAR；未安装对应模组时，相关兼容功能不会启用。
+Minecraft 1.21.x 需要 Fabric Loader `0.17.3+`，Minecraft 26.x 需要 Fabric Loader `0.18.4+`；MaLiLib 是必需依赖。Xaero's Minimap、Xaero's World Map、Mod Menu、Carpet、REI 和 JEI 为可选联动模组，不会打进 halfmasa JAR；未安装对应模组时，相关兼容功能不会启用。
 
 在默认 Windows 游戏目录中，全局配置位于绝对路径 `C:\Users\<username>\AppData\Roaming\.minecraft\config\halfmasa\`。搜索与查询历史、快捷键圆盘数据和服务器图标缓存使用该目录下的独立文件或子目录；跟随单人存档的持久化数据位于 `C:\Users\<username>\AppData\Roaming\.minecraft\saves\<world>\config\halfmasa\`。如果启动器使用自定义游戏目录，请将 `.minecraft` 替换为该绝对路径。模组是纯客户端工具，不要求服务器安装 halfmasa。
 
 ## 主要入口
 
-按 `X + H` 打开 halfmasa 配置界面，也可以从 Mod Menu 进入。配置页按“推荐”“路径点工具”“创造模式工具”“移植功能”“扩展”和“已停用功能”分类。动作项可直接点击“触发”，也可以绑定 MaLiLib 快捷键。
+按 `X + H` 打开 halfmasa 配置界面，也可以从 Mod Menu 进入。配置页按“推荐”“路径点工具”“创造模式工具”“移植功能”“扩展”和“已停用功能”分类。普通动作项可绑定 MaLiLib 快捷键；路径点导入、导出、去重和历史操作使用界面按钮触发。
 
 ## 构建
 

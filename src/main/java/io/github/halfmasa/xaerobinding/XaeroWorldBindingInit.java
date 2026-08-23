@@ -28,8 +28,9 @@ import io.github.halfmasa.xaerobinding.feature.ItemManagerHistoryOverlay;
 import io.github.halfmasa.xaerobinding.feature.bridging.BridgingAssist;
 import io.github.halfmasa.xaerobinding.gui.HalfMasaConfigScreen;
 import io.github.halfmasa.xaerobinding.gui.KeybindCustomizationScreen;
-import io.github.halfmasa.xaerobinding.waypoint.WaypointChatSender;
 import io.github.halfmasa.xaerobinding.waypoint.WaypointClientActions;
+import io.github.halfmasa.xaerobinding.waypoint.WaypointBundleService.ExportScope;
+import io.github.halfmasa.xaerobinding.binding.WorldBindingStore;
 
 import java.util.function.BooleanSupplier;
 
@@ -50,12 +51,23 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
             GuiBase.openGui(new HalfMasaConfigScreen());
             return true;
         });
-        registerTrigger(Configs.COPY_WAYPOINT_BUNDLE, WaypointClientActions::copyBundle);
-        registerTrigger(Configs.IMPORT_WAYPOINT_BUNDLE, WaypointClientActions::importBundle);
-        registerTrigger(Configs.SHARE_CURRENT_SET, WaypointClientActions::shareCurrentSet);
-        registerTrigger(Configs.SHARE_ALL_WAYPOINTS, WaypointClientActions::shareAll);
-        registerTrigger(Configs.DEDUPE_CURRENT_SET, WaypointClientActions::dedupeCurrentSet);
-        registerTrigger(Configs.DEDUPE_ALL_WAYPOINTS, WaypointClientActions::dedupeAll);
+        Configs.IMPORT_WAYPOINT_BUNDLE.setAction(0, WaypointClientActions::importBundle);
+        Configs.EXPORT_ALL_DIMENSIONS.setAction(0,
+                () -> WaypointClientActions.exportToClipboard(ExportScope.ALL_DIMENSIONS));
+        Configs.EXPORT_ALL_DIMENSIONS.setAction(1,
+                () -> WaypointClientActions.exportToFile(ExportScope.ALL_DIMENSIONS));
+        Configs.EXPORT_CURRENT_DIMENSION.setAction(0,
+                () -> WaypointClientActions.exportToClipboard(ExportScope.CURRENT_DIMENSION));
+        Configs.EXPORT_CURRENT_DIMENSION.setAction(1,
+                () -> WaypointClientActions.exportToFile(ExportScope.CURRENT_DIMENSION));
+        Configs.EXPORT_CURRENT_SET.setAction(0,
+                () -> WaypointClientActions.exportToClipboard(ExportScope.CURRENT_SET));
+        Configs.EXPORT_CURRENT_SET.setAction(1,
+                () -> WaypointClientActions.exportToFile(ExportScope.CURRENT_SET));
+        Configs.DEDUPE_WAYPOINTS.setAction(0, WaypointClientActions::dedupeCurrentSet);
+        Configs.DEDUPE_WAYPOINTS.setAction(1, WaypointClientActions::dedupeAll);
+        Configs.WAYPOINT_HISTORY.setAction(0, WaypointClientActions::undo);
+        Configs.WAYPOINT_HISTORY.setAction(1, WaypointClientActions::redo);
         registerTrigger(Configs.GIVE_FULL_INVENTORY, GiveFullInventory::onKeybind);
         registerTrigger(Configs.REPORT_ELYTRA_TIME, ElytraTimeService::reportEquippedElytra);
         registerTrigger(Configs.OPEN_KEYBIND_EDITOR, () -> {
@@ -72,6 +84,7 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         Configs.CJK_LATIN_SPACING.setValueChangeCallback(config -> Minecraft.getInstance().reloadResourcePacks());
         Configs.CJK_LATIN_SPACING_TRANSLATIONS.setValueChangeCallback(
                 config -> Minecraft.getInstance().reloadResourcePacks());
+        Configs.ENABLE_WORLD_BINDING.setValueChangeCallback(config -> WorldBindingStore.ensureCurrentWorldBinding());
         Configs.DISABLE_FLUID_RENDERING.setValueChangeCallback(config -> refreshWorldRendering());
         Configs.DISABLE_NON_SOURCE_FLUID_RENDERING.setValueChangeCallback(config -> refreshWorldRendering());
         Configs.ENTITY_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
@@ -91,7 +104,6 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         Configs.ITEM_MANAGER_RECIPE_HISTORY_ROWS.setValueChangeCallback(config -> ItemManagerHistoryOverlay.resetBounds());
         Configs.ITEM_MANAGER_RECIPE_HISTORY_POSITION.setValueChangeCallback(config -> ItemManagerHistoryOverlay.resetBounds());
         InputEventHandler.getKeybindManager().registerKeybindProvider(this);
-        TickHandler.getInstance().registerClientTickHandler(WaypointChatSender.getInstance());
         TickHandler.getInstance().registerClientTickHandler(KeybindPieManager.getInstance());
         TickHandler.getInstance().registerClientTickHandler(ImeService.getInstance());
         TickHandler.getInstance().registerClientTickHandler(CooldownAutoAttack.getInstance());
@@ -99,6 +111,7 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         TickHandler.getInstance().registerClientTickHandler(FastLoadingController.getInstance());
         TickHandler.getInstance().registerClientTickHandler(EntityRenderAggregation.getInstance());
         TickHandler.getInstance().registerClientTickHandler(ItemSearchHistoryService.getInstance());
+        TickHandler.getInstance().registerClientTickHandler(WorldBindingStore.getInstance());
     }
 
     @Override

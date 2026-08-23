@@ -17,29 +17,103 @@ import com.google.gson.GsonBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.world.level.storage.LevelResource;
+import fi.dy.masa.malilib.interfaces.IClientTickHandler;
 
 import io.github.halfmasa.xaerobinding.XaeroWorldBinding;
 import io.github.halfmasa.xaerobinding.config.Configs;
 
-public final class WorldBindingStore
+public final class WorldBindingStore implements IClientTickHandler
 {
     public static final String FILE_NAME = "xaero-world-binding.json";
     private static final String LEGACY_FILE_NAME = ".halfmasa-xaero-binding.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<Path, BindingFile> CACHE = new HashMap<>();
+    private static final WorldBindingStore INSTANCE = new WorldBindingStore();
+    private static String pendingMinimapRootId;
+    private static String pendingWorldMapRootId;
+    private static Path activeWorldRoot;
 
     private WorldBindingStore()
     {
     }
 
+    public static WorldBindingStore getInstance()
+    {
+        return INSTANCE;
+    }
+
     public static String resolveMinimapRoot(String original)
     {
-        return resolve(original, file -> file.minimapRootId, (file, value) -> file.minimapRootId = value);
+        rememberMinimapRoot(original);
+        return resolve(original, file -> firstNonBlank(file.minimapRootId, file.worldMapRootId),
+                (file, value) -> file.minimapRootId = value);
     }
 
     public static String resolveWorldMapRoot(String original)
     {
-        return resolve(original, file -> file.worldMapRootId, (file, value) -> file.worldMapRootId = value);
+        rememberWorldMapRoot(original);
+        return resolve(original, file -> firstNonBlank(file.worldMapRootId, file.minimapRootId),
+                (file, value) -> file.worldMapRootId = value);
+    }
+
+    @Override
+    public void onClientTick(Minecraft client)
+    {
+        ensureCurrentWorldBinding();
+    }
+
+    public static synchronized void ensureCurrentWorldBinding()
+    {
+        if (!Configs.ENABLE_WORLD_BINDING.getBooleanValue())
+        {
+            activeWorldRoot = null;
+            return;
+        }
+
+        Path worldRoot = getSingleplayerWorldRoot();
+        if (worldRoot == null)
+        {
+            activeWorldRoot = null;
+            return;
+        }
+
+        try
+        {
+            BindingFile binding = CACHE.computeIfAbsent(worldRoot, WorldBindingStore::readUnchecked);
+            boolean changed = false;
+            if (binding.minimapRootId == null || binding.minimapRootId.isBlank())
+            {
+                String minimapId = firstNonBlank(binding.worldMapRootId, pendingMinimapRootId);
+                if (minimapId != null)
+                {
+                    binding.minimapRootId = minimapId;
+                    changed = true;
+                }
+            }
+            if (binding.worldMapRootId == null || binding.worldMapRootId.isBlank())
+            {
+                String worldMapId = firstNonBlank(binding.minimapRootId, pendingWorldMapRootId);
+                if (worldMapId != null)
+                {
+                    binding.worldMapRootId = worldMapId;
+                    changed = true;
+                }
+            }
+            if (changed)
+            {
+                save(worldRoot, binding);
+            }
+            Path file = bindingFile(worldRoot);
+            if (Files.exists(file) && !worldRoot.equals(activeWorldRoot))
+            {
+                activeWorldRoot = worldRoot;
+                XaeroWorldBinding.LOGGER.info("Singleplayer Xaero binding file: {}", file);
+            }
+        }
+        catch (RuntimeException | IOException exception)
+        {
+            XaeroWorldBinding.LOGGER.error("Failed to initialize {} in {}", FILE_NAME, worldRoot, exception);
+        }
     }
 
     private static synchronized String resolve(
@@ -76,6 +150,31 @@ public final class WorldBindingStore
             XaeroWorldBinding.LOGGER.error("Failed to read or write {} in {}", FILE_NAME, worldRoot, exception);
             return original;
         }
+    }
+
+    private static synchronized void rememberMinimapRoot(String original)
+    {
+        if (original != null && !original.isBlank())
+        {
+            pendingMinimapRootId = original;
+        }
+    }
+
+    private static synchronized void rememberWorldMapRoot(String original)
+    {
+        if (original != null && !original.isBlank())
+        {
+            pendingWorldMapRootId = original;
+        }
+    }
+
+    private static String firstNonBlank(String preferred, String fallback)
+    {
+        if (preferred != null && !preferred.isBlank())
+        {
+            return preferred;
+        }
+        return fallback != null && !fallback.isBlank() ? fallback : null;
     }
 
     public static Path getSingleplayerWorldRoot()
