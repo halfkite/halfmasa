@@ -365,11 +365,7 @@ public final class WaypointBundleService
             {
                 return true;
             }
-            //#if MC >= 1.21.11
-            if (dimension.dimensionKey().identifier().equals(candidate.getContainer().getEquivalentDimId()))
-            //#else
-            //$$ if (dimension.dimensionKey().location().equals(candidate.getContainer().getEquivalentDimId()))
-            //#endif
+            if (dimensionKeyId(dimension.dimensionKey()).equals(equivalentDimensionId(candidate)))
             {
                 return true;
             }
@@ -707,7 +703,19 @@ public final class WaypointBundleService
 
     private static boolean isExportable(Waypoint waypoint)
     {
-        return !waypoint.isTemporary() && !waypoint.isServerWaypoint() && !waypoint.isThirdParty();
+        return !waypoint.isTemporary() && !waypoint.isServerWaypoint() && !isThirdParty(waypoint);
+    }
+
+    private static boolean isThirdParty(Waypoint waypoint)
+    {
+        try
+        {
+            return (boolean) waypoint.getClass().getMethod("isThirdParty").invoke(waypoint);
+        }
+        catch (ReflectiveOperationException ignored)
+        {
+            return false;
+        }
     }
 
     private static String dimensionId(MinimapWorld world)
@@ -719,16 +727,42 @@ public final class WaypointBundleService
         //#endif
     }
 
-    private static String equivalentDimensionId(MinimapWorld world)
+    private static String dimensionKeyId(ResourceKey<Level> dimensionKey)
     {
         //#if MC >= 1.21.11
-        Identifier location = world.getContainer().getEquivalentDimId();
+        return dimensionKey == null ? "" : dimensionKey.identifier().toString();
         //#else
-        //$$ ResourceLocation location = world.getContainer().getEquivalentDimId();
+        //$$ return dimensionKey == null ? "" : dimensionKey.location().toString();
         //#endif
-        return location == null || location.equals(MinimapWorldContainer.UNKNOWN_DIM_ID)
-                ? ""
-                : location.toString();
+    }
+
+    private static String equivalentDimensionId(MinimapWorld world)
+    {
+        try
+        {
+            Object location = world.getContainer().getClass().getMethod("getEquivalentDimId")
+                    .invoke(world.getContainer());
+            if (location == null)
+            {
+                return "";
+            }
+            try
+            {
+                Object unknown = MinimapWorldContainer.class.getField("UNKNOWN_DIM_ID").get(null);
+                if (location.equals(unknown))
+                {
+                    return "";
+                }
+            }
+            catch (ReflectiveOperationException ignored)
+            {
+            }
+            return location.toString();
+        }
+        catch (ReflectiveOperationException ignored)
+        {
+            return "";
+        }
     }
 
     private static String encode(String prefix, Object bundle) throws IOException

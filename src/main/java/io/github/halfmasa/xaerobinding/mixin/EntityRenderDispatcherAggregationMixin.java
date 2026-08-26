@@ -59,7 +59,7 @@ public abstract class EntityRenderDispatcherAggregationMixin
             state.isInvisible = true;
         }
     }
-    //#elseif MC >= 1.21.4
+    //#elseif MC >= 1.21.2
     //$$ @Inject(method = "render(Lnet/minecraft/world/entity/Entity;DDDFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"), cancellable = true)
     //$$ private <E extends Entity> void halfmasa_skipAggregatedModel(
     //$$         E entity, double x, double y, double z, float tickDelta,

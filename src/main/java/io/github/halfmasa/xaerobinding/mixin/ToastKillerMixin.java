@@ -5,7 +5,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 //#else
 //$$ import net.minecraft.client.gui.GuiGraphics;
 //#endif
-//#if MC >= 1.21.4
+//#if MC >= 1.21.2
 import net.minecraft.client.gui.components.toasts.ToastManager;
 //#else
 //$$ import net.minecraft.client.gui.components.toasts.ToastComponent;
@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
 
-//#if MC >= 1.21.4
+//#if MC >= 1.21.2
 @Mixin(ToastManager.class)
 //#else
 //$$ @Mixin(ToastComponent.class)

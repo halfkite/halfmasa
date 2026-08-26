@@ -57,7 +57,15 @@ public abstract class ServerSelectionListMixin extends ObjectSelectionList<Serve
     //$$ @Override
     //$$ protected void renderListItems(GuiGraphics guiGraphics, int mouseX, int mouseY, float tickDelta) {
     //#endif
-        draggable_lists$dragManager.renderListItems(guiGraphics, mouseX, mouseY, tickDelta);
+        if (isDragging()) {
+            draggable_lists$dragManager.renderListItems(guiGraphics, mouseX, mouseY, tickDelta);
+        } else {
+            //#if MC >= 26.1
+            super.extractListItems(guiGraphics, mouseX, mouseY, tickDelta);
+            //#else
+            //$$ super.renderListItems(guiGraphics, mouseX, mouseY, tickDelta);
+            //#endif
+        }
     }
 
     //#if MC >= 1.21.10

@@ -28,7 +28,7 @@ import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-//#if MC >= 1.21.8
+//#if MC >= 1.21.5
 import net.minecraft.nbt.NbtOps;
 //#endif
 import net.minecraft.nbt.TagParser;
@@ -189,7 +189,7 @@ public final class ItemSearchHistoryService implements IClientTickHandler
                     }
                     try
                     {
-                        //#if MC >= 1.21.8
+                        //#if MC >= 1.21.5
                         CompoundTag tag = TagParser.parseCompoundFully(element.getAsString());
                         ItemStack stack = ItemStack.CODEC.parse(
                                 this.provider.createSerializationContext(NbtOps.INSTANCE), tag).getOrThrow();

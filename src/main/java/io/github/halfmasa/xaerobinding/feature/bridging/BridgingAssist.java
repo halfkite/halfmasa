@@ -33,7 +33,7 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 //#if MC >= 1.21.8
 import net.minecraft.client.renderer.RenderPipelines;
 //#endif
-//#if MC >= 1.21.4 && MC < 1.21.11
+//#if MC >= 1.21.2 && MC < 1.21.11
 //$$ import net.minecraft.client.renderer.ShapeRenderer;
 //#endif
 import net.minecraft.core.BlockPos;
@@ -156,7 +156,7 @@ public final class BridgingAssist implements IClientTickHandler
         int y = (graphics.guiHeight() - INDICATOR_SIZE + 1) / 2 + (debugScreenVisible ? 15 : 0);
         //#if MC >= 1.21.8
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, INDICATOR_SIZE, INDICATOR_SIZE);
-        //#elseif MC >= 1.21.4
+        //#elseif MC >= 1.21.2
         //$$ graphics.blitSprite(RenderType::guiTextured, sprite, x, y, INDICATOR_SIZE, INDICATOR_SIZE);
         //#else
         //$$ graphics.blitSprite(sprite, x, y, INDICATOR_SIZE, INDICATOR_SIZE);
@@ -179,7 +179,7 @@ public final class BridgingAssist implements IClientTickHandler
     //$$     VertexConsumer vertices = bufferSource.getBuffer(RenderType.lines());
     //$$     ShapeRenderer.renderLineBox(poseStack.last(), vertices, box, red, green, blue, alpha);
     //$$ }
-    //#elseif MC >= 1.21.4
+    //#elseif MC >= 1.21.2
     //$$ public void renderOutline(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
     //$$         double cameraX, double cameraY, double cameraZ)
     //$$ {
@@ -303,7 +303,7 @@ public final class BridgingAssist implements IClientTickHandler
         List<DirectionScore> scores = new ArrayList<>();
         for (Direction facing : Direction.values())
         {
-            //#if MC >= 1.21.4
+            //#if MC >= 1.21.2
             Vec3 normal = facing.getUnitVec3();
             //#else
             //$$ Vec3 normal = Vec3.atLowerCornerOf(facing.getNormal());

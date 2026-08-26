@@ -61,7 +61,7 @@ public final class GiveFullInventory
             return false;
         }
 
-        //#if MC >= 1.21.8
+        //#if MC >= 1.21.5
         int selectedSlot = player.getInventory().getSelectedSlot();
         //#else
         //$$ int selectedSlot = player.getInventory().selected;

@@ -8,7 +8,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 //$$ import com.mojang.blaze3d.vertex.PoseStack;
 //$$ import net.minecraft.client.gui.GuiGraphics;
 //#endif
-//#if MC >= 1.21.4
+//#if MC >= 1.21.2
 import net.minecraft.client.renderer.state.MapRenderState;
 //#endif
 import net.minecraft.core.component.DataComponents;
@@ -49,7 +49,7 @@ public abstract class MapInSlotMixin
     //#else
     //$$ @Shadow public abstract PoseStack pose();
 //#endif
-    //#if MC >= 1.21.4
+    //#if MC >= 1.21.2
     @Unique private final MapRenderState halfmasa_mapState = new MapRenderState();
     //#endif
 
@@ -96,7 +96,7 @@ public abstract class MapInSlotMixin
         //$$ this.minecraft.getMapRenderer().extractRenderState(mapId, savedData, this.halfmasa_mapState);
         //$$ this.submitMapRenderState(this.halfmasa_mapState);
         //$$ this.pose().popMatrix();
-        //#elseif MC >= 1.21.4
+        //#elseif MC >= 1.21.2
         //$$ this.pose().pushPose();
         //$$ this.pose().translate(x, y, 200.0F);
         //$$ this.pose().scale(0.125F, 0.125F, 0.125F);

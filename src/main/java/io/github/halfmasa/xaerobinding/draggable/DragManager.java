@@ -11,7 +11,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 //$$ import net.minecraft.client.gui.GuiGraphics;
 //#endif
 import net.minecraft.client.gui.components.ObjectSelectionList;
-//#if MC >= 1.21.4
+//#if MC >= 1.21.2
 import net.minecraft.util.ARGB;
 //#else
 //$$ import net.minecraft.util.FastColor;
@@ -135,7 +135,7 @@ public class DragManager<T, E extends ObjectSelectionList.Entry<?>> {
         int entryWidth = dragList.draggable_lists$getRowWidth();
 
         float shaderColorValue = 191f / 255f;
-        //#if MC >= 1.21.4
+        //#if MC >= 1.21.2
         guiGraphics.fill(x - 1, y - 1, x + entryWidth - 2, y + entryHeight + 1, ARGB.color(128, 191, 191, 191));
         //#else
         //$$ guiGraphics.fill(x - 1, y - 1, x + entryWidth - 2, y + entryHeight + 1, FastColor.ARGB32.color(128, 191, 191, 191));
