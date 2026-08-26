@@ -253,6 +253,17 @@ jobs:
 
           "jar=$publishedPath" >> $env:GITHUB_OUTPUT
           "version=$env:RELEASE_TAG-mc$env:MC_VERSION" >> $env:GITHUB_OUTPUT
+          $gameVersions = switch ($env:MC_VERSION) {
+            '1.21-1.21.1' { @('1.21', '1.21.1') }
+            '1.21.2-1.21.3' { @('1.21.2', '1.21.3') }
+            '1.21.6-1.21.8' { @('1.21.6', '1.21.7', '1.21.8') }
+            '1.21.9-1.21.10' { @('1.21.9', '1.21.10') }
+            '26.1-26.1.2' { @('26.1', '26.1.1', '26.1.2') }
+            default { @($env:MC_VERSION) }
+          }
+          'game_versions<<EOF' >> $env:GITHUB_OUTPUT
+          $gameVersions >> $env:GITHUB_OUTPUT
+          'EOF' >> $env:GITHUB_OUTPUT
 
       - name: Publish to GitHub and CurseForge
         if: inputs.publish_curseforge
@@ -269,7 +280,7 @@ jobs:
           changelog-file: release-notes/RELEASE_NOTES.md
           loaders: fabric
           environment: client
-          game-versions: ${{ matrix.mc_version }}
+          game-versions: ${{ steps.artifact.outputs.game_versions }}
           java: ${{ startsWith(matrix.mc_version, '26.') && '25' || '21' }}
           dependencies: |
             malilib(required){curseforge:303119}
@@ -298,7 +309,7 @@ jobs:
           changelog-file: release-notes/RELEASE_NOTES.md
           loaders: fabric
           environment: client
-          game-versions: ${{ matrix.mc_version }}
+          game-versions: ${{ steps.artifact.outputs.game_versions }}
           java: ${{ startsWith(matrix.mc_version, '26.') && '25' || '21' }}
           dependencies: |
             malilib(required){modrinth:GcWjdA9I}
