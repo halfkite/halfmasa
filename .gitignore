@@ -22,3 +22,7 @@ backups/
 share/
 tmp_*.zip
 src/src/
+tmp-report-*/
+tmp_*/
+launch_out.log
+.zcode/

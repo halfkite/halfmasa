@@ -145,6 +145,9 @@ public final class KeybindCustomizationScreen extends GuiBase
                     this.store.reload();
                     this.initGui();
                 });
+        this.addButton(new ButtonGeneric(262, bottom, 86, 20,
+                StringUtils.translate("halfmasa.gui.keybind_editor.browse")),
+                (button, mouseButton) -> GuiBase.openGui(new KeymapBrowserScreen()));
     }
 
     //#if MC >= 1.21.11

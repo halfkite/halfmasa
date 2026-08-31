@@ -19,6 +19,12 @@ import io.github.halfmasa.xaerobinding.feature.ImeService;
 public final class ExternalBaseIME
 {
     private static final ExternalBaseIME INSTANCE = new ExternalBaseIME();
+    private static final boolean VANILLA_IME_SUPPORTED =
+            //#if MC >= 26.1
+            true;
+            //#else
+            //$$ false;
+            //#endif
     private boolean initialized;
     private boolean initializationAttempted;
 
@@ -36,6 +42,16 @@ public final class ExternalBaseIME
             return this.initialized;
         }
         this.initializationAttempted = true;
+
+        // The native window hook permanently breaks vanilla IME once installed,
+        // and toggling the feature off cannot undo it. Vanilla handles IME
+        // natively since 26.1, so never load the bridge on those versions.
+        if (VANILLA_IME_SUPPORTED)
+        {
+            XaeroWorldBinding.LOGGER.info(
+                    "ContingameIME is disabled on Minecraft 26.1+: the game natively supports input methods");
+            return false;
+        }
 
         String operatingSystem = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
         if (!operatingSystem.contains("windows"))

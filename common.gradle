@@ -68,8 +68,19 @@ configurations.configureEach {
 
 def javaVersion = unobfuscated ? JavaVersion.VERSION_25 : JavaVersion.VERSION_21
 group = rootProject.group
-version = "${rootProject.mod_version}+${rootProject.buildTimestamp}"
+def publicationVersion = project.findProperty('publication_version')
+if (publicationVersion != null && publicationVersion != rootProject.mod_version) {
+    throw new GradleException(
+            "publication_version=${publicationVersion} must match mod_version=${rootProject.mod_version}"
+    )
+}
+version = publicationVersion ?: "${rootProject.mod_version}+${rootProject.buildTimestamp}"
 base.archivesName = "${rootProject.mod_file_name}-${project.artifact_mc_version}"
+
+tasks.withType(org.gradle.api.tasks.bundling.AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
 
 loom {
     mixin {
@@ -115,6 +126,9 @@ processResources {
                 return null
             }
             if (project.mcVersion >= 26_01_00 && legacyReiLayoutMixins.any { line.contains(it) }) {
+                return null
+            }
+            if (project.mcVersion < 26_01_00 && line.contains('"ImePreeditOverlayMixin"')) {
                 return null
             }
             line.replace('{{COMPATIBILITY_LEVEL}}', properties.compatibility_level)

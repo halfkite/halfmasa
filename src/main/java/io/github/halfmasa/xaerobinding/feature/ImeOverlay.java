@@ -14,6 +14,7 @@ public final class ImeOverlay
     private static volatile String composition;
     private static volatile int compositionCaret;
     private static volatile String[] candidates;
+    private static volatile int focusedCandidate = -1;
     private static volatile boolean alphaMode;
     private static volatile long showAlphaUntil;
     private static volatile int caretX;
@@ -37,7 +38,13 @@ public final class ImeOverlay
 
     public static void setCandidates(String[] values)
     {
+        setCandidates(values, -1);
+    }
+
+    public static void setCandidates(String[] values, int focused)
+    {
         candidates = values == null ? null : Arrays.copyOf(values, values.length);
+        focusedCandidate = focused;
     }
 
     public static void setAlphaMode(boolean alpha)
@@ -60,6 +67,7 @@ public final class ImeOverlay
     {
         composition = null;
         candidates = null;
+        focusedCandidate = -1;
         showAlphaUntil = 0L;
     }
 
@@ -69,7 +77,7 @@ public final class ImeOverlay
     //$$ public static void render(GuiGraphics graphics)
     //#endif
     {
-        if (!ImeService.getInstance().isNativeActive())
+        if (!ImeService.getInstance().isNativeActive() && !Ime261Compat.shouldRenderOverlayLayer())
         {
             return;
         }
@@ -108,35 +116,40 @@ public final class ImeOverlay
         int candidateY = y + compositionHeight;
         if (currentCandidates != null && currentCandidates.length > 0)
         {
-            StringBuilder line = new StringBuilder();
+            int selected = focusedCandidate;
+            int boxX = Math.min(x, Math.max(0, client.getWindow().getGuiScaledWidth() - 20));
+            int contentWidth = -8;
             for (int index = 0; index < currentCandidates.length; index++)
             {
-                if (index > 0)
-                {
-                    line.append("  ");
-                }
-                line.append(index + 1).append(' ').append(currentCandidates[index]);
+                contentWidth += client.font.width((index + 1) + " " + currentCandidates[index]) + 8;
             }
-            String text = line.toString();
-            int width = client.font.width(text) + 8;
-            int drawX = Math.min(x, Math.max(0, client.getWindow().getGuiScaledWidth() - width));
-            graphics.fill(drawX, candidateY, drawX + width, candidateY + client.font.lineHeight + 6, 0xE0202020);
-            //#if MC >= 26.1
-            graphics.text(client.font, text, drawX + 4, candidateY + 3, 0xFFFFFFFF, false);
-            //#else
-            //$$ graphics.drawString(client.font, text, drawX + 4, candidateY + 3, 0xFFFFFFFF, false);
-            //#endif
+            int boxRight = Math.min(boxX + 8 + contentWidth, client.getWindow().getGuiScaledWidth());
+            graphics.fill(boxX, candidateY, boxRight, candidateY + client.font.lineHeight + 6, 0xE0202020);
+            int drawX = boxX + 4;
+            int lineY = candidateY + 3;
+            for (int index = 0; index < currentCandidates.length; index++)
+            {
+                String segment = (index + 1) + " " + currentCandidates[index];
+                int color = index == selected ? 0xFFFFD700 : 0xFFFFFFFF;
+                //#if MC >= 26.1
+                graphics.text(client.font, segment, drawX, lineY, color, false);
+                //#else
+                //$$ graphics.drawString(client.font, segment, drawX, lineY, color, false);
+                //#endif
+                drawX += client.font.width(segment) + 8;
+            }
         }
 
-        if (showAlphaUntil > System.currentTimeMillis())
+        String badge = showAlphaUntil > System.currentTimeMillis() ? (alphaMode ? "A" : "中")
+                : Ime261Compat.getBadgeText();
+        if (badge != null)
         {
-            String mode = alphaMode ? "A" : "中";
             int modeX = Math.max(0, x - 18);
             graphics.fill(modeX, y, modeX + 16, y + 16, 0xE0202020);
             //#if MC >= 26.1
-            graphics.text(client.font, mode, modeX + 4, y + 4, 0xFFFFFFFF, false);
+            graphics.text(client.font, badge, modeX + 4, y + 4, 0xFFFFFFFF, false);
             //#else
-            //$$ graphics.drawString(client.font, mode, modeX + 4, y + 4, 0xFFFFFFFF, false);
+            //$$ graphics.drawString(client.font, badge, modeX + 4, y + 4, 0xFFFFFFFF, false);
             //#endif
         }
 

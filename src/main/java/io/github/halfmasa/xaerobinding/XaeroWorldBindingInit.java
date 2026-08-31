@@ -28,6 +28,7 @@ import io.github.halfmasa.xaerobinding.feature.ItemManagerHistoryOverlay;
 import io.github.halfmasa.xaerobinding.feature.bridging.BridgingAssist;
 import io.github.halfmasa.xaerobinding.gui.HalfMasaConfigScreen;
 import io.github.halfmasa.xaerobinding.gui.KeybindCustomizationScreen;
+import io.github.halfmasa.xaerobinding.gui.KeymapBrowserScreen;
 import io.github.halfmasa.xaerobinding.waypoint.WaypointClientActions;
 import io.github.halfmasa.xaerobinding.waypoint.WaypointBundleService.ExportScope;
 import io.github.halfmasa.xaerobinding.binding.WorldBindingStore;
@@ -74,10 +75,17 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
             GuiBase.openGui(new KeybindCustomizationScreen());
             return true;
         });
+        registerTrigger(Configs.OPEN_KEYMAP_BROWSER, () -> {
+            GuiBase.openGui(new KeymapBrowserScreen());
+            return true;
+        });
         registerTrigger(Configs.RELOAD_KEYBIND_DATA, KeybindCustomizationStore.getInstance()::reload);
         registerTrigger(Configs.CLEAR_SERVER_ICON_CACHE, ServerIconCache::requestClear);
         registerTrigger(Configs.CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION, ItemManagerHistoryOverlay::cyclePosition);
         Configs.CONTINGAME_IME.getKeybind().setCallback((action, key) -> ImeService.getInstance().onModeHotkey());
+        //#if MC >= 26.1
+        Configs.CONTINGAME_IME.setComment("halfmasa.config.ported.comment.contingameIme.mc261");
+        //#endif
         Configs.KEEP_MOD_MENU_SCROLL.setValueChangeCallback(config -> {
             if (!Configs.KEEP_MOD_MENU_SCROLL.getBooleanValue()) ConfigScrollMemory.clear();
         });

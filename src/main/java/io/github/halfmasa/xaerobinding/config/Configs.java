@@ -285,6 +285,8 @@ public final class Configs implements IConfigHandler
             "openKeybindPieEditor", "").applyTranslationKey(PORTED_KEY);
     public static final ActionHotkey RELOAD_KEYBIND_DATA = new ActionHotkey(
             "reloadKeybindPieData", "").applyTranslationKey(PORTED_KEY);
+    public static final ActionHotkey OPEN_KEYMAP_BROWSER = new ActionHotkey(
+            "openKeymapBrowser", "").applyTranslationKey(PORTED_KEY);
     public static final ConfigBooleanHotkeyed CLICK_AND_SEND = new ConfigBooleanHotkeyed(
             "clickAndSend", false, "").apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed CJK_LATIN_SPACING = new ConfigBooleanHotkeyed(
@@ -327,6 +329,14 @@ public final class Configs implements IConfigHandler
             "imeAutoReplaceSlash", true).apply(PORTED_KEY);
     public static final ConfigStringList IME_SLASH_CHARACTERS = new ConfigStringList(
             "imeSlashCharacters", ImmutableList.of("、")).apply(PORTED_KEY);
+    //#if MC >= 26.1
+    public static final ConfigBoolean IME_STATUS_INDICATOR = new ConfigBoolean(
+            "imeStatusIndicator", true).apply(PORTED_KEY);
+    public static final ConfigOptionList IME_RENDER_STYLE = new ConfigOptionList(
+            "imeRenderStyle", ImeStyle.VANILLA).apply(PORTED_KEY);
+    public static final ConfigBoolean IME_HIDE_VANILLA_PREEDIT = new ConfigBoolean(
+            "imeHideVanillaPreedit", false).apply(PORTED_KEY);
+    //#endif
     public static final ConfigBooleanHotkeyed CONDENSED_CREATIVE = new ConfigBooleanHotkeyed(
             "condensedCreative", false, "").apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed KEEP_MOD_MENU_SCROLL = new ConfigBooleanHotkeyed(
@@ -403,11 +413,18 @@ public final class Configs implements IConfigHandler
             KEYBIND_GRADATION,
             KEYBIND_ANIMATE,
             OPEN_KEYBIND_EDITOR,
-            RELOAD_KEYBIND_DATA);
+            RELOAD_KEYBIND_DATA,
+            OPEN_KEYMAP_BROWSER);
     private static final List<IConfigBase> IME_CHILDREN = List.of(
             IME_DISABLE_IN_COMMAND_MODE,
             IME_AUTO_REPLACE_SLASH,
-            IME_SLASH_CHARACTERS);
+            IME_SLASH_CHARACTERS
+//#if MC >= 26.1
+            , IME_STATUS_INDICATOR
+            , IME_RENDER_STYLE
+            , IME_HIDE_VANILLA_PREEDIT
+//#endif
+            );
     private static final List<IConfigBase> FAST_SCROLLING_CHILDREN = List.of(
             FAST_SCROLLING_PRIMARY_ENABLED,
             FAST_SCROLLING_PRIMARY_HOTKEY,
@@ -670,6 +687,7 @@ public final class Configs implements IConfigHandler
             KEYBIND_PIE_MENU,
             OPEN_KEYBIND_EDITOR,
             RELOAD_KEYBIND_DATA,
+            OPEN_KEYMAP_BROWSER,
             CLICK_AND_SEND,
             CJK_LATIN_SPACING,
             MAP_IN_SLOT,

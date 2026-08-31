@@ -83,7 +83,7 @@ public final class KeybindPieManager implements IClientTickHandler
 
         Minecraft client = Minecraft.getInstance();
         Screen screen = MinecraftClientCompat.getScreen(client);
-        if (screen instanceof KeybindPieScreen)
+        if (screen instanceof KeybindPieScreen || !wouldTriggerNow(client, screen))
         {
             return false;
         }
@@ -116,8 +116,54 @@ public final class KeybindPieManager implements IClientTickHandler
         {
             return true;
         }
-        Screen screen = MinecraftClientCompat.getScreen(Minecraft.getInstance());
+        Minecraft client = Minecraft.getInstance();
+        Screen screen = MinecraftClientCompat.getScreen(client);
+        if (!wouldTriggerNow(client, screen))
+        {
+            return false;
+        }
         return (this.activeKey != null && this.activeKey.equals(key)) || mappingsFor(key, screen).size() > 1;
+    }
+
+    /**
+     * Whether a key press would actually reach and actuate bindings in the
+     * current situation. Vanilla dispatches to KeyMapping here (this is called
+     * from KeyMapping.set/click), but the bindings only act while in a world
+     * with no text field stealing the key as typing input.
+     */
+    public static boolean wouldTriggerNow(Minecraft client, Screen screen)
+    {
+        if (screen != null)
+        {
+            return !isTypingContext(screen);
+        }
+        return client.player != null;
+    }
+
+    private static boolean isTypingContext(Screen screen)
+    {
+        if (ImeService.getInstance().hasFocusTarget())
+        {
+            return true;
+        }
+        return focusedIsEditable(screen.getFocused());
+    }
+
+    private static boolean focusedIsEditable(net.minecraft.client.gui.components.events.GuiEventListener listener)
+    {
+        if (listener == null)
+        {
+            return false;
+        }
+        if (listener instanceof net.minecraft.client.gui.components.EditBox)
+        {
+            return true;
+        }
+        if (listener instanceof net.minecraft.client.gui.components.events.ContainerEventHandler container)
+        {
+            return focusedIsEditable(container.getFocused());
+        }
+        return false;
     }
 
     public void completeSelection(KeyMapping mapping, boolean clickHold)

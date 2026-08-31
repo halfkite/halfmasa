@@ -37,11 +37,13 @@ public abstract class OnlineServerEntryMixin extends ObjectSelectionList.Entry<S
     //$$ public abstract void render(GuiGraphics guiGraphics, int i, int j, int k, int l, int m, int n, int o, boolean bl, float f);
     //#endif
 
-    @Shadow
-    @Final
-    ServerSelectionList field_19117;
-
+    // field_19117 is an intermediary-era field name that no longer exists in 26.1+,
+    // where the parent list is only reachable as the synthetic this$0 field.
     //#if MC < 1.21.10
+    //$$ @Shadow
+    //$$ @Final
+    //$$ ServerSelectionList field_19117;
+    //$$
     //$$ @Shadow
     //$$ public abstract boolean mouseClicked(double d, double e, int i);
     //#endif

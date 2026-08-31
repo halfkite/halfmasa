@@ -172,9 +172,16 @@ public final class ImeService implements IClientTickHandler
         return this.nativeActive;
     }
 
+    public boolean hasFocusTarget()
+    {
+        return this.focusedTarget != null;
+    }
+
     @Override
     public void onClientTick(Minecraft client)
     {
+        Ime261Compat.onClientTick(client);
+
         boolean master = Configs.CONTINGAME_IME.getBooleanValue();
         if (master != this.previousMaster)
         {

@@ -1,317 +1,612 @@
 name: Release halfmasa
+run-name: Publish ${{ github.event.release.tag_name || inputs.tag }}
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: Release version; must match mod_version, for example 1.1.5
+      tag:
+        description: 'Existing published GitHub Release tag'
         required: true
         type: string
-      target_subproject:
-        description: Minecraft version to publish, or all
+      destinations:
+        description: 'External platform repair target'
         required: false
         type: choice
         default: all
         options:
           - all
-          - '1.21-1.21.1'
-          - '1.21.2-1.21.3'
-          - '1.21.4'
-          - '1.21.5'
-          - '1.21.6-1.21.8'
-          - '1.21.9-1.21.10'
-          - '1.21.11'
-          - '26.1-26.1.2'
-          - '26.2'
-      previous_tag:
-        description: Previous tag for the changelog; leave empty to detect it
+          - modrinth
+          - curseforge
+      versions:
+        description: 'Build projects to repair, comma-separated, or all'
         required: false
         type: string
-      release_type:
-        description: Formal release removes build timestamps from public JAR names
+        default: all
+      legacy_label_cleanup:
+        description: 'Legacy CF:<id> Asset label cleanup (run one canary before confirmed batch)'
         required: false
         type: choice
-        default: release
+        default: none
         options:
-          - release
-          - beta
-      publish_modrinth:
-        description: Publish this release to Modrinth
-        required: false
-        type: boolean
-        default: true
-      publish_curseforge:
-        description: Publish this release to CurseForge
-        required: false
-        type: boolean
-        default: true
+          - none
+          - canary
+          - confirmed
 
 permissions:
+  actions: read
   contents: write
 
-env:
-  RELEASE_TAG: ${{ inputs.release_tag }}
-  RELEASE_TYPE: ${{ inputs.release_type }}
+concurrency:
+  group: publish-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
 
 jobs:
-  validate:
-    name: Validate release version
+  inspect:
+    name: Inspect existing GitHub Release
     runs-on: ubuntu-latest
     outputs:
-      release_tag: ${{ steps.version.outputs.release_tag }}
+      tag: ${{ steps.context.outputs.tag }}
+      commit: ${{ steps.context.outputs.commit }}
+      prerelease: ${{ steps.context.outputs.prerelease }}
+      matrix: ${{ steps.context.outputs.matrix }}
+      versions: ${{ steps.context.outputs.versions }}
+      all_versions: ${{ steps.context.outputs.all_versions }}
+      is_all_versions: ${{ steps.context.outputs.is_all_versions }}
+      publisher_commit: ${{ steps.context.outputs.publisher_commit }}
     steps:
-      - name: Check out source
+      - name: Select existing Release tag
+        id: release
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          DESTINATIONS: ${{ inputs.destinations }}
+          LEGACY_LABEL_CLEANUP: ${{ inputs.legacy_label_cleanup }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          tag="$EVENT_TAG"
+          if [[ "$EVENT_NAME" == 'workflow_dispatch' ]]; then
+            tag="$INPUT_TAG"
+            if [[ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]]; then
+              echo "Manual repair runs must be dispatched from the default branch $DEFAULT_BRANCH" >&2
+              exit 1
+            fi
+            if [[ "$LEGACY_LABEL_CLEANUP" != 'none' && "$DESTINATIONS" == 'modrinth' ]]; then
+              echo 'Legacy Asset label cleanup requires a CurseForge repair destination' >&2
+              exit 1
+            fi
+          fi
+          if [[ -z "$tag" ]]; then
+            echo 'Release tag is empty' >&2
+            exit 1
+          fi
+          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Check out publisher helper
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || format('refs/tags/{0}', steps.release.outputs.tag) }}
+          fetch-depth: 1
+          path: publisher
 
-      - name: Match tag to internal mod version
-        id: version
+      - name: Check out Release source
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ steps.release.outputs.tag }}
+          fetch-depth: 1
+          path: release-source
+
+      - name: Read GitHub Release metadata
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release view "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json tagName,name,body,isDraft,isPrerelease,targetCommitish \
+            > release.json
+
+      - name: Validate Release and publication metadata
+        id: context
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          TARGET_VERSIONS: ${{ github.event_name == 'workflow_dispatch' && inputs.versions || 'all' }}
+        run: |
+          set -euo pipefail
+          commit="$(git -C release-source rev-parse HEAD)"
+          publisher_commit="$(git -C publisher rev-parse HEAD)"
+          python publisher/scripts/python/release_metadata.py inspect-release \
+            --repo-root release-source \
+            --release-json release.json \
+            --tag "$RELEASE_TAG" \
+            --commit "$commit" \
+            --target "$TARGET_VERSIONS" \
+            --output release-context.json \
+            --github-output "$GITHUB_OUTPUT"
+          printf 'publisher_commit=%s\n' "$publisher_commit" >> "$GITHUB_OUTPUT"
+
+          if [[ "$GITHUB_EVENT_NAME" == 'workflow_dispatch' ]]; then
+            prerelease="$(python -c "import json; print(str(json.load(open('release-context.json'))['prerelease']).lower())")"
+            if [[ "$prerelease" == 'true' ]]; then
+              echo 'External platform repair is disabled for prereleases' >&2
+              exit 1
+            fi
+          fi
+
+      - name: Upload immutable Release context
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-context
+          path: release-context.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 14
+
+  build:
+    name: Build Release tag
+    needs: inspect
+    if: ${{ github.event_name == 'release' }}
+    uses: ./.github/workflows/build.yml
+    with:
+      target_subproject: all
+      ref: ${{ needs.inspect.outputs.commit }}
+      release_version: ${{ needs.inspect.outputs.tag }}
+
+  package-release:
+    name: Package built Release JARs
+    needs: [inspect, build]
+    if: ${{ github.event_name == 'release' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out publisher helper
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.inspect.outputs.publisher_commit }}
+          fetch-depth: 1
+          path: publisher
+
+      - name: Download Release context
+        uses: actions/download-artifact@v4
+        with:
+          name: release-context
+          path: release-context
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: build-*
+          path: build-artifacts
+
+      - name: Validate and name final JARs
         shell: bash
         run: |
           set -euo pipefail
-          mod_version="$(sed -n 's/^mod_version=//p' gradle.properties | head -n 1 | tr -d '\r')"
-          if [[ -z "$mod_version" ]]; then
-            echo 'mod_version is missing from gradle.properties' >&2
-            exit 1
-          fi
-          if [[ "$RELEASE_TAG" != "$mod_version" ]]; then
-            echo "Release tag '$RELEASE_TAG' must exactly match mod_version '$mod_version'." >&2
-            exit 1
-          fi
-          echo "release_tag=$mod_version" >> "$GITHUB_OUTPUT"
+          python publisher/scripts/python/release_metadata.py assemble-build \
+            --context release-context/release-context.json \
+            --artifacts-root build-artifacts \
+            --build-versions '${{ needs.build.outputs.versions }}' \
+            --build-commit '${{ needs.build.outputs.commit }}' \
+            --output-dir release-package
 
-  build:
-    name: Build release artifacts
-    needs: validate
-    uses: ./.github/workflows/build.yml
-    with:
-      target_subproject: ${{ inputs.target_subproject || 'all' }}
-      ref: ${{ github.sha }}
-
-  credentials:
-    name: Verify publishing credentials
-    needs: [validate, build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verify Modrinth access
-        if: inputs.publish_modrinth
-        env:
-          MODRINTH_TOKEN: ${{ secrets.MODRINTH_API_TOKEN }}
-          MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID || '9ZHJ1Ue9' }}
-        run: |
-          set -euo pipefail
-          test -n "$MODRINTH_TOKEN"
-          curl --fail --silent --show-error \
-            --header "Authorization: $MODRINTH_TOKEN" \
-            --header 'User-Agent: halfkite/halfmasa release-workflow' \
-            https://api.modrinth.com/v2/user >/dev/null
-          curl --fail --silent --show-error \
-            --header "Authorization: $MODRINTH_TOKEN" \
-            --header 'User-Agent: halfkite/halfmasa release-workflow' \
-            "https://api.modrinth.com/v2/project/$MODRINTH_PROJECT_ID" >/dev/null
-
-      - name: Verify CurseForge upload access
-        if: inputs.publish_curseforge
-        env:
-          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
-        run: |
-          set -euo pipefail
-          test -n "$CURSEFORGE_TOKEN"
-          curl --fail --silent --show-error \
-            --header "X-Api-Token: $CURSEFORGE_TOKEN" \
-            'https://minecraft.curseforge.com/api/game/version-types?cache=true' >/dev/null
-
-  prepare:
-    name: Create release and changelog
-    needs: [validate, build, credentials]
-    runs-on: ubuntu-latest
-    outputs:
-      release_tag: ${{ steps.release.outputs.tag }}
-    steps:
-      - name: Check out source
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Generate short changelog
-        env:
-          PREVIOUS_TAG: ${{ inputs.previous_tag }}
-        run: |
-          set -euo pipefail
-          args=(--head "$GITHUB_SHA" --tag "$RELEASE_TAG" --output RELEASE_NOTES.md)
-          if [[ -n "$PREVIOUS_TAG" ]]; then
-            args+=(--previous-tag "$PREVIOUS_TAG")
-          fi
-          python scripts/python/release_notes.py "${args[@]}"
-
-      - name: Create or verify tag and GitHub Release
-        id: release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-
-          if git show-ref --tags --verify --quiet "refs/tags/$RELEASE_TAG"; then
-            existing_sha="$(git rev-list -n 1 "refs/tags/$RELEASE_TAG")"
-            if [[ "$existing_sha" != "$GITHUB_SHA" ]]; then
-              echo "Tag $RELEASE_TAG already points to $existing_sha instead of $GITHUB_SHA." >&2
-              exit 1
-            fi
-          else
-            git tag -a "$RELEASE_TAG" "$GITHUB_SHA" -m "Release $RELEASE_TAG"
-            git push origin "$RELEASE_TAG"
-          fi
-
-          prerelease=false
-          if [[ "$RELEASE_TYPE" == 'beta' ]]; then
-            prerelease=true
-          fi
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release edit "$RELEASE_TAG" \
-              --title "$RELEASE_TAG" \
-              --notes-file RELEASE_NOTES.md \
-              --prerelease="$prerelease"
-          else
-            args=("$RELEASE_TAG" --target "$GITHUB_SHA" --title "$RELEASE_TAG" --notes-file RELEASE_NOTES.md)
-            if [[ "$prerelease" == 'true' ]]; then
-              args+=(--prerelease)
-            else
-              args+=(--latest)
-            fi
-            gh release create "${args[@]}"
-          fi
-          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Upload release notes for publishers
+      - name: Upload validated Release package
         uses: actions/upload-artifact@v4
         with:
-          name: release-notes
-          path: RELEASE_NOTES.md
+          name: release-package
+          path: release-package
           if-no-files-found: error
+          overwrite: true
           retention-days: 14
 
-  publish:
-    name: Publish Minecraft ${{ matrix.mc_version }}
-    needs: [validate, build, prepare]
+  package-dispatch:
+    name: Collect existing GitHub Release Assets
+    needs: inspect
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out current publisher helper
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.inspect.outputs.publisher_commit }}
+          fetch-depth: 1
+          path: publisher
+
+      - name: Download Release context
+        uses: actions/download-artifact@v4
+        with:
+          name: release-context
+          path: release-context
+
+      - name: Download existing GitHub Release JARs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.inspect.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p existing-assets
+          gh release download "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "halfmasa-$RELEASE_TAG-mc*.jar" \
+            --dir existing-assets
+
+      - name: Validate existing Release Assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python publisher/scripts/python/release_metadata.py assemble-assets \
+            --context release-context/release-context.json \
+            --assets-root existing-assets \
+            --output-dir release-package
+
+      - name: Upload validated repair package
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-package
+          path: release-package
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 14
+
+  publish-github:
+    name: Publish GitHub Release Assets
+    needs: [inspect, package-release]
+    if: ${{ github.event_name == 'release' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out publisher helper
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.inspect.outputs.publisher_commit }}
+          fetch-depth: 1
+          path: publisher
+
+      - name: Download validated Release package
+        uses: actions/download-artifact@v4
+        with:
+          name: release-package
+          path: release-package
+
+      - name: Upload or verify GitHub Release Assets
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.inspect.outputs.tag }}
+        run: |
+          set -euo pipefail
+          python publisher/scripts/python/github_release_assets.py \
+            --manifest release-package/release-manifest.json \
+            --repository "$GITHUB_REPOSITORY" \
+            --tag "$RELEASE_TAG"
+
+  publish-modrinth:
+    name: Publish Modrinth Minecraft ${{ matrix.mc_version }}
+    needs: [inspect, package-release, package-dispatch, publish-github]
+    if: >-
+      ${{
+        always() &&
+        needs.inspect.result == 'success' &&
+        needs.inspect.outputs.prerelease != 'true' &&
+        (
+          (
+            github.event_name == 'release' &&
+            needs.package-release.result == 'success' &&
+            needs.publish-github.result == 'success'
+          ) ||
+          (
+            github.event_name == 'workflow_dispatch' &&
+            needs.package-dispatch.result == 'success' &&
+            (inputs.destinations == 'all' || inputs.destinations == 'modrinth')
+          )
+        )
+      }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       max-parallel: 1
-      matrix:
-        mc_version: ${{ inputs.target_subproject == 'all' && fromJSON('["1.21-1.21.1","1.21.2-1.21.3","1.21.4","1.21.5","1.21.6-1.21.8","1.21.9-1.21.10","1.21.11","26.1-26.1.2","26.2"]') || fromJSON(format('["{0}"]', inputs.target_subproject)) }}
-
+      matrix: ${{ fromJSON(needs.inspect.outputs.matrix) }}
     steps:
-      - name: Download build artifact
+      - name: Check out publisher helper
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.inspect.outputs.publisher_commit }}
+          fetch-depth: 1
+          path: publisher
+
+      - name: Download validated Release package
         uses: actions/download-artifact@v4
         with:
-          name: build-${{ matrix.mc_version }}
-          path: release-assets/${{ matrix.mc_version }}
+          name: release-package
+          path: release-package
 
-      - name: Download release notes
-        uses: actions/download-artifact@v4
-        with:
-          name: release-notes
-          path: release-notes
-
-      - name: Verify and prepare public JAR
-        id: artifact
-        shell: pwsh
+      - name: Create or reconcile tag-only Modrinth Version
+        shell: bash
         env:
-          MC_VERSION: ${{ matrix.mc_version }}
-          RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
-          RELEASE_TYPE: ${{ inputs.release_type }}
+          MODRINTH_API_TOKEN: ${{ secrets.MODRINTH_API_TOKEN }}
+          MODRINTH_PROJECT: ${{ vars.MODRINTH_PROJECT_ID || 'TO-BE-CONFIGURED' }}
         run: |
-          $ErrorActionPreference = 'Stop'
-          $dir = Join-Path 'release-assets' $env:MC_VERSION
-          $source = @(Get-ChildItem $dir -Filter '*.jar')
-          if ($source.Count -ne 1) {
-            throw "Expected exactly one downloaded JAR for $env:MC_VERSION, found $($source.Count)"
-          }
-          $manifestPath = Join-Path $dir "build-manifest-$env:MC_VERSION.json"
-          if (-not (Test-Path $manifestPath)) {
-            throw "Missing build manifest for $env:MC_VERSION"
-          }
-          $manifest = Get-Content -Raw $manifestPath | ConvertFrom-Json
-          $actualHash = (Get-FileHash $source[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($manifest.sha256 -ne $actualHash) {
-            throw "SHA-256 mismatch for $($source[0].Name)"
-          }
-          if ($manifest.mod_version -ne $env:RELEASE_TAG) {
-            throw "Artifact version '$($manifest.mod_version)' does not match release '$env:RELEASE_TAG'"
-          }
+          set -euo pipefail
+          python publisher/scripts/python/modrinth_publish.py \
+            --manifest release-package/release-manifest.json \
+            --project "$MODRINTH_PROJECT" \
+            --build-project '${{ matrix.mc_version }}'
 
-          if ($env:RELEASE_TYPE -eq 'release') {
-            $publishedName = "halfmasa-fabric-$env:RELEASE_TAG-mc$env:MC_VERSION.jar"
-            $publishedPath = Join-Path $dir $publishedName
-            Move-Item $source[0].FullName $publishedPath
-          } else {
-            $publishedPath = $source[0].FullName
-          }
-
-          "jar=$publishedPath" >> $env:GITHUB_OUTPUT
-          "version=$env:RELEASE_TAG-mc$env:MC_VERSION" >> $env:GITHUB_OUTPUT
-          $gameVersions = switch ($env:MC_VERSION) {
-            '1.21-1.21.1' { @('1.21', '1.21.1') }
-            '1.21.2-1.21.3' { @('1.21.2', '1.21.3') }
-            '1.21.6-1.21.8' { @('1.21.6', '1.21.7', '1.21.8') }
-            '1.21.9-1.21.10' { @('1.21.9', '1.21.10') }
-            '26.1-26.1.2' { @('26.1', '26.1.1', '26.1.2') }
-            default { @($env:MC_VERSION) }
-          }
-          'game_versions<<EOF' >> $env:GITHUB_OUTPUT
-          $gameVersions >> $env:GITHUB_OUTPUT
-          'EOF' >> $env:GITHUB_OUTPUT
-
-      - name: Publish to GitHub and CurseForge
-        if: inputs.publish_curseforge
-        uses: Kira-NT/mc-publish@v3.3.1
+  curseforge-state-audit:
+    name: Audit all selected CurseForge publication state
+    needs: [inspect, package-release, package-dispatch, publish-github]
+    if: >-
+      ${{
+        always() &&
+        needs.inspect.result == 'success' &&
+        needs.inspect.outputs.prerelease != 'true' &&
+        (
+          (
+            github.event_name == 'release' &&
+            needs.package-release.result == 'success' &&
+            needs.publish-github.result == 'success'
+          ) ||
+          (
+            github.event_name == 'workflow_dispatch' &&
+            needs.package-dispatch.result == 'success' &&
+            (inputs.destinations == 'all' || inputs.destinations == 'curseforge')
+          )
+        )
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out publisher helper
+        uses: actions/checkout@v4
         with:
-          curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID || '1661919' }}
-          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          github-token: ${{ github.token }}
-          github-tag: ${{ needs.prepare.outputs.release_tag }}
-          files: ${{ steps.artifact.outputs.jar }}
-          name: ${{ needs.validate.outputs.release_tag }}
-          version: ${{ steps.artifact.outputs.version }}
-          version-type: ${{ inputs.release_type }}
-          changelog-file: release-notes/RELEASE_NOTES.md
-          loaders: fabric
-          environment: client
-          game-versions: ${{ steps.artifact.outputs.game_versions }}
-          java: ${{ startsWith(matrix.mc_version, '26.') && '25' || '21' }}
-          dependencies: |
-            malilib(required){curseforge:303119}
-          retry-attempts: 3
-          retry-delay: 15000
+          ref: ${{ needs.inspect.outputs.publisher_commit }}
+          fetch-depth: 1
+          path: publisher
 
-      - name: Publish to GitHub
-        if: ${{ !inputs.publish_curseforge }}
+      - name: Download validated Release package
+        uses: actions/download-artifact@v4
+        with:
+          name: release-package
+          path: release-package
+
+      - name: Audit every selected CurseForge state entry
+        shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
-          RELEASE_JAR: ${{ steps.artifact.outputs.jar }}
-          GH_REPOSITORY: ${{ github.repository }}
-        run: gh release upload "$RELEASE_TAG" "$RELEASE_JAR" --clobber --repo "$GH_REPOSITORY"
+          GITHUB_TOKEN: ${{ github.token }}
+          CURSEFORGE_PROJECT: ${{ vars.CURSEFORGE_PROJECT_ID || '1661919' }}
+          CLEANUP_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.legacy_label_cleanup || 'none' }}
+        run: |
+          set -euo pipefail
+          python publisher/scripts/python/curseforge_state.py audit \
+            --manifest release-package/release-manifest.json \
+            --context release-package/release-context.json \
+            --git-repository publisher \
+            --repository "$GITHUB_REPOSITORY" \
+            --project "$CURSEFORGE_PROJECT" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --event-name "$GITHUB_EVENT_NAME" \
+            --cleanup-mode "$CLEANUP_MODE" \
+            --output curseforge-state-audit.json
 
-      - name: Publish to Modrinth
-        if: inputs.publish_modrinth
-        uses: Kira-NT/mc-publish@v3.3.1
+      - name: Upload read-only CurseForge state audit
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
         with:
-          modrinth-id: ${{ vars.MODRINTH_PROJECT_ID || '9ZHJ1Ue9' }}
-          modrinth-token: ${{ secrets.MODRINTH_API_TOKEN }}
-          files: ${{ steps.artifact.outputs.jar }}
-          name: ${{ needs.validate.outputs.release_tag }}
-          version: ${{ steps.artifact.outputs.version }}
-          version-type: ${{ inputs.release_type }}
-          changelog-file: release-notes/RELEASE_NOTES.md
+          name: curseforge-state-audit
+          path: curseforge-state-audit.json
+          if-no-files-found: warn
+          overwrite: true
+          retention-days: 14
+
+  publish-curseforge:
+    name: Publish CurseForge Minecraft ${{ matrix.mc_version }}
+    needs: [inspect, package-release, package-dispatch, publish-github, curseforge-state-audit]
+    if: >-
+      ${{
+        always() &&
+        needs.inspect.result == 'success' &&
+        needs.curseforge-state-audit.result == 'success' &&
+        needs.inspect.outputs.prerelease != 'true' &&
+        (
+          (
+            github.event_name == 'release' &&
+            needs.package-release.result == 'success' &&
+            needs.publish-github.result == 'success'
+          ) ||
+          (
+            github.event_name == 'workflow_dispatch' &&
+            needs.package-dispatch.result == 'success' &&
+            (inputs.destinations == 'all' || inputs.destinations == 'curseforge')
+          )
+        )
+      }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.inspect.outputs.matrix) }}
+    steps:
+      - name: Check out publisher helper
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.inspect.outputs.publisher_commit }}
+          fetch-depth: 1
+          path: publisher
+
+      - name: Download validated Release package
+        uses: actions/download-artifact@v4
+        with:
+          name: release-package
+          path: release-package
+
+      - name: Validate CurseForge project identity
+        id: curseforge-project
+        shell: bash
+        env:
+          CURSEFORGE_PROJECT: ${{ vars.CURSEFORGE_PROJECT_ID || '1661919' }}
+        run: |
+          set -euo pipefail
+          python publisher/scripts/python/curseforge_state.py validate-project \
+            --project "$CURSEFORGE_PROJECT" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Read project publication metadata
+        id: metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python publisher/scripts/python/release_metadata.py platform-entry \
+            --manifest release-package/release-manifest.json \
+            --build-project '${{ matrix.mc_version }}' \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Check CurseForge state and upload history
+        id: curseforge
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python publisher/scripts/python/curseforge_state.py precheck \
+            --manifest release-package/release-manifest.json \
+            --context release-package/release-context.json \
+            --git-repository publisher \
+            --build-project '${{ matrix.mc_version }}' \
+            --repository "$GITHUB_REPOSITORY" \
+            --project '${{ steps.curseforge-project.outputs.project_id }}' \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --event-name "$GITHUB_EVENT_NAME" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Migrate legacy CurseForge file ID to Git notes
+        if: ${{ steps.curseforge.outputs.state_source == 'legacy-label' }}
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python publisher/scripts/python/curseforge_state.py record \
+            --manifest release-package/release-manifest.json \
+            --context release-package/release-context.json \
+            --git-repository publisher \
+            --build-project '${{ matrix.mc_version }}' \
+            --repository "$GITHUB_REPOSITORY" \
+            --project '${{ steps.curseforge-project.outputs.project_id }}' \
+            --file-id '${{ steps.curseforge.outputs.file_id }}' \
+            --source legacy-label
+
+      - name: Update existing CurseForge metadata
+        if: ${{ steps.curseforge.outputs.should_upload == 'false' }}
+        shell: bash
+        env:
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+        run: |
+          set -euo pipefail
+          python publisher/scripts/python/curseforge_state.py update \
+            --manifest release-package/release-manifest.json \
+            --build-project '${{ matrix.mc_version }}' \
+            --project '${{ steps.curseforge-project.outputs.project_id }}' \
+            --file-id '${{ steps.curseforge.outputs.file_id }}'
+
+      - name: Upload to CurseForge
+        id: upload
+        if: ${{ steps.curseforge.outputs.should_upload == 'true' }}
+        uses: Kira-NT/mc-publish@52307b03863581dec6b652b83e597aec02ebb075
+        with:
+          curseforge-id: ${{ steps.curseforge-project.outputs.project_id }}
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          files: ${{ steps.metadata.outputs.jar }}
+          name: ${{ needs.inspect.outputs.tag }}
+          version: ${{ needs.inspect.outputs.tag }}
+          version-type: release
+          changelog-file: release-package/CHANGELOG.md
           loaders: fabric
-          environment: client
-          game-versions: ${{ steps.artifact.outputs.game_versions }}
-          java: ${{ startsWith(matrix.mc_version, '26.') && '25' || '21' }}
-          dependencies: |
-            malilib(required){modrinth:GcWjdA9I}
-          retry-attempts: 3
-          retry-delay: 15000
+          game-versions: ${{ steps.metadata.outputs.game_versions }}
+          dependencies: ${{ steps.metadata.outputs.dependencies }}
+          retry-attempts: 1
+
+      - name: Validate CurseForge upload outputs
+        id: validated-upload
+        if: ${{ steps.curseforge.outputs.should_upload == 'true' }}
+        shell: bash
+        env:
+          CURSEFORGE_VERSION: ${{ steps.upload.outputs.curseforge-version }}
+          CURSEFORGE_FILES: ${{ steps.upload.outputs.curseforge-files }}
+          CURSEFORGE_URL: ${{ steps.upload.outputs.curseforge-url }}
+        run: |
+          set -euo pipefail
+          python publisher/scripts/python/curseforge_state.py validate-upload \
+            --manifest release-package/release-manifest.json \
+            --build-project '${{ matrix.mc_version }}' \
+            --project '${{ steps.curseforge-project.outputs.project_id }}' \
+            --version "$CURSEFORGE_VERSION" \
+            --files "$CURSEFORGE_FILES" \
+            --url "$CURSEFORGE_URL" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Persist uploaded CurseForge file ID in Git notes
+        if: ${{ steps.curseforge.outputs.should_upload == 'true' }}
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python publisher/scripts/python/curseforge_state.py record \
+            --manifest release-package/release-manifest.json \
+            --context release-package/release-context.json \
+            --git-repository publisher \
+            --build-project '${{ matrix.mc_version }}' \
+            --repository "$GITHUB_REPOSITORY" \
+            --project '${{ steps.curseforge-project.outputs.project_id }}' \
+            --file-id '${{ steps.validated-upload.outputs.file_id }}' \
+            --source upload
+
+  curseforge-label-cleanup:
+    name: Clear verified legacy CurseForge Asset labels
+    needs:
+      [inspect, package-release, package-dispatch, curseforge-state-audit, publish-curseforge]
+    if: >-
+      ${{
+        always() &&
+        github.event_name == 'workflow_dispatch' &&
+        inputs.legacy_label_cleanup != 'none' &&
+        needs.inspect.result == 'success' &&
+        needs.curseforge-state-audit.result == 'success' &&
+        needs.publish-curseforge.result == 'success'
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out current publisher helper
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.inspect.outputs.publisher_commit }}
+          fetch-depth: 1
+          path: publisher
+
+      - name: Download validated Release package
+        uses: actions/download-artifact@v4
+        with:
+          name: release-package
+          path: release-package
+
+      - name: Clear labels after Git-note migration
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CURSEFORGE_PROJECT: ${{ vars.CURSEFORGE_PROJECT_ID || '1661919' }}
+          CLEANUP_MODE: ${{ inputs.legacy_label_cleanup }}
+        run: |
+          set -euo pipefail
+          python publisher/scripts/python/curseforge_state.py clear-labels \
+            --manifest release-package/release-manifest.json \
+            --context release-package/release-context.json \
+            --git-repository publisher \
+            --repository "$GITHUB_REPOSITORY" \
+            --project "$CURSEFORGE_PROJECT" \
+            --mode "$CLEANUP_MODE"
