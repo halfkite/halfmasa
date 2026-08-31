@@ -93,7 +93,7 @@ jobs:
 
       - name: Select preprocessing root
         shell: bash
-        run: printf '1.21.1\n' > versions/mainProject
+        run: printf '26.2\n' > versions/mainProject
 
       - name: Set up Java ${{ matrix.java }}
         uses: actions/setup-java@v4
