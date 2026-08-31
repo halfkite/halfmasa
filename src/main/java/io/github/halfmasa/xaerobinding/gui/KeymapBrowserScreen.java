@@ -980,7 +980,7 @@ public final class KeymapBrowserScreen extends GuiBase
                 grab * this.scrollbarMaxOffset / Math.max(1, trackHeight - thumbHeight)));
     }
 
-    //#if MC >= 26.1
+    //#if MC >= 1.21.11
     @Override
     public boolean onMouseDragged(MouseButtonEvent event, double deltaX, double deltaY)
     {
@@ -991,7 +991,20 @@ public final class KeymapBrowserScreen extends GuiBase
         }
         return super.onMouseDragged(event, deltaX, deltaY);
     }
+    //#elseif MC >= 1.21.10
+    //$$ @Override
+    //$$ public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY)
+    //$$ {
+    //$$     if (this.draggingScrollbar)
+    //$$     {
+    //$$         this.handleScrollbarDrag(event.y());
+    //$$         return true;
+    //$$     }
+    //$$     return super.mouseDragged(event, deltaX, deltaY);
+    //$$ }
+    //#endif
 
+    //#if MC >= 1.21.10
     @Override
     public boolean onMouseReleased(MouseButtonEvent event)
     {
