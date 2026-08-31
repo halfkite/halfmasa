@@ -1,0 +1,16 @@
+{
+  "curseforge_project_id": "1661919",
+  "files": [
+    {
+      "build_project": "1.21.1",
+      "curseforge_file_id": "8775315",
+      "github_asset_id": 537468311,
+      "jar_name": "halfmasa-1.1.7-mc1.21-1.21.1.jar",
+      "sha256": "7e971633a833eeff9a490f4d531766e52691b07f464513ed58cef998177deb95"
+    }
+  ],
+  "release_commit": "2e9dd989e884621b759ed48e27ea24bd313a367a",
+  "repository": "halfkite/halfmasa",
+  "schema": 1,
+  "tag": "1.1.7"
+}
