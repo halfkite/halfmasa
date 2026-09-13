@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.gui.KeybindPieScreen;
 
 @Mixin(KeyboardInput.class)
 public abstract class KeyboardInputMixin
@@ -26,8 +27,10 @@ public abstract class KeyboardInputMixin
         //#else
         //$$ var currentScreen = minecraft.screen;
         //#endif
-        if (!Configs.INVENTORY_MOVE.getBooleanValue()
-                || !(currentScreen instanceof AbstractContainerScreen<?>))
+        boolean pieScreen = currentScreen instanceof KeybindPieScreen;
+        boolean containerMove = Configs.INVENTORY_MOVE.getBooleanValue()
+                && currentScreen instanceof AbstractContainerScreen<?>;
+        if (!pieScreen && !containerMove)
         {
             return keyMapping.isDown();
         }

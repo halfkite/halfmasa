@@ -101,6 +101,9 @@ processResources {
             '"ReiItemHistoryMixin"',
             '"ReiItemHistoryFavoritesMixin"'
     ]
+    def integratedServerExitMixins = [
+            '"IntegratedServerExitMixin"'
+    ]
     def properties = [
             mod_version: project.version,
             minecraft_dependency: project.minecraft_dependency,
@@ -126,6 +129,9 @@ processResources {
                 return null
             }
             if (project.mcVersion >= 26_01_00 && legacyReiLayoutMixins.any { line.contains(it) }) {
+                return null
+            }
+            if (project.mcVersion < 26_02_00 && integratedServerExitMixins.any { line.contains(it) }) {
                 return null
             }
             if (project.mcVersion < 26_01_00 && line.contains('"ImePreeditOverlayMixin"')) {

@@ -1,0 +1,98 @@
+package io.github.halfmasa.xaerobinding.gui;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public final class KeymapKeyboardLayout
+{
+    public static final int CELL_HEIGHT = 16;
+    public static final int CELL_GAP = 2;
+    public static final int ROWS = 6;
+    public static final int HEIGHT = ROWS * (CELL_HEIGHT + CELL_GAP) + 8;
+
+    private KeymapKeyboardLayout() {}
+
+    public static List<Key> keys(int x, int y, int width)
+    {
+        List<Key> result = new ArrayList<>();
+        int gap = 12;
+        int mainWidth = (int) ((width - 2 * gap) * 0.635D);
+        int clusterWidth = (int) ((width - 2 * gap) * 0.155D);
+        int numpadWidth = width - 2 * gap - mainWidth - clusterWidth;
+        int numpadX = x + width - numpadWidth;
+        int navX = numpadX - gap - clusterWidth;
+        int rowStep = CELL_HEIGHT + CELL_GAP;
+
+        String[][] mainRows = {
+                {"ESC:256:1", "_:0:1", "F1:290:1", "F2:291:1", "F3:292:1", "F4:293:1", "_:0:0.5",
+                        "F5:294:1", "F6:295:1", "F7:296:1", "F8:297:1", "_:0:0.5",
+                        "F9:298:1", "F10:299:1", "F11:300:1", "F12:301:1"},
+                {"`:96:1", "1:48:1", "2:49:1", "3:50:1", "4:51:1", "5:52:1", "6:53:1", "7:54:1",
+                        "8:55:1", "9:56:1", "0:57:1", "-:45:1", "=:61:1", "⌫:259:2"},
+                {"TAB:258:1.5", "Q:81:1", "W:87:1", "E:69:1", "R:82:1", "T:84:1", "Y:89:1", "U:85:1",
+                        "I:73:1", "O:79:1", "P:80:1", "[:91:1", "]:93:1", "\\:92:1.5"},
+                {"CAPS:280:1.75", "A:65:1", "S:83:1", "D:68:1", "F:70:1", "G:71:1", "H:72:1", "J:74:1",
+                        "K:75:1", "L:76:1", ";:59:1", "':39:1", "ENTER:257:2.25"},
+                {"⇧:340:2.25", "Z:90:1", "X:88:1", "C:67:1", "V:86:1", "B:66:1", "N:78:1", "M:77:1",
+                        ",:44:1", ".:46:1", "/:47:1", "⇧:344:2.75"},
+                {"CTRL:341:1.25", "WIN:343:1.25", "ALT:342:1.25", "　:32:6.25", "ALT:346:1.25",
+                        "WIN:347:1.25", "MENU:348:1.25", "CTRL:345:1.25"}
+        };
+        for (int row = 0; row < mainRows.length; row++)
+        {
+            addRow(result, mainRows[row], x, y + row * rowStep, mainWidth, 15.0F);
+        }
+
+        addRow(result, new String[] {"PRT:283:1", "SCR:281:1", "PAU:284:1"},
+                navX, y, clusterWidth, 3.0F);
+        String[][] navRows = {
+                {"INS:260:1", "HOM:268:1", "PGU:266:1"},
+                {"DEL:261:1", "END:269:1", "PGD:267:1"},
+                {"_:0:1", "↑:264:1", "_:0:1"},
+                {"←:263:1", "↓:265:1", "→:262:1"}
+        };
+        for (int row = 0; row < navRows.length; row++)
+        {
+            addRow(result, navRows[row], navX, y + (row + 2) * rowStep, clusterWidth, 3.0F);
+        }
+
+        String[][] numpadRows = {
+                {"NUM:282:1", "/:331:1", "*:332:1", "-:333:1"},
+                {"7:327:1", "8:328:1", "9:329:1", "+:334:1:2"},
+                {"4:324:1", "5:325:1", "6:326:1", "_:0:1"},
+                {"1:321:1", "2:322:1", "3:323:1", "⏎:335:1:2"},
+                {"0:320:2", ".:330:1", "_:0:1"}
+        };
+        for (int row = 0; row < numpadRows.length; row++)
+        {
+            addRow(result, numpadRows[row], numpadX, y + row * rowStep, numpadWidth, 4.0F);
+        }
+        addRow(result, new String[] {"L:-1:1", "M:-3:1", "R:-2:1"},
+                numpadX, y + 5 * rowStep, numpadWidth, 3.0F);
+        return result;
+    }
+
+    private static void addRow(List<Key> result, String[] cells, int x, int y, int width, float totalUnits)
+    {
+        float unit = width / totalUnits;
+        float cellX = x;
+        for (String cell : cells)
+        {
+            String[] parts = cell.split(":");
+            int code = Integer.parseInt(parts[1]);
+            float units = Float.parseFloat(parts[2]);
+            int cellWidth = (int) (unit * units) - CELL_GAP;
+            int cellHeight = parts.length > 3 && "2".equals(parts[3])
+                    ? 2 * CELL_HEIGHT + CELL_GAP : CELL_HEIGHT;
+            if (code != 0)
+            {
+                result.add(new Key(code, parts[0], (int) cellX, y, cellWidth, cellHeight, code < 0));
+            }
+            cellX += cellWidth + CELL_GAP;
+        }
+    }
+
+    public record Key(int code, String label, int x, int y, int width, int height, boolean mouse)
+    {
+    }
+}

@@ -24,7 +24,17 @@ public abstract class ImePreeditOverlayMixin
         Ime261Compat.onPreedit(event.fullText(), event.caretPosition(), event.blocks(), event.focusedBlock());
     }
 
-    @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
+    //#if MC >= 26.2
+    @Inject(
+            method = "extractRenderState",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lcom/mojang/blaze3d/platform/TextInputManager;setTextInputArea(IIII)V",
+                    shift = At.Shift.AFTER),
+            cancellable = true)
+    //#else
+    //$$ @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
+    //#endif
     private void halfmasa_replacePreeditRender(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
             float tickDelta, CallbackInfo ci)
     {

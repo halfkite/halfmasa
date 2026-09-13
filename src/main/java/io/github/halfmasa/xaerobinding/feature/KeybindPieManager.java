@@ -11,6 +11,9 @@ import java.util.Set;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+//#if MC >= 1.21.10
+import net.minecraft.client.input.KeyEvent;
+//#endif
 import net.minecraft.client.gui.screens.Screen;
 import org.lwjgl.glfw.GLFW;
 
@@ -28,6 +31,10 @@ public final class KeybindPieManager implements IClientTickHandler
     private final Map<InputConstants.Key, HeldSelection> heldSelections = new HashMap<>();
     private final Map<KeyMapping, Integer> oneShotReleases = new HashMap<>();
     private final Map<InputConstants.Key, SelectionCooldown> selectionCooldowns = new HashMap<>();
+    private final Set<Integer> pressedInputKeys = new HashSet<>();
+    private final Map<KeyMapping, Integer> orderedComboProgress = new HashMap<>();
+    private final Set<KeyMapping> activeCustomCombos = new HashSet<>();
+    private boolean customMappingsSynchronized;
     private InputConstants.Key activeKey;
     private KeybindPieScreen activeScreen;
     private Screen parentScreen;
@@ -41,6 +48,8 @@ public final class KeybindPieManager implements IClientTickHandler
 
     public boolean handleSet(InputConstants.Key key, boolean pressed)
     {
+        this.trackInput(key, pressed);
+
         if (!Configs.KEYBIND_PIE_MENU.getBooleanValue())
         {
             return false;
@@ -89,6 +98,10 @@ public final class KeybindPieManager implements IClientTickHandler
         }
 
         List<KeyMapping> conflicts = mappingsFor(key, screen);
+        if (hasJeiBinding(conflicts))
+        {
+            return false;
+        }
         if (conflicts.size() < 2)
         {
             return false;
@@ -103,6 +116,7 @@ public final class KeybindPieManager implements IClientTickHandler
         this.parentScreen = screen;
         this.activeScreen.setParent(screen);
         MinecraftClientCompat.setScreen(client, this.activeScreen);
+        this.restoreMovementKeys(client);
         return true;
     }
 
@@ -122,7 +136,12 @@ public final class KeybindPieManager implements IClientTickHandler
         {
             return false;
         }
-        return (this.activeKey != null && this.activeKey.equals(key)) || mappingsFor(key, screen).size() > 1;
+        List<KeyMapping> conflicts = mappingsFor(key, screen);
+        if (hasJeiBinding(conflicts))
+        {
+            return false;
+        }
+        return (this.activeKey != null && this.activeKey.equals(key)) || conflicts.size() > 1;
     }
 
     /**
@@ -166,6 +185,93 @@ public final class KeybindPieManager implements IClientTickHandler
         return false;
     }
 
+    public void handleKeyboardEvent(InputConstants.Key key, boolean pressed)
+    {
+        this.trackInput(key, pressed);
+        this.restoreMovementKeys(Minecraft.getInstance());
+    }
+
+    /**
+     * Screen changes call KeyMapping.releaseAll(), which clears the held
+     * movement state even though the physical keys are still down. Keep the
+     * movement mappings aligned while the wheel is visible.
+     */
+    public void restoreMovementKeys(Minecraft client)
+    {
+        if (this.activeScreen == null || client.options == null)
+        {
+            return;
+        }
+        this.restorePhysicalMovementKeys(client);
+    }
+
+    private static void restoreMovementKey(Minecraft client, KeyMapping mapping)
+    {
+        setDown(mapping, isPhysicallyDown(client, ((KeyMappingAccessor) mapping).halfmasa$getBoundKey()));
+    }
+
+    private void restorePhysicalMovementKeys(Minecraft client)
+    {
+        if (client.options == null)
+        {
+            return;
+        }
+        restoreMovementKey(client, client.options.keyUp);
+        restoreMovementKey(client, client.options.keyDown);
+        restoreMovementKey(client, client.options.keyLeft);
+        restoreMovementKey(client, client.options.keyRight);
+        restoreMovementKey(client, client.options.keyJump);
+        restoreMovementKey(client, client.options.keyShift);
+        restoreMovementKey(client, client.options.keySprint);
+    }
+
+    public void refreshCustomCombos()
+    {
+        Minecraft client = Minecraft.getInstance();
+        if (client.options == null)
+        {
+            return;
+        }
+        this.synchronizeCustomMappings(client);
+        Screen screen = MinecraftClientCompat.getScreen(client);
+        KeybindCustomizationStore store = KeybindCustomizationStore.getInstance();
+        for (KeyMapping mapping : client.options.keyMappings)
+        {
+            List<Integer> combo = store.comboKeys(mapping);
+            if (combo.size() < 2 || !isCustomComboActive(store, mapping, screen))
+            {
+                boolean wasActive = this.activeCustomCombos.remove(mapping);
+                this.orderedComboProgress.remove(mapping);
+                if (wasActive)
+                {
+                    setDown(mapping, false);
+                }
+                continue;
+            }
+
+            boolean held = combo.stream().allMatch(code -> isInputCodeDown(client, code));
+            boolean active = store.requiresKeyOrder(mapping)
+                    ? held && this.orderedComboProgress.getOrDefault(mapping, 0) == combo.size()
+                    : held;
+            if (active && this.activeCustomCombos.add(mapping))
+            {
+                this.triggerCustomCombo(mapping, combo);
+            }
+            else if (!active && this.activeCustomCombos.remove(mapping))
+            {
+                setDown(mapping, false);
+            }
+        }
+    }
+
+    private void trackInput(InputConstants.Key key, boolean pressed)
+    {
+        int inputCode = keyCode(key);
+        if (pressed) this.pressedInputKeys.add(inputCode);
+        else this.pressedInputKeys.remove(inputCode);
+        this.updateCustomCombos(inputCode, pressed);
+    }
+
     public void completeSelection(KeyMapping mapping, boolean clickHold)
     {
         InputConstants.Key key = this.activeKey;
@@ -175,6 +281,10 @@ public final class KeybindPieManager implements IClientTickHandler
         this.parentScreen = null;
         Minecraft client = Minecraft.getInstance();
         MinecraftClientCompat.setScreen(client, screen);
+        if (MinecraftClientCompat.getScreen(client) == null)
+        {
+            this.restorePhysicalMovementKeys(client);
+        }
 
         if (mapping == null || key == null)
         {
@@ -209,22 +319,31 @@ public final class KeybindPieManager implements IClientTickHandler
     {
         if (this.activeScreen == screen)
         {
-            this.activeKey = null;
-            this.activeScreen = null;
-            this.parentScreen = null;
+            this.clearTransientState();
+            Minecraft client = Minecraft.getInstance();
+            if (MinecraftClientCompat.getScreen(client) == null)
+            {
+                this.restorePhysicalMovementKeys(client);
+            }
         }
     }
 
     @Override
     public void onClientTick(Minecraft client)
     {
+        this.synchronizeCustomMappings(client);
+        if (this.activeScreen != null && MinecraftClientCompat.getScreen(client) != this.activeScreen)
+        {
+            this.clearTransientState();
+            if (MinecraftClientCompat.getScreen(client) == null)
+            {
+                this.restorePhysicalMovementKeys(client);
+            }
+        }
+        this.restoreMovementKeys(client);
         if (!Configs.KEYBIND_PIE_MENU.getBooleanValue())
         {
-            this.heldSelections.values().forEach(held -> setDown(held.mapping, false));
-            this.heldSelections.clear();
-            this.oneShotReleases.keySet().forEach(mapping -> setDown(mapping, false));
-            this.oneShotReleases.clear();
-            this.selectionCooldowns.clear();
+            this.clearTransientState();
             return;
         }
 
@@ -291,10 +410,243 @@ public final class KeybindPieManager implements IClientTickHandler
         }
 
         return java.util.Arrays.stream(client.options.keyMappings)
-                .filter(mapping -> key.equals(((KeyMappingAccessor) mapping).halfmasa$getBoundKey()))
+            .filter(mapping -> key.equals(((KeyMappingAccessor) mapping).halfmasa$getBoundKey()))
+                .filter(mapping -> !KeybindCustomizationStore.getInstance().hasCustomCombination(mapping))
+                .filter(mapping -> !isDefaultWheelExcludedMapping(client, mapping))
+                .filter(mapping -> !isDebugOnlyMapping(mapping) || isDebugModifierDown(client, key))
                 .filter(mapping -> KeybindCustomizationStore.getInstance().isActive(mapping, screen))
                 .sorted(Comparator.comparing(KeyMapping::getName))
                 .toList();
+    }
+
+    private static boolean hasJeiBinding(List<KeyMapping> mappings)
+    {
+        return mappings.stream().anyMatch(KeybindPieManager::isJeiMapping);
+    }
+
+    private static boolean isJeiMapping(KeyMapping mapping)
+    {
+        String name = mapping.getName().toLowerCase(java.util.Locale.ROOT);
+        return name.startsWith("key.jei.") || name.startsWith("jei.");
+    }
+
+    private static boolean isDefaultWheelExcludedMapping(Minecraft client, KeyMapping mapping)
+    {
+        InputConstants.Key key = ((KeyMappingAccessor) mapping).halfmasa$getBoundKey();
+        if (key.getType() == InputConstants.Type.MOUSE && key.getValue() == GLFW.GLFW_MOUSE_BUTTON_MIDDLE)
+        {
+            return true;
+        }
+        //#if MC >= 26.2
+        return mapping == client.options.keySaveHotbarActivator ||
+                mapping == client.options.keyLoadHotbarActivator ||
+                mapping == client.options.keyDebugOverlay ||
+                mapping == client.options.keyDebugModifier;
+        //#else
+        //$$ return false;
+        //#endif
+    }
+
+    private void updateCustomCombos(int inputCode, boolean pressed)
+    {
+        Minecraft client = Minecraft.getInstance();
+        if (client.options == null)
+        {
+            return;
+        }
+        Screen screen = MinecraftClientCompat.getScreen(client);
+        for (KeyMapping mapping : client.options.keyMappings)
+        {
+            KeybindCustomizationStore store = KeybindCustomizationStore.getInstance();
+            List<Integer> combo = store.comboKeys(mapping);
+            if (combo.size() < 2 || !isCustomComboActive(store, mapping, screen))
+            {
+                boolean wasActive = this.activeCustomCombos.remove(mapping);
+                this.orderedComboProgress.remove(mapping);
+                if (wasActive)
+                {
+                    setDown(mapping, false);
+                }
+                continue;
+            }
+
+            if (pressed && combo.contains(inputCode) && store.requiresKeyOrder(mapping))
+            {
+                int progress = this.orderedComboProgress.getOrDefault(mapping, 0);
+                if (progress < combo.size() && inputCode == combo.get(progress))
+                {
+                    progress++;
+                }
+                else if (inputCode == combo.get(0))
+                {
+                    progress = 1;
+                }
+                else
+                {
+                    progress = 0;
+                }
+                this.orderedComboProgress.put(mapping, progress);
+            }
+
+            boolean active = store.requiresKeyOrder(mapping)
+                    ? this.orderedComboProgress.getOrDefault(mapping, 0) == combo.size() &&
+                            this.pressedInputKeys.containsAll(combo)
+                    : this.pressedInputKeys.containsAll(combo);
+            if (active && this.activeCustomCombos.add(mapping))
+            {
+                this.triggerCustomCombo(mapping, combo);
+            }
+            else if (!active && this.activeCustomCombos.remove(mapping))
+            {
+                setDown(mapping, false);
+            }
+
+            if (!pressed && !combo.stream().anyMatch(this.pressedInputKeys::contains))
+            {
+                this.orderedComboProgress.remove(mapping);
+            }
+        }
+    }
+
+    private static boolean isCustomComboActive(KeybindCustomizationStore store, KeyMapping mapping, Screen screen)
+    {
+        KeybindCustomizationStore.ActivationContext context = store.activationContext(mapping);
+        if (context == KeybindCustomizationStore.ActivationContext.DISABLED)
+        {
+            return false;
+        }
+        if (context == KeybindCustomizationStore.ActivationContext.GAMEPLAY && screen != null)
+        {
+            return false;
+        }
+        if (context == KeybindCustomizationStore.ActivationContext.SCREEN &&
+                (screen == null || isTypingContext(screen)))
+        {
+            return false;
+        }
+        if (context == KeybindCustomizationStore.ActivationContext.AUTO &&
+                screen != null && isTypingContext(screen))
+        {
+            return false;
+        }
+        return true;
+    }
+
+    private void triggerCustomCombo(KeyMapping mapping, List<Integer> combo)
+    {
+        Minecraft client = Minecraft.getInstance();
+        Screen screen = MinecraftClientCompat.getScreen(client);
+        if (screen != null && !combo.isEmpty() && combo.get(0) >= 0)
+        {
+            InputConstants.Key previousKey = ((KeyMappingAccessor) mapping).halfmasa$getBoundKey();
+            InputConstants.Key triggerKey = InputConstants.Type.KEYSYM.getOrCreate(combo.get(0));
+            mapping.setKey(triggerKey);
+            boolean handled;
+            try
+            {
+                //#if MC >= 1.21.10
+                handled = screen.keyPressed(new KeyEvent(combo.get(0), 0, 0));
+                //#else
+                //$$ handled = screen.keyPressed(combo.get(0), 0, 0);
+                //#endif
+            }
+            finally
+            {
+                mapping.setKey(previousKey);
+                KeyMapping.resetMapping();
+            }
+            if (handled)
+            {
+                return;
+            }
+        }
+        setDown(mapping, true);
+        setClicks(mapping, 1);
+    }
+
+    private void synchronizeCustomMappings(Minecraft client)
+    {
+        if (this.customMappingsSynchronized || client.options == null)
+        {
+            return;
+        }
+        KeybindCustomizationStore store = KeybindCustomizationStore.getInstance();
+        boolean changed = false;
+        for (KeyMapping mapping : client.options.keyMappings)
+        {
+            if (store.comboKeys(mapping).size() >= 2 &&
+                    !InputConstants.UNKNOWN.equals(((KeyMappingAccessor) mapping).halfmasa$getBoundKey()))
+            {
+                mapping.setKey(InputConstants.UNKNOWN);
+                changed = true;
+            }
+        }
+        if (changed)
+        {
+            KeyMapping.resetMapping();
+        }
+        this.customMappingsSynchronized = true;
+    }
+
+    /** Allows the next tick to re-apply combo unbinding after the store was reloaded from disk. */
+    public void invalidateCustomMappingSync()
+    {
+        this.customMappingsSynchronized = false;
+    }
+
+    private static int keyCode(InputConstants.Key key)
+    {
+        return key.getType() == InputConstants.Type.MOUSE ? -(key.getValue() + 1) : key.getValue();
+    }
+
+    private static boolean isInputCodeDown(Minecraft client, int code)
+    {
+        if (code < 0)
+        {
+            //#if MC >= 1.21.10
+            return GLFW.glfwGetMouseButton(client.getWindow().handle(), -code - 1) == GLFW.GLFW_PRESS;
+            //#else
+            //$$ return GLFW.glfwGetMouseButton(client.getWindow().getWindow(), -code - 1) == GLFW.GLFW_PRESS;
+            //#endif
+        }
+        //#if MC >= 1.21.10
+        return InputConstants.isKeyDown(client.getWindow(), code);
+        //#else
+        //$$ return InputConstants.isKeyDown(client.getWindow().getWindow(), code);
+        //#endif
+    }
+
+    private static boolean isDebugOnlyMapping(KeyMapping mapping)
+    {
+        //#if MC >= 26.2
+        Minecraft client = Minecraft.getInstance();
+        if (client.options != null && client.options.debugKeys != null)
+        {
+            for (KeyMapping debugKey : client.options.debugKeys)
+            {
+                if (debugKey == mapping)
+                {
+                    return true;
+                }
+            }
+        }
+        //#endif
+        return false;
+    }
+
+    private static boolean isDebugModifierDown(Minecraft client, InputConstants.Key pressedKey)
+    {
+        //#if MC >= 26.2
+        if (client.options == null || client.options.keyDebugModifier == null)
+        {
+            return false;
+        }
+        InputConstants.Key debugModifier =
+                ((KeyMappingAccessor) client.options.keyDebugModifier).halfmasa$getBoundKey();
+        return !debugModifier.equals(pressedKey) && isPhysicallyDown(client, debugModifier);
+        //#else
+        //$$ return false;
+        //#endif
     }
 
     private static boolean isIgnored(InputConstants.Key key)
@@ -342,6 +694,22 @@ public final class KeybindPieManager implements IClientTickHandler
     private static void setClicks(KeyMapping mapping, int clicks)
     {
         ((KeyMappingAccessor) mapping).halfmasa$setClickCount(clicks);
+    }
+
+    private void clearTransientState()
+    {
+        this.heldSelections.values().forEach(held -> setDown(held.mapping, false));
+        this.heldSelections.clear();
+        this.oneShotReleases.keySet().forEach(mapping -> setDown(mapping, false));
+        this.oneShotReleases.clear();
+        this.selectionCooldowns.clear();
+        this.activeCustomCombos.forEach(mapping -> setDown(mapping, false));
+        this.activeCustomCombos.clear();
+        this.orderedComboProgress.clear();
+        this.pressedInputKeys.clear();
+        this.activeKey = null;
+        this.activeScreen = null;
+        this.parentScreen = null;
     }
 
     private static final class HeldSelection

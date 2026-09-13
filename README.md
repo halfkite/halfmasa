@@ -1,12 +1,18 @@
 # halfmasa
 
+[![License](https://img.shields.io/github/license/halfkite/halfmasa)](https://choosealicense.com/licenses/mit/)
+[![Modrinth](https://img.shields.io/modrinth/dt/9ZHJ1Ue9?color=00AF5C&label=Modrinth%20downloads&logo=modrinth)](https://modrinth.com/project/9ZHJ1Ue9)
+[![CurseForge](https://img.shields.io/curseforge/dt/1661919?logo=curseforge&label=CurseForge%20downloads&color=f16436)](https://www.curseforge.com/minecraft/mc-mods/halfmasa)
+[![MC Versions](https://cf.way2muchnoise.eu/versions/For%20MC_1661919_all.svg)](https://www.curseforge.com/minecraft/mc-mods/halfmasa)
+[![GitHub](https://img.shields.io/github/downloads/halfkite/halfmasa/total?color=161616&label=GitHub%20downloads&logo=github)](https://github.com/halfkite/halfmasa/releases)
+
 halfmasa is a client-side Minecraft Fabric utility mod for Xaero and MaLiLib users, providing save and waypoint binding, creative tools, input and UI improvements, and JEI/REI recipe lookup history.
 
 halfmasa（半马萨）是一个面向 Minecraft Fabric 客户端的 Xaero 与 MaLiLib 实用工具模组。它把存档与路径点绑定、路径点分享、创造模式工具、输入和界面增强，以及 JEI/REI 查询历史集中到统一的 MaLiLib 配置界面中。除特别说明外，功能默认关闭。
 
 ## 支持版本
 
-当前版本为 `1.1.5`，构建配置支持 Minecraft `1.21.1`、`1.21.4`、`1.21.8`、`1.21.10`、`1.21.11`、`26.1.2` 和 `26.2`。
+当前版本为 `1.1.7`，构建配置支持 Minecraft `1.21.1`、`1.21.3`、`1.21.4`、`1.21.5`、`1.21.8`、`1.21.10`、`1.21.11`、`26.1.2` 和 `26.2`。
 
 ## 文档
 

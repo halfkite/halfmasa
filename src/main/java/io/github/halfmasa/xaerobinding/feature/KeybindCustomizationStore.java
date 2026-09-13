@@ -3,12 +3,16 @@ package io.github.halfmasa.xaerobinding.feature;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -88,8 +92,13 @@ public final class KeybindCustomizationStore
 
     public synchronized Entry get(KeyMapping mapping)
     {
+        return this.get(mapping.getName());
+    }
+
+    public synchronized Entry get(String bindingId)
+    {
         ensureLoaded();
-        return this.entries.computeIfAbsent(mapping.getName(), ignored -> new Entry());
+        return this.entries.computeIfAbsent(bindingId, ignored -> new Entry());
     }
 
     public synchronized String displayName(KeyMapping mapping)
@@ -116,6 +125,26 @@ public final class KeybindCustomizationStore
     public synchronized boolean isActive(KeyMapping mapping, Screen screen)
     {
         return get(mapping).activationContext.isActive(screen != null);
+    }
+
+    public synchronized boolean hasCustomCombination(KeyMapping mapping)
+    {
+        return !get(mapping).comboKeys.isEmpty();
+    }
+
+    public synchronized List<Integer> comboKeys(KeyMapping mapping)
+    {
+        return new ArrayList<>(get(mapping).comboKeys);
+    }
+
+    public synchronized boolean requiresKeyOrder(KeyMapping mapping)
+    {
+        return get(mapping).requireKeyOrder;
+    }
+
+    public synchronized ActivationContext activationContext(KeyMapping mapping)
+    {
+        return get(mapping).activationContext;
     }
 
     public synchronized void reset(KeyMapping mapping)
@@ -151,6 +180,12 @@ public final class KeybindCustomizationStore
         {
             entry.activationContext = ActivationContext.AUTO;
         }
+        if (entry.comboKeys == null)
+        {
+            entry.comboKeys = new ArrayList<>();
+        }
+        Set<Integer> seen = new HashSet<>();
+        entry.comboKeys.removeIf(key -> key == null || !seen.add(key));
         return entry;
     }
 
@@ -170,12 +205,15 @@ public final class KeybindCustomizationStore
         public boolean hideCategory;
         public Integer sectorColor;
         public ActivationContext activationContext = ActivationContext.AUTO;
+        public List<Integer> comboKeys = new ArrayList<>();
+        public boolean requireKeyOrder;
 
         private boolean isDefault()
         {
             return (this.displayName == null || this.displayName.isBlank()) &&
                     !this.hideCategory && this.sectorColor == null &&
-                    this.activationContext == ActivationContext.AUTO;
+                    this.activationContext == ActivationContext.AUTO &&
+                    this.comboKeys.isEmpty() && !this.requireKeyOrder;
         }
     }
 

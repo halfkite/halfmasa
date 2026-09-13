@@ -2,6 +2,7 @@ package io.github.halfmasa.xaerobinding.mixin;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,5 +31,17 @@ public abstract class KeybindPieKeyMappingMixin
         {
             ci.cancel();
         }
+    }
+
+    @Inject(method = "setAll", at = @At("TAIL"))
+    private static void halfmasa_refreshCustomCombinations(CallbackInfo ci)
+    {
+        KeybindPieManager.getInstance().refreshCustomCombos();
+    }
+
+    @Inject(method = "releaseAll", at = @At("TAIL"))
+    private static void halfmasa_restoreMovementAfterScreenChange(CallbackInfo ci)
+    {
+        KeybindPieManager.getInstance().restoreMovementKeys(Minecraft.getInstance());
     }
 }

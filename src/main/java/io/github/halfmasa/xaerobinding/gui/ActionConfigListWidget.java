@@ -1,17 +1,30 @@
 package io.github.halfmasa.xaerobinding.gui;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import fi.dy.masa.malilib.config.IConfigBase;
+import fi.dy.masa.malilib.gui.GuiConfigsBase;
 import fi.dy.masa.malilib.gui.GuiConfigsBase.ConfigOptionWrapper;
 import fi.dy.masa.malilib.gui.widgets.WidgetConfigOption;
 import fi.dy.masa.malilib.gui.widgets.WidgetListConfigOptions;
 
-import io.github.halfmasa.xaerobinding.config.Configs;
-
 public final class ActionConfigListWidget extends WidgetListConfigOptions
 {
+    private final ConfigExpansionProvider expansionProvider;
+
+    @Override
+    protected Collection<ConfigOptionWrapper> getAllEntries()
+    {
+        Collection<ConfigOptionWrapper> prepared = this.expansionProvider.prepareEntries(
+                super.getAllEntries(), this.hasFilter());
+        return prepared.stream()
+                .filter(entry -> entry.getConfig() == null ||
+                        !this.expansionProvider.isInlineCompanion(entry.getConfig()))
+                .toList();
+    }
+
     @Override
     protected List<String> getEntryStringsForFilter(ConfigOptionWrapper entry)
     {
@@ -22,12 +35,12 @@ public final class ActionConfigListWidget extends WidgetListConfigOptions
             return strings;
         }
 
-        IConfigBase parent = Configs.getExpansionParent(config);
+        IConfigBase parent = this.expansionProvider.getExpansionParent(config);
         if (parent != null)
         {
             addSearchStrings(strings, parent);
         }
-        for (IConfigBase child : Configs.getExpansionChildren(config))
+        for (IConfigBase child : this.expansionProvider.getExpansionChildren(config))
         {
             addSearchStrings(strings, child);
         }
@@ -61,7 +74,7 @@ public final class ActionConfigListWidget extends WidgetListConfigOptions
                 continue;
             }
 
-            int indent = 18 + (Configs.isExpandedChild(config) ? 28 : 0);
+            int indent = 18 + (this.expansionProvider.isExpandedChild(config) ? 28 : 0);
             width = Math.max(width,
                     this.getStringWidth(config.getConfigGuiDisplayName()) + indent + 16);
         }
@@ -77,9 +90,37 @@ public final class ActionConfigListWidget extends WidgetListConfigOptions
             int configWidth,
             float zLevel,
             boolean useKeybindSearch,
-            HalfMasaConfigScreen parent)
+            GuiConfigsBase parent)
+    {
+        this(x, y, width, height, configWidth, zLevel, useKeybindSearch, parent,
+                HalfMasaConfigExpansionProvider.INSTANCE);
+    }
+
+    public ActionConfigListWidget(
+            int x,
+            int y,
+            int width,
+            int height,
+            int configWidth,
+            float zLevel,
+            boolean useKeybindSearch,
+            GuiConfigsBase parent,
+            ConfigExpansionProvider expansionProvider)
     {
         super(x, y, width, height, configWidth, zLevel, useKeybindSearch, parent);
+        this.expansionProvider = expansionProvider;
+    }
+
+    public void refreshExpandedConfigs()
+    {
+        int scrollPosition = this.getScrollbar().getValue();
+        this.refreshEntries();
+        this.getScrollbar().setValue(scrollPosition);
+    }
+
+    ConfigExpansionProvider getExpansionProvider()
+    {
+        return this.expansionProvider;
     }
 
     @Override
@@ -100,6 +141,8 @@ public final class ActionConfigListWidget extends WidgetListConfigOptions
                 entry,
                 listIndex,
                 this.parent,
-                this);
+                this,
+                this,
+                this.expansionProvider);
     }
 }

@@ -26,3 +26,6 @@ tmp-report-*/
 tmp_*/
 launch_out.log
 .zcode/
+
+# Python bytecode
+__pycache__/

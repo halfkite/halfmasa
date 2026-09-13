@@ -29,7 +29,9 @@
     "MinecraftInputAccessor",
     "KeyboardHandlerAccessor",
     "KeybindPieKeyMappingMixin",
+    "KeyboardHandlerComboMixin",
     "KeyboardInputMixin",
+    "IntegratedServerExitMixin",
     "ScreenshotMixin",
     "PackCompatibilityMixin",
     "ItemStackTooltipMixin",
@@ -58,6 +60,8 @@
     "GuiListBaseScrollMixin",
     "WidgetListBaseFastScrollingMixin",
     "MaLiLibConfigScrollMixin",
+    "GuiConfigsBaseAccessor",
+    "TweakerooConfigListMixin",
     "ServerPingerFixMixin",
     "ServerIconCacheMixin",
     "ImeEditBoxMixin",
@@ -69,6 +73,7 @@
     "LiquidBlockRendererMixin",
     "SodiumFluidRendererMixin",
     "SodiumLevelSliceFluidMixin",
+    "PlantModelOffsetMixin",
     "EntityRenderAggregationMixin",
     "EntityRenderDispatcherAggregationMixin"
     ,"DraggableListsMinecraftMixin"

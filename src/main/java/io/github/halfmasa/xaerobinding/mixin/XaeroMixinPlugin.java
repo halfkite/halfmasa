@@ -30,6 +30,10 @@ public final class XaeroMixinPlugin implements IMixinConfigPlugin
         {
             return FabricLoader.getInstance().isModLoaded("modmenu");
         }
+        if (mixinClassName.endsWith("TweakerooConfigListMixin"))
+        {
+            return FabricLoader.getInstance().isModLoaded("tweakeroo");
+        }
         if (mixinClassName.contains("ReiItemHistory"))
         {
             return FabricLoader.getInstance().isModLoaded("roughlyenoughitems");

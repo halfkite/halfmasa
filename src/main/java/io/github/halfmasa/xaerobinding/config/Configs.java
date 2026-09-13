@@ -41,7 +41,7 @@ public final class Configs implements IConfigHandler
 {
     private static final String CONFIG_DIRECTORY_NAME = "halfmasa";
     private static final String CONFIG_FILE_NAME = "halfmasa.json";
-    private static final int CONFIG_VERSION = 31;
+    private static final int CONFIG_VERSION = 34;
     private static final String GENERIC_KEY = "halfmasa.config.generic";
     private static volatile boolean configLoaded;
 
@@ -235,8 +235,28 @@ public final class Configs implements IConfigHandler
             "bridgingExpanded", false).apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed KEYBIND_PIE_MENU = new ConfigBooleanHotkeyed(
             "keybindPieMenu", false, "").apply(PORTED_KEY);
+    public static final ConfigBoolean TWEAKEROO_COLLAPSIBLE_CONFIG = new ConfigBoolean(
+            "tweakerooCollapsibleConfig", false).apply(PORTED_KEY);
+    public static final ConfigBoolean CUSTOM_CONFIG_GROUPS = new ConfigBoolean(
+            "customConfigGroups", false).apply(PORTED_KEY);
+    public static final ActionHotkey OPEN_CUSTOM_CONFIG_GROUPS = new ActionHotkey(
+            "openCustomConfigGroups", "").applyTranslationKey(PORTED_KEY);
+    public static final ConfigBoolean CONFIG_GROUPING_EXPANDED = new ConfigBoolean(
+            "configGroupingExpanded", false).apply(PORTED_KEY);
+    public static final ConfigGroupHeader CONFIG_GROUPING_GROUP = new ConfigGroupHeader(
+            "configGroupingGroup", PORTED_KEY, CONFIG_GROUPING_EXPANDED);
     public static final ConfigBoolean KEYBIND_WHEEL_EXPANDED = new ConfigBoolean(
             "keybindWheelExpanded", false).apply(PORTED_KEY);
+    public static final ConfigBoolean KEYMAP_DIRECT_REBIND = new ConfigBoolean(
+            "keymapDirectRebind", false).apply(PORTED_KEY);
+    public static final ConfigBoolean KEYMAP_RELEASE_CONFIRM = new ConfigBoolean(
+            "keymapReleaseConfirm", false).apply(PORTED_KEY);
+    public static final ConfigHotkey KEYMAP_CONFIRM_SETTING = new ConfigHotkey(
+            "keymapConfirmSetting", "ENTER").apply(PORTED_KEY);
+    public static final ConfigBoolean KEYMAP_SETTINGS_EXPANDED = new ConfigBoolean(
+            "keymapSettingsExpanded", false).apply(PORTED_KEY);
+    public static final ConfigGroupHeader KEYMAP_SETTINGS_GROUP = new ConfigGroupHeader(
+            "keymapSettingsGroup", PORTED_KEY, KEYMAP_SETTINGS_EXPANDED);
     public static final ConfigInteger KEYBIND_REPEAT_COOLDOWN = new ConfigInteger(
             "keybindPieRepeatCooldown", 20, 0, 200, true).apply(PORTED_KEY);
     public static final ConfigInteger KEYBIND_SELECTION_COOLDOWN = new ConfigInteger(
@@ -411,10 +431,17 @@ public final class Configs implements IConfigHandler
             KEYBIND_ALTERNATE_LIGHTEN,
             KEYBIND_ALPHA,
             KEYBIND_GRADATION,
-            KEYBIND_ANIMATE,
+            KEYBIND_ANIMATE);
+    private static final List<IConfigBase> KEYMAP_SETTINGS_CHILDREN = List.of(
+            KEYMAP_DIRECT_REBIND,
+            KEYMAP_RELEASE_CONFIRM,
+            KEYMAP_CONFIRM_SETTING,
             OPEN_KEYBIND_EDITOR,
-            RELOAD_KEYBIND_DATA,
-            OPEN_KEYMAP_BROWSER);
+            RELOAD_KEYBIND_DATA);
+    private static final List<IConfigBase> CONFIG_GROUPING_CHILDREN = List.of(
+            TWEAKEROO_COLLAPSIBLE_CONFIG,
+            CUSTOM_CONFIG_GROUPS,
+            OPEN_CUSTOM_CONFIG_GROUPS);
     private static final List<IConfigBase> IME_CHILDREN = List.of(
             IME_DISABLE_IN_COMMAND_MODE,
             IME_AUTO_REPLACE_SLASH,
@@ -451,6 +478,7 @@ public final class Configs implements IConfigHandler
             BRIDGING_PERSPECTIVE,
             BRIDGING_SNAP_STRENGTH,
             BRIDGING_ADJACENCY);
+    private static final List<IConfigBase> PLANT_CENTERING_CHILDREN = PlantCenteringConfigs.CHILDREN;
     private static final List<IConfigBase> SAVES_RELATED_CONFIGS = List.of(
             ENABLE_WORLD_BINDING,
             CUSTOM_SAVES_PATHS,
@@ -491,13 +519,26 @@ public final class Configs implements IConfigHandler
             FAST_SCROLLING_EXPANDED),
             FAST_SCROLLING_CHILDREN,
             List.of(
+            PlantCenteringConfigs.CENTER_PLANT_MODELS,
+            PlantCenteringConfigs.CENTER_PLANT_MODELS_EXPANDED),
+            PLANT_CENTERING_CHILDREN,
+            List.of(
             BRIDGING_ASSIST,
             BRIDGING_EXPANDED),
             BRIDGING_CHILDREN,
             List.of(
             KEYBIND_PIE_MENU,
+            CONFIG_GROUPING_GROUP,
+            CONFIG_GROUPING_EXPANDED),
+            CONFIG_GROUPING_CHILDREN,
+            List.of(
+            OPEN_KEYMAP_BROWSER,
             KEYBIND_WHEEL_EXPANDED),
             KEYBIND_PIE_SETTINGS,
+            List.of(
+            KEYMAP_SETTINGS_GROUP,
+            KEYMAP_SETTINGS_EXPANDED),
+            KEYMAP_SETTINGS_CHILDREN,
             List.of(
             CLICK_AND_SEND,
             CJK_LATIN_SPACING,
@@ -542,10 +583,19 @@ public final class Configs implements IConfigHandler
             List.of(
                     DISABLE_PAUSED_ITEM_TRAJECTORY_PREDICTION,
                     FAST_WORLD_LOADING_SCREEN,
-            FAST_RESOURCE_PACK_LOADING_SCREEN,
-            KEYBIND_PIE_MENU,
+                    FAST_RESOURCE_PACK_LOADING_SCREEN,
+                    KEYBIND_PIE_MENU,
+                    CONFIG_GROUPING_GROUP,
+                    CONFIG_GROUPING_EXPANDED),
+            CONFIG_GROUPING_CHILDREN,
+            List.of(
+                    OPEN_KEYMAP_BROWSER,
                     KEYBIND_WHEEL_EXPANDED),
             KEYBIND_PIE_SETTINGS,
+            List.of(
+                    KEYMAP_SETTINGS_GROUP,
+                    KEYMAP_SETTINGS_EXPANDED),
+            KEYMAP_SETTINGS_CHILDREN,
             List.of(
                     CLICK_AND_SEND,
                     MAP_IN_SLOT,
@@ -616,9 +666,18 @@ public final class Configs implements IConfigHandler
             NIGHT_VISION_FADE_EXPANDED,
             BOAT_VIEW_360,
             BOAT_ITEM_VIEW,
+            CONFIG_GROUPING_GROUP,
+            CONFIG_GROUPING_EXPANDED),
+            CONFIG_GROUPING_CHILDREN,
+            List.of(
             KEYBIND_PIE_MENU,
+            OPEN_KEYMAP_BROWSER,
             KEYBIND_WHEEL_EXPANDED),
             KEYBIND_PIE_SETTINGS,
+            List.of(
+            KEYMAP_SETTINGS_GROUP,
+            KEYMAP_SETTINGS_EXPANDED),
+            KEYMAP_SETTINGS_CHILDREN,
             List.of(
             CLICK_AND_SEND,
             MAP_IN_SLOT,
@@ -655,49 +714,52 @@ public final class Configs implements IConfigHandler
             .distinct()
             .toList();
 
-    public static final List<IHotkey> HOTKEYS = List.of(
-            OPEN_TOOLS,
-            GIVE_FULL_INVENTORY,
-            REPORT_ELYTRA_TIME,
-            ENABLE_WORLD_BINDING,
-            ENABLE_GIVE_FULL_INVENTORY,
-            SCREENSHOT_TO_CLIPBOARD,
-            SKIP_RESOURCE_PACK_COMPATIBILITY_CHECK,
-            ELYTRA_TIME_TOOLTIP,
-            BOAT_VIEW_360,
-            BOAT_ITEM_VIEW,
-            INVENTORY_MOVE,
-            DISABLE_PAUSED_ITEM_TRAJECTORY_PREDICTION,
-            DISABLE_FLUID_RENDERING,
-            DISABLE_NON_SOURCE_FLUID_RENDERING,
-            ENTITY_RENDER_AGGREGATION,
-            ENTITY_AGGREGATION_COUNT_ONLY,
-            FAST_WORLD_LOADING_SCREEN,
-            FAST_RESOURCE_PACK_LOADING_SCREEN,
-            BETTER_SAVED_HOTBARS,
-            ITEM_SEARCH_HISTORY,
-            ITEM_MANAGER_RECIPE_HISTORY,
-            CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION,
-            KEEP_MOD_MENU_SCROLL,
-            COOLDOWN_AUTO_ATTACK,
-            DRAGGABLE_LISTS,
-            BRIDGING_ASSIST,
-            FAST_SCROLLING_PRIMARY_HOTKEY,
-            FAST_SCROLLING_SECONDARY_HOTKEY,
-            KEYBIND_PIE_MENU,
-            OPEN_KEYBIND_EDITOR,
-            RELOAD_KEYBIND_DATA,
-            OPEN_KEYMAP_BROWSER,
-            CLICK_AND_SEND,
-            CJK_LATIN_SPACING,
-            MAP_IN_SLOT,
-            SERVER_ICON_CACHE,
-            CLEAR_SERVER_ICON_CACHE,
-            TOAST_KILLER,
-            SERVER_PINGER_FIX,
-            CONTINGAME_IME,
-            CONDENSED_CREATIVE,
-            FILL_SAFETY);
+    public static final List<IHotkey> HOTKEYS = Stream.concat(
+            Stream.of(
+                    OPEN_TOOLS,
+                    GIVE_FULL_INVENTORY,
+                    REPORT_ELYTRA_TIME,
+                    ENABLE_WORLD_BINDING,
+                    ENABLE_GIVE_FULL_INVENTORY,
+                    SCREENSHOT_TO_CLIPBOARD,
+                    SKIP_RESOURCE_PACK_COMPATIBILITY_CHECK,
+                    ELYTRA_TIME_TOOLTIP,
+                    BOAT_VIEW_360,
+                    BOAT_ITEM_VIEW,
+                    INVENTORY_MOVE,
+                    DISABLE_PAUSED_ITEM_TRAJECTORY_PREDICTION,
+                    DISABLE_FLUID_RENDERING,
+                    DISABLE_NON_SOURCE_FLUID_RENDERING,
+                    ENTITY_RENDER_AGGREGATION,
+                    ENTITY_AGGREGATION_COUNT_ONLY,
+                    FAST_WORLD_LOADING_SCREEN,
+                    FAST_RESOURCE_PACK_LOADING_SCREEN,
+                    BETTER_SAVED_HOTBARS,
+                    ITEM_SEARCH_HISTORY,
+                    ITEM_MANAGER_RECIPE_HISTORY,
+                    CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION,
+                    KEEP_MOD_MENU_SCROLL,
+                    COOLDOWN_AUTO_ATTACK,
+                    DRAGGABLE_LISTS,
+                    BRIDGING_ASSIST,
+                    FAST_SCROLLING_PRIMARY_HOTKEY,
+                    FAST_SCROLLING_SECONDARY_HOTKEY,
+                    KEYBIND_PIE_MENU,
+                    OPEN_KEYBIND_EDITOR,
+                    RELOAD_KEYBIND_DATA,
+                    OPEN_KEYMAP_BROWSER,
+                    OPEN_CUSTOM_CONFIG_GROUPS,
+                    CLICK_AND_SEND,
+                    CJK_LATIN_SPACING,
+                    MAP_IN_SLOT,
+                    SERVER_ICON_CACHE,
+                    CLEAR_SERVER_ICON_CACHE,
+                    TOAST_KILLER,
+                    SERVER_PINGER_FIX,
+                    CONTINGAME_IME,
+                    CONDENSED_CREATIVE,
+                    FILL_SAFETY),
+            PlantCenteringConfigs.HOTKEYS.stream()).toList();
 
     @Override
     public void load()
@@ -783,6 +845,14 @@ public final class Configs implements IConfigHandler
                     if (FAST_SCROLLING_SECONDARY_MULTIPLIER.getIntegerValue() == 8)
                     {
                         FAST_SCROLLING_SECONDARY_MULTIPLIER.setIntegerValue(6);
+                    }
+                }
+                if (configVersion < 34)
+                {
+                    PlantCenteringConfigs.CENTER_PLANT_MODELS.setBooleanValue(false);
+                    for (IConfigBase config : PlantCenteringConfigs.CHILDREN)
+                    {
+                        ((ConfigBooleanHotkeyed) config).setBooleanValue(true);
                     }
                 }
                 if (configVersion < 21)
@@ -887,11 +957,35 @@ public final class Configs implements IConfigHandler
 
     public static List<IConfigBase> getAllView()
     {
-        List<IConfigBase> configs = Stream.of(GENERIC, getWaypointView(), getCreativeView(), getPortedView(), getClientView(), getExtensionsView(), getDisabledView())
+        List<IConfigBase> generic = CUSTOM_CONFIG_GROUPS.getBooleanValue()
+                ? visibleConfigs(GENERIC) : GENERIC;
+        List<IConfigBase> configs = Stream.of(generic, getWaypointView(), getCreativeView(), getPortedView(), getClientView(), getExtensionsView(), getDisabledView())
                 .flatMap(List::stream)
                 .distinct()
                 .toList();
         return keepRelatedConfigsTogether(configs);
+    }
+
+    public static List<IConfigBase> getCustomGroupCandidates()
+    {
+        return ALL.stream()
+                .filter(config -> !(config instanceof ConfigGroupHeader))
+                .filter(config -> !config.getName().endsWith("Expanded"))
+                .toList();
+    }
+
+    public static List<IConfigBase> getBuiltInExpansionParents()
+    {
+        java.util.LinkedHashSet<IConfigBase> parents = new java.util.LinkedHashSet<>();
+        for (IConfigBase config : ALL)
+        {
+            IConfigBase parent = getExpansionParent(config);
+            if (parent != null)
+            {
+                parents.add(parent);
+            }
+        }
+        return List.copyOf(parents);
     }
 
     public static List<IConfigBase> getRecommendedView()
@@ -963,6 +1057,8 @@ public final class Configs implements IConfigHandler
     public static ConfigBoolean getExpansionConfig(IConfigBase config)
     {
         if (config == KEYBIND_PIE_MENU) return KEYBIND_WHEEL_EXPANDED;
+        if (config == CONFIG_GROUPING_GROUP) return CONFIG_GROUPING_EXPANDED;
+        if (config == KEYMAP_SETTINGS_GROUP) return KEYMAP_SETTINGS_EXPANDED;
         if (config == NIGHT_VISION_FADE) return NIGHT_VISION_FADE_EXPANDED;
         if (config == FAST_SCROLLING) return FAST_SCROLLING_EXPANDED;
         if (config == CJK_LATIN_SPACING) return CJK_LATIN_SPACING_EXPANDED;
@@ -976,12 +1072,15 @@ public final class Configs implements IConfigHandler
         if (config == CONDENSED_CREATIVE) return CONDENSED_CREATIVE_EXPANDED;
         if (config == ITEM_SEARCH_HISTORY) return ITEM_SEARCH_HISTORY_EXPANDED;
         if (config == ITEM_MANAGER_RECIPE_HISTORY) return ITEM_MANAGER_RECIPE_HISTORY_EXPANDED;
+        if (config == PlantCenteringConfigs.CENTER_PLANT_MODELS) return PlantCenteringConfigs.CENTER_PLANT_MODELS_EXPANDED;
         return null;
     }
 
     public static boolean isExpandedChild(IConfigBase config)
     {
         return KEYBIND_PIE_SETTINGS.contains(config) ||
+                CONFIG_GROUPING_CHILDREN.contains(config) ||
+                KEYMAP_SETTINGS_CHILDREN.contains(config) ||
                 config == NIGHT_VISION_FADE_SECONDS ||
                 FAST_SCROLLING_CHILDREN.contains(config) ||
                 CJK_LATIN_SPACING_CHILDREN.contains(config) ||
@@ -992,12 +1091,15 @@ public final class Configs implements IConfigHandler
                 isWaypointSharingChild(config) || isDraggableChild(config) ||
                 isEntityAggregationChild(config) || CONDENSED_CREATIVE_CHILDREN.contains(config) ||
                 ITEM_SEARCH_HISTORY_CHILDREN.contains(config) ||
-                ITEM_MANAGER_RECIPE_HISTORY_CHILDREN.contains(config);
+                ITEM_MANAGER_RECIPE_HISTORY_CHILDREN.contains(config) ||
+                PLANT_CENTERING_CHILDREN.contains(config);
     }
 
     public static IConfigBase getExpansionParent(IConfigBase config)
     {
         if (KEYBIND_PIE_SETTINGS.contains(config)) return KEYBIND_PIE_MENU;
+        if (CONFIG_GROUPING_CHILDREN.contains(config)) return CONFIG_GROUPING_GROUP;
+        if (KEYMAP_SETTINGS_CHILDREN.contains(config)) return KEYMAP_SETTINGS_GROUP;
         if (config == NIGHT_VISION_FADE_SECONDS) return NIGHT_VISION_FADE;
         if (FAST_SCROLLING_CHILDREN.contains(config)) return FAST_SCROLLING;
         if (CJK_LATIN_SPACING_CHILDREN.contains(config)) return CJK_LATIN_SPACING;
@@ -1011,6 +1113,7 @@ public final class Configs implements IConfigHandler
         if (CONDENSED_CREATIVE_CHILDREN.contains(config)) return CONDENSED_CREATIVE;
         if (ITEM_SEARCH_HISTORY_CHILDREN.contains(config)) return ITEM_SEARCH_HISTORY;
         if (ITEM_MANAGER_RECIPE_HISTORY_CHILDREN.contains(config)) return ITEM_MANAGER_RECIPE_HISTORY;
+        if (PLANT_CENTERING_CHILDREN.contains(config)) return PlantCenteringConfigs.CENTER_PLANT_MODELS;
         return null;
     }
 
@@ -1023,9 +1126,18 @@ public final class Configs implements IConfigHandler
 
     private static List<IConfigBase> visibleConfigs(List<IConfigBase> configs)
     {
+        if (CUSTOM_CONFIG_GROUPS.getBooleanValue())
+        {
+            return configs.stream()
+                    .filter(config -> !(config instanceof ConfigGroupHeader))
+                    .filter(config -> !config.getName().endsWith("Expanded"))
+                    .toList();
+        }
         return configs.stream()
                 .filter(config -> config != IME_SETTINGS_EXPANDED &&
                         config != KEYBIND_WHEEL_EXPANDED &&
+                        config != CONFIG_GROUPING_EXPANDED &&
+                        config != KEYMAP_SETTINGS_EXPANDED &&
                         config != NIGHT_VISION_FADE_EXPANDED &&
                         config != FAST_SCROLLING_EXPANDED &&
                         config != CJK_LATIN_SPACING_EXPANDED &&
@@ -1036,8 +1148,11 @@ public final class Configs implements IConfigHandler
                         config != WAYPOINT_SHARING_EXPANDED &&
                         config != CONDENSED_CREATIVE_EXPANDED &&
                         config != ITEM_SEARCH_HISTORY_EXPANDED &&
-                        config != ITEM_MANAGER_RECIPE_HISTORY_EXPANDED)
+                        config != ITEM_MANAGER_RECIPE_HISTORY_EXPANDED &&
+                        config != PlantCenteringConfigs.CENTER_PLANT_MODELS_EXPANDED)
                 .filter(config -> !KEYBIND_PIE_SETTINGS.contains(config) || KEYBIND_WHEEL_EXPANDED.getBooleanValue())
+                .filter(config -> !CONFIG_GROUPING_CHILDREN.contains(config) || CONFIG_GROUPING_EXPANDED.getBooleanValue())
+                .filter(config -> !KEYMAP_SETTINGS_CHILDREN.contains(config) || KEYMAP_SETTINGS_EXPANDED.getBooleanValue())
                 .filter(config -> config != NIGHT_VISION_FADE_SECONDS || NIGHT_VISION_FADE_EXPANDED.getBooleanValue())
                 .filter(config -> !FAST_SCROLLING_CHILDREN.contains(config) || FAST_SCROLLING_EXPANDED.getBooleanValue())
                 .filter(config -> !CJK_LATIN_SPACING_CHILDREN.contains(config) || CJK_LATIN_SPACING_EXPANDED.getBooleanValue())
@@ -1052,6 +1167,7 @@ public final class Configs implements IConfigHandler
                 .filter(config -> !CONDENSED_CREATIVE_CHILDREN.contains(config) || CONDENSED_CREATIVE_EXPANDED.getBooleanValue())
                 .filter(config -> !ITEM_SEARCH_HISTORY_CHILDREN.contains(config) || ITEM_SEARCH_HISTORY_EXPANDED.getBooleanValue())
                 .filter(config -> !ITEM_MANAGER_RECIPE_HISTORY_CHILDREN.contains(config) || ITEM_MANAGER_RECIPE_HISTORY_EXPANDED.getBooleanValue())
+                .filter(config -> !PLANT_CENTERING_CHILDREN.contains(config) || PlantCenteringConfigs.CENTER_PLANT_MODELS_EXPANDED.getBooleanValue())
                 .toList();
     }
 
@@ -1071,6 +1187,10 @@ public final class Configs implements IConfigHandler
 
     private static List<IConfigBase> groupedPortedView()
     {
+        if (CUSTOM_CONFIG_GROUPS.getBooleanValue())
+        {
+            return visibleConfigs(PORTED);
+        }
         java.util.ArrayList<IConfigBase> result = new java.util.ArrayList<>();
         for (IConfigBase config : PORTED)
         {
@@ -1080,8 +1200,11 @@ public final class Configs implements IConfigHandler
                     config == CJK_LATIN_SPACING_EXPANDED ||
                     config == BRIDGING_EXPANDED ||
                     config == KEYBIND_WHEEL_EXPANDED || config == IME_SETTINGS_EXPANDED ||
+                    config == CONFIG_GROUPING_EXPANDED ||
+                    config == KEYMAP_SETTINGS_EXPANDED ||
                     config == GIVE_FULL_INVENTORY_EXPANDED || config == CUSTOM_SAVES_PATHS_EXPANDED ||
-                    config == CONDENSED_CREATIVE_EXPANDED || config == ITEM_SEARCH_HISTORY_EXPANDED)
+                    config == CONDENSED_CREATIVE_EXPANDED || config == ITEM_SEARCH_HISTORY_EXPANDED ||
+                    config == PlantCenteringConfigs.CENTER_PLANT_MODELS_EXPANDED)
             {
                 continue;
             }
@@ -1092,6 +1215,26 @@ public final class Configs implements IConfigHandler
                 continue;
             }
             if (ITEM_SEARCH_HISTORY_CHILDREN.contains(config))
+            {
+                continue;
+            }
+            if (config == CONFIG_GROUPING_GROUP)
+            {
+                result.add(config);
+                if (CONFIG_GROUPING_EXPANDED.getBooleanValue()) result.addAll(CONFIG_GROUPING_CHILDREN);
+                continue;
+            }
+            if (CONFIG_GROUPING_CHILDREN.contains(config))
+            {
+                continue;
+            }
+            if (config == KEYMAP_SETTINGS_GROUP)
+            {
+                result.add(config);
+                if (KEYMAP_SETTINGS_EXPANDED.getBooleanValue()) result.addAll(KEYMAP_SETTINGS_CHILDREN);
+                continue;
+            }
+            if (KEYMAP_SETTINGS_CHILDREN.contains(config))
             {
                 continue;
             }
@@ -1130,6 +1273,10 @@ public final class Configs implements IConfigHandler
             ConfigGroupHeader header,
             java.util.function.Predicate<IConfigBase> childPredicate)
     {
+        if (CUSTOM_CONFIG_GROUPS.getBooleanValue())
+        {
+            return visibleConfigs(configs);
+        }
         java.util.ArrayList<IConfigBase> result = new java.util.ArrayList<>();
         boolean inserted = false;
         for (IConfigBase config : configs)
@@ -1182,6 +1329,14 @@ public final class Configs implements IConfigHandler
         {
             return KEYBIND_WHEEL_EXPANDED.getBooleanValue();
         }
+        if (CONFIG_GROUPING_CHILDREN.contains(config))
+        {
+            return CONFIG_GROUPING_EXPANDED.getBooleanValue();
+        }
+        if (KEYMAP_SETTINGS_CHILDREN.contains(config))
+        {
+            return KEYMAP_SETTINGS_EXPANDED.getBooleanValue();
+        }
         if (IME_CHILDREN.contains(config))
         {
             return IME_SETTINGS_EXPANDED.getBooleanValue();
@@ -1201,6 +1356,10 @@ public final class Configs implements IConfigHandler
         if (ITEM_MANAGER_RECIPE_HISTORY_CHILDREN.contains(config))
         {
             return ITEM_MANAGER_RECIPE_HISTORY_EXPANDED.getBooleanValue();
+        }
+        if (PLANT_CENTERING_CHILDREN.contains(config))
+        {
+            return PlantCenteringConfigs.CENTER_PLANT_MODELS_EXPANDED.getBooleanValue();
         }
         return true;
     }
@@ -1273,6 +1432,10 @@ public final class Configs implements IConfigHandler
         DRAGGABLE_LISTS.setBooleanValue(false);
         BRIDGING_ASSIST.setBooleanValue(false);
         KEYBIND_PIE_MENU.setBooleanValue(false);
+        TWEAKEROO_COLLAPSIBLE_CONFIG.setBooleanValue(false);
+        CUSTOM_CONFIG_GROUPS.setBooleanValue(false);
+        KEYMAP_DIRECT_REBIND.setBooleanValue(false);
+        KEYMAP_RELEASE_CONFIRM.setBooleanValue(false);
         CLICK_AND_SEND.setBooleanValue(false);
         CJK_LATIN_SPACING.setBooleanValue(false);
         MAP_IN_SLOT.setBooleanValue(false);
