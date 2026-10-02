@@ -238,7 +238,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 "is_all_versions": True,
                 "all_entries": [entry],
                 "selected_entries": [entry],
-                "modrinth_project_id": "TO-BE-CONFIGURED",
+                "modrinth_project_id": "9ZHJ1Ue9",
                 "curseforge_project_id": "1661919",
             }
             context_path = root / "context.json"

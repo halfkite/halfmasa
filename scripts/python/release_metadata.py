@@ -16,7 +16,7 @@ from typing import Any, Iterable
 
 
 MOD_ID = "halfmasa"
-MODRINTH_PROJECT_ID = "TO-BE-CONFIGURED"  # replace once the Modrinth project exists
+MODRINTH_PROJECT_ID = "9ZHJ1Ue9"
 MODRINTH_MALIBIL_ID = "GcWjdA9I"
 CURSEFORGE_PROJECT_ID = "1661919"
 CURSEFORGE_MALIBIL_ID = "303119"

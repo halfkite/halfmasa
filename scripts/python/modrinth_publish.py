@@ -17,7 +17,7 @@ from typing import Any
 
 
 API_ROOT = "https://api.modrinth.com/v2"
-EXPECTED_PROJECT_ID = "TO-BE-CONFIGURED"  # replace once the Modrinth project exists
+EXPECTED_PROJECT_ID = "9ZHJ1Ue9"
 
 
 class ModrinthError(RuntimeError):

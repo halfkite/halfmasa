@@ -22,7 +22,7 @@ class ModrinthPublishTest(unittest.TestCase):
             "title": "Release title",
             "body": "Changes",
             "modrinth_version_number": "1.5.4",
-            "modrinth_project_id": "TO-BE-CONFIGURED",
+            "modrinth_project_id": "9ZHJ1Ue9",
             "is_all_versions": True,
             "all_versions": ["1.21.1", "1.21.3"],
             "all_entries": [
