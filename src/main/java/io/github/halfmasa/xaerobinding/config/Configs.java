@@ -35,13 +35,14 @@ import fi.dy.masa.malilib.util.data.json.JsonUtils;
 //#endif
 
 import io.github.halfmasa.xaerobinding.XaeroWorldBinding;
+import io.github.halfmasa.xaerobinding.compat.InputCompat;
 import io.github.halfmasa.xaerobinding.feature.CustomSavesPath;
 
 public final class Configs implements IConfigHandler
 {
     private static final String CONFIG_DIRECTORY_NAME = "halfmasa";
     private static final String CONFIG_FILE_NAME = "halfmasa.json";
-    private static final int CONFIG_VERSION = 34;
+    private static final int CONFIG_VERSION = 38;
     private static final String GENERIC_KEY = "halfmasa.config.generic";
     private static volatile boolean configLoaded;
 
@@ -163,6 +164,85 @@ public final class Configs implements IConfigHandler
             "boatView360", false, "").apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed BOAT_ITEM_VIEW = new ConfigBooleanHotkeyed(
             "boatItemView", false, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed VOID_TRADING = new ConfigBooleanHotkeyed(
+            "voidTrading", false, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed VOID_TRADING_EXPANDED = new ConfigBooleanHotkeyed(
+            "voidTradingExpanded", false, "").apply(PORTED_KEY);
+    public static final ConfigString VOID_TRADING_FAKE_PLAYER_NAMES = new ConfigString(
+            "voidTradingFakePlayerNames", "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed VOID_TRADING_AUTO_DETECT_FAKE_PLAYERS = new ConfigBooleanHotkeyed(
+            "voidTradingAutoDetectFakePlayers", false, "").apply(PORTED_KEY);
+    public static final ConfigOptionList VOID_TRADING_RECOVERY_MODE = new ConfigOptionList(
+            "voidTradingRecoveryMode", VoidTradeRecoveryMode.REJOIN).apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed VOID_TRADING_AUTO_TRADE = new ConfigBooleanHotkeyed(
+            "voidTradingAutoTrade", false, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed VOID_TRADING_AUTO_OPEN = new ConfigBooleanHotkeyed(
+            "voidTradingAutoOpen", false, "").apply(PORTED_KEY);
+    public static final ConfigHotkey VOID_TRADING_AUTO_OPEN_CANCEL = new ConfigHotkey(
+            "voidTradingAutoOpenCancel", "ESC", KeybindSettings.GUI).apply(PORTED_KEY);
+    public static final ConfigString VOID_TRADING_TRADE_INDICES = new ConfigString(
+            "voidTradingTradeIndices", "1").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed VOID_TRADING_TRADE_SPECIFIED_ITEMS = new ConfigBooleanHotkeyed(
+            "voidTradingTradeSpecifiedItems", false, "").apply(PORTED_KEY);
+    public static final ConfigStringList VOID_TRADING_TRADE_ITEMS = new ConfigStringList(
+            "voidTradingTradeItems", ImmutableList.of()).apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed VOID_TRADING_AUTO_CLOSE = new ConfigBooleanHotkeyed(
+            "voidTradingAutoClose", false, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed VOID_TRADING_DROP_TRADE_ITEMS = new ConfigBooleanHotkeyed(
+            "voidTradingDropTradeItems", false, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed VOID_TRADING_AUTO_UNCRAFT_EMERALD_BLOCKS = new ConfigBooleanHotkeyed(
+            "voidTradingAutoUncraftEmeraldBlocks", false, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed VOID_TRADING_QUICK_SHULKER = new ConfigBooleanHotkeyed(
+            "voidTradingQuickShulker", false, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed LITEMATICA_AUTO_REFILL = new ConfigBooleanHotkeyed(
+            "litematicaAutoRefill", false, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed LITEMATICA_REFILL_SILENT = new ConfigBooleanHotkeyed(
+            "litematicaRefillSilent", false, "").apply(PORTED_KEY);
+    public static final ConfigBoolean LITEMATICA_REFILL_EXPANDED = new ConfigBoolean(
+            "litematicaRefillExpanded", false).apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed LITEMATICA_REFILL_ALLOW_FAKE = new ConfigBooleanHotkeyed(
+            "litematicaRefillAllowFake", true, "").apply(PORTED_KEY);
+    public static final ConfigInteger LITEMATICA_REFILL_AMOUNT = new ConfigInteger(
+            "litematicaRefillAmount", 32, 0, 2304, true).apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed PRINTER_AUTO_REFILL = new ConfigBooleanHotkeyed(
+            "printerAutoRefill", false, "").apply(PORTED_KEY);
+    public static final ConfigBoolean PRINTER_REFILL_EXPANDED = new ConfigBoolean(
+            "printerRefillExpanded", false).apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed PRINTER_REFILL_ALLOW_FAKE = new ConfigBooleanHotkeyed(
+            "printerRefillAllowFake", true, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed PRINTER_REFILL_SILENT = new ConfigBooleanHotkeyed(
+            "printerRefillSilent", false, "").apply(PORTED_KEY);
+    public static final ConfigInteger PRINTER_REFILL_AMOUNT = new ConfigInteger(
+            "printerRefillAmount", 32, 0, 2304, true).apply(PORTED_KEY);
+    public static final List<IConfigBase> LITEMATICA_REFILL_CHILDREN = List.of(
+            LITEMATICA_REFILL_ALLOW_FAKE, LITEMATICA_REFILL_AMOUNT, LITEMATICA_REFILL_SILENT);
+    public static final List<IConfigBase> PRINTER_REFILL_CHILDREN = List.of(
+            PRINTER_REFILL_ALLOW_FAKE, PRINTER_REFILL_AMOUNT, PRINTER_REFILL_SILENT);
+    public static final List<IConfigBase> REFILL_EXTENSION_CONFIGS = Stream.of(
+            List.of(LITEMATICA_AUTO_REFILL, LITEMATICA_REFILL_EXPANDED), LITEMATICA_REFILL_CHILDREN,
+            List.of(PRINTER_AUTO_REFILL, PRINTER_REFILL_EXPANDED), PRINTER_REFILL_CHILDREN)
+            .flatMap(list -> list.stream().map(config -> (IConfigBase) config)).toList();
+    public static final ConfigBooleanHotkeyed CONFLUX_MAP_EXTENSIONS = new ConfigBooleanHotkeyed(
+            "confluxMapExtensions", false, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed CONFLUX_MAP_EXTENSIONS_EXPANDED = new ConfigBooleanHotkeyed(
+            "confluxMapExtensionsExpanded", false, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed CONFLUX_MAP_ALL_DIMENSIONS = new ConfigBooleanHotkeyed(
+            "confluxMapAllDimensions", false, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed CONFLUX_MAP_PUBLIC_WAYPOINTS = new ConfigBooleanHotkeyed(
+            "confluxMapPublicWaypoints", false, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed CONFLUX_MAP_SHOW_BOTH_WAYPOINTS = new ConfigBooleanHotkeyed(
+            "confluxMapShowBothWaypoints", false, "").apply(PORTED_KEY);
+    public static final ConfigOptionList CONFLUX_MAP_WAYPOINT_LIST_LAYOUT = new ConfigOptionList(
+            "confluxMapWaypointListLayout", ConfluxMapWaypointListLayout.SIDE_BY_SIDE).apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed CONFLUX_MAP_CLOSE_AFTER_TELEPORT = new ConfigBooleanHotkeyed(
+            "confluxMapCloseAfterTeleport", true, "").apply(PORTED_KEY);
+    public static final ConfigInteger CONFLUX_MAP_UNKNOWN_HEIGHT = new ConfigInteger(
+            "confluxMapUnknownHeight", 128, -2048, 4096, true).apply(PORTED_KEY);
+    public static final ActionHotkey CONFLUX_MAP_TEMPORARY_WAYPOINT = new ActionHotkey(
+            "confluxMapTemporaryWaypoint", "").applyTranslationKey(PORTED_KEY);
+
+    private static final ConfigString LEGACY_VOID_TRADING_FAKE_PLAYER_PREFIX = new ConfigString(
+            "voidTradingFakePlayerPrefix", "").apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed INVENTORY_MOVE = new ConfigBooleanHotkeyed(
             "inventoryMove", false, "").apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed FAST_WORLD_LOADING_SCREEN = new ConfigBooleanHotkeyed(
@@ -247,6 +327,7 @@ public final class Configs implements IConfigHandler
             "configGroupingGroup", PORTED_KEY, CONFIG_GROUPING_EXPANDED);
     public static final ConfigBoolean KEYBIND_WHEEL_EXPANDED = new ConfigBoolean(
             "keybindWheelExpanded", false).apply(PORTED_KEY);
+    // Better Key Settings is available across the supported version matrix.
     public static final ConfigBoolean KEYMAP_DIRECT_REBIND = new ConfigBoolean(
             "keymapDirectRebind", false).apply(PORTED_KEY);
     public static final ConfigBoolean KEYMAP_RELEASE_CONFIRM = new ConfigBoolean(
@@ -433,6 +514,7 @@ public final class Configs implements IConfigHandler
             KEYBIND_GRADATION,
             KEYBIND_ANIMATE);
     private static final List<IConfigBase> KEYMAP_SETTINGS_CHILDREN = List.of(
+            OPEN_KEYMAP_BROWSER,
             KEYMAP_DIRECT_REBIND,
             KEYMAP_RELEASE_CONFIRM,
             KEYMAP_CONFIRM_SETTING,
@@ -504,6 +586,31 @@ public final class Configs implements IConfigHandler
             NIGHT_VISION_FADE_EXPANDED,
             BOAT_VIEW_360,
             BOAT_ITEM_VIEW,
+            VOID_TRADING,
+            VOID_TRADING_EXPANDED,
+            VOID_TRADING_FAKE_PLAYER_NAMES,
+            VOID_TRADING_AUTO_DETECT_FAKE_PLAYERS,
+            VOID_TRADING_RECOVERY_MODE,
+            VOID_TRADING_AUTO_TRADE,
+            VOID_TRADING_AUTO_OPEN,
+            VOID_TRADING_AUTO_OPEN_CANCEL,
+            VOID_TRADING_TRADE_INDICES,
+            VOID_TRADING_TRADE_SPECIFIED_ITEMS,
+            VOID_TRADING_TRADE_ITEMS,
+            VOID_TRADING_AUTO_CLOSE,
+            VOID_TRADING_DROP_TRADE_ITEMS,
+            VOID_TRADING_AUTO_UNCRAFT_EMERALD_BLOCKS,
+            VOID_TRADING_QUICK_SHULKER,
+            CONFLUX_MAP_EXTENSIONS,
+            CONFLUX_MAP_EXTENSIONS_EXPANDED,
+            CONFLUX_MAP_ALL_DIMENSIONS,
+            CONFLUX_MAP_PUBLIC_WAYPOINTS,
+            CONFLUX_MAP_SHOW_BOTH_WAYPOINTS,
+            CONFLUX_MAP_WAYPOINT_LIST_LAYOUT,
+            CONFLUX_MAP_CLOSE_AFTER_TELEPORT,
+            CONFLUX_MAP_UNKNOWN_HEIGHT,
+            CONFLUX_MAP_TEMPORARY_WAYPOINT,
+
             INVENTORY_MOVE,
             FAST_WORLD_LOADING_SCREEN,
             FAST_RESOURCE_PACK_LOADING_SCREEN,
@@ -528,17 +635,15 @@ public final class Configs implements IConfigHandler
             BRIDGING_CHILDREN,
             List.of(
             KEYBIND_PIE_MENU,
-            CONFIG_GROUPING_GROUP,
-            CONFIG_GROUPING_EXPANDED),
-            CONFIG_GROUPING_CHILDREN,
-            List.of(
-            OPEN_KEYMAP_BROWSER,
             KEYBIND_WHEEL_EXPANDED),
             KEYBIND_PIE_SETTINGS,
             List.of(
-            KEYMAP_SETTINGS_GROUP,
-            KEYMAP_SETTINGS_EXPANDED),
+            CONFIG_GROUPING_GROUP,
+            CONFIG_GROUPING_EXPANDED),
+            CONFIG_GROUPING_CHILDREN,
+            List.of(KEYMAP_SETTINGS_GROUP, KEYMAP_SETTINGS_EXPANDED),
             KEYMAP_SETTINGS_CHILDREN,
+
             List.of(
             CLICK_AND_SEND,
             CJK_LATIN_SPACING,
@@ -585,17 +690,15 @@ public final class Configs implements IConfigHandler
                     FAST_WORLD_LOADING_SCREEN,
                     FAST_RESOURCE_PACK_LOADING_SCREEN,
                     KEYBIND_PIE_MENU,
-                    CONFIG_GROUPING_GROUP,
-                    CONFIG_GROUPING_EXPANDED),
-            CONFIG_GROUPING_CHILDREN,
-            List.of(
-                    OPEN_KEYMAP_BROWSER,
                     KEYBIND_WHEEL_EXPANDED),
             KEYBIND_PIE_SETTINGS,
             List.of(
-                    KEYMAP_SETTINGS_GROUP,
-                    KEYMAP_SETTINGS_EXPANDED),
+                    CONFIG_GROUPING_GROUP,
+                    CONFIG_GROUPING_EXPANDED),
+            CONFIG_GROUPING_CHILDREN,
+            List.of(KEYMAP_SETTINGS_GROUP, KEYMAP_SETTINGS_EXPANDED),
             KEYMAP_SETTINGS_CHILDREN,
+
             List.of(
                     CLICK_AND_SEND,
                     MAP_IN_SLOT,
@@ -614,7 +717,10 @@ public final class Configs implements IConfigHandler
             .flatMap(list -> list.stream().map(config -> (IConfigBase) config))
             .toList();
 
-    public static final List<IConfigBase> EXTENSIONS = ITEM_MANAGER_RECIPE_HISTORY_CONFIGS;
+    public static final List<IConfigBase> EXTENSIONS = Stream.of(ITEM_MANAGER_RECIPE_HISTORY_CONFIGS
+            , REFILL_EXTENSION_CONFIGS
+
+            ).flatMap(List::stream).toList();
 
     private static final String DISABLED_KEY = "halfmasa.config.disabled";
     public static final ConfigBooleanHotkeyed DISABLE_FLUID_RENDERING = new ConfigBooleanHotkeyed(
@@ -623,6 +729,10 @@ public final class Configs implements IConfigHandler
             "disableNonSourceFluidRendering", false, "").apply(DISABLED_KEY);
     public static final ConfigBooleanHotkeyed ENTITY_RENDER_AGGREGATION = new ConfigBooleanHotkeyed(
             "entityRenderAggregation", false, "").apply(DISABLED_KEY);
+//#if MC >= 26.3
+    public static final ConfigBooleanHotkeyed ITEM_RENDER_AGGREGATION = new ConfigBooleanHotkeyed(
+            "itemRenderAggregation", true, "").apply(DISABLED_KEY);
+//#endif
     public static final ConfigBooleanHotkeyed ENTITY_AGGREGATION_COUNT_ONLY = new ConfigBooleanHotkeyed(
             "entityAggregationCountOnly", false, "").apply(DISABLED_KEY);
     public static final ConfigBoolean ENTITY_RENDER_AGGREGATION_EXPANDED = new ConfigBoolean(
@@ -648,6 +758,9 @@ public final class Configs implements IConfigHandler
             DISABLE_FLUID_RENDERING,
             DISABLE_NON_SOURCE_FLUID_RENDERING,
             ENTITY_RENDER_AGGREGATION,
+//#if MC >= 26.3
+            ITEM_RENDER_AGGREGATION,
+//#endif
             ENTITY_AGGREGATION_COUNT_ONLY,
             ENTITY_AGGREGATION_RADIUS,
             ENTITY_AGGREGATION_THRESHOLD,
@@ -671,13 +784,11 @@ public final class Configs implements IConfigHandler
             CONFIG_GROUPING_CHILDREN,
             List.of(
             KEYBIND_PIE_MENU,
-            OPEN_KEYMAP_BROWSER,
             KEYBIND_WHEEL_EXPANDED),
             KEYBIND_PIE_SETTINGS,
-            List.of(
-            KEYMAP_SETTINGS_GROUP,
-            KEYMAP_SETTINGS_EXPANDED),
+            List.of(KEYMAP_SETTINGS_GROUP, KEYMAP_SETTINGS_EXPANDED),
             KEYMAP_SETTINGS_CHILDREN,
+
             List.of(
             CLICK_AND_SEND,
             MAP_IN_SLOT,
@@ -726,11 +837,39 @@ public final class Configs implements IConfigHandler
                     ELYTRA_TIME_TOOLTIP,
                     BOAT_VIEW_360,
                     BOAT_ITEM_VIEW,
+                    VOID_TRADING,
+                    VOID_TRADING_EXPANDED,
+                    VOID_TRADING_AUTO_DETECT_FAKE_PLAYERS,
+                    VOID_TRADING_AUTO_TRADE,
+                    VOID_TRADING_AUTO_OPEN,
+                    VOID_TRADING_AUTO_OPEN_CANCEL,
+                    VOID_TRADING_TRADE_SPECIFIED_ITEMS,
+                    VOID_TRADING_AUTO_CLOSE,
+                    VOID_TRADING_DROP_TRADE_ITEMS,
+                    VOID_TRADING_AUTO_UNCRAFT_EMERALD_BLOCKS,
+                    VOID_TRADING_QUICK_SHULKER,
+                    LITEMATICA_AUTO_REFILL,
+                    LITEMATICA_REFILL_SILENT,
+                    LITEMATICA_REFILL_ALLOW_FAKE,
+                    PRINTER_AUTO_REFILL,
+                    PRINTER_REFILL_ALLOW_FAKE,
+                    PRINTER_REFILL_SILENT,
+                    CONFLUX_MAP_EXTENSIONS,
+                    CONFLUX_MAP_EXTENSIONS_EXPANDED,
+                    CONFLUX_MAP_ALL_DIMENSIONS,
+                    CONFLUX_MAP_PUBLIC_WAYPOINTS,
+                    CONFLUX_MAP_SHOW_BOTH_WAYPOINTS,
+                    CONFLUX_MAP_CLOSE_AFTER_TELEPORT,
+                    CONFLUX_MAP_TEMPORARY_WAYPOINT,
+
                     INVENTORY_MOVE,
                     DISABLE_PAUSED_ITEM_TRAJECTORY_PREDICTION,
                     DISABLE_FLUID_RENDERING,
                     DISABLE_NON_SOURCE_FLUID_RENDERING,
                     ENTITY_RENDER_AGGREGATION,
+//#if MC >= 26.3
+                    ITEM_RENDER_AGGREGATION,
+//#endif
                     ENTITY_AGGREGATION_COUNT_ONLY,
                     FAST_WORLD_LOADING_SCREEN,
                     FAST_RESOURCE_PACK_LOADING_SCREEN,
@@ -748,6 +887,7 @@ public final class Configs implements IConfigHandler
                     OPEN_KEYBIND_EDITOR,
                     RELOAD_KEYBIND_DATA,
                     OPEN_KEYMAP_BROWSER,
+
                     OPEN_CUSTOM_CONFIG_GROUPS,
                     CLICK_AND_SEND,
                     CJK_LATIN_SPACING,
@@ -813,7 +953,19 @@ public final class Configs implements IConfigHandler
             ConfigUtils.readConfigBase(root, "Ported", PORTED);
             ConfigUtils.readConfigBase(root, "Ported", ITEM_MANAGER_RECIPE_HISTORY_CONFIGS);
             ConfigUtils.readConfigBase(root, "Ported", CUSTOM_SAVES_INTERNAL);
+            if (configVersion < 36)
+            {
+                ConfigUtils.readConfigBase(root, "Ported", List.of(LEGACY_VOID_TRADING_FAKE_PLAYER_PREFIX));
+                if (VOID_TRADING_FAKE_PLAYER_NAMES.getStringValue().isBlank() &&
+                        !LEGACY_VOID_TRADING_FAKE_PLAYER_PREFIX.getStringValue().isBlank())
+                {
+                    VOID_TRADING_FAKE_PLAYER_NAMES.setValueFromString(
+                            LEGACY_VOID_TRADING_FAKE_PLAYER_PREFIX.getStringValue().trim());
+                }
+            }
             ConfigUtils.readConfigBase(root, "Client", CLIENT);
+            ConfigUtils.readConfigBase(root, "Ported", REFILL_EXTENSION_CONFIGS); // Preserve previous settings.
+
             ConfigUtils.readConfigBase(root, "Extensions", EXTENSIONS);
             ConfigUtils.readConfigBase(root, "Disabled", DISABLED);
             if (configVersion < 14)
@@ -855,6 +1007,11 @@ public final class Configs implements IConfigHandler
                         ((ConfigBooleanHotkeyed) config).setBooleanValue(true);
                     }
                 }
+                if (configVersion < 35)
+                {
+                    KEYBIND_IGNORED_KEYS.setValueFromString(migrateIgnoredKeyCodes(
+                            KEYBIND_IGNORED_KEYS.getStringValue()));
+                }
                 if (configVersion < 21)
                 {
                     KeybindSettings current = CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION.getKeybind().getSettings();
@@ -895,6 +1052,36 @@ public final class Configs implements IConfigHandler
             XaeroWorldBinding.LOGGER.error("Failed to parse config file {}", file.toAbsolutePath());
         }
         CustomSavesPath.applyLoadedSelection();
+    }
+
+    private static String migrateIgnoredKeyCodes(String value)
+    {
+        StringBuilder migrated = new StringBuilder();
+        for (String token : value.split("[,;\\s]+"))
+        {
+            if (token.isBlank())
+            {
+                continue;
+            }
+            try
+            {
+                int code = InputCompat.layoutKeyCode(Integer.parseInt(token));
+                if (migrated.length() > 0)
+                {
+                    migrated.append(',');
+                }
+                migrated.append(code);
+            }
+            catch (NumberFormatException ignored)
+            {
+                if (migrated.length() > 0)
+                {
+                    migrated.append(',');
+                }
+                migrated.append(token);
+            }
+        }
+        return migrated.toString();
     }
 
     public static boolean isConfigLoaded()
@@ -1060,6 +1247,11 @@ public final class Configs implements IConfigHandler
         if (config == CONFIG_GROUPING_GROUP) return CONFIG_GROUPING_EXPANDED;
         if (config == KEYMAP_SETTINGS_GROUP) return KEYMAP_SETTINGS_EXPANDED;
         if (config == NIGHT_VISION_FADE) return NIGHT_VISION_FADE_EXPANDED;
+        if (config == VOID_TRADING) return VOID_TRADING_EXPANDED;
+        if (config == LITEMATICA_AUTO_REFILL) return LITEMATICA_REFILL_EXPANDED;
+        if (config == PRINTER_AUTO_REFILL) return PRINTER_REFILL_EXPANDED;
+        if (config == CONFLUX_MAP_EXTENSIONS) return CONFLUX_MAP_EXTENSIONS_EXPANDED;
+
         if (config == FAST_SCROLLING) return FAST_SCROLLING_EXPANDED;
         if (config == CJK_LATIN_SPACING) return CJK_LATIN_SPACING_EXPANDED;
         if (config == BRIDGING_ASSIST) return BRIDGING_EXPANDED;
@@ -1082,6 +1274,10 @@ public final class Configs implements IConfigHandler
                 CONFIG_GROUPING_CHILDREN.contains(config) ||
                 KEYMAP_SETTINGS_CHILDREN.contains(config) ||
                 config == NIGHT_VISION_FADE_SECONDS ||
+                isVoidTradingChild(config) ||
+                LITEMATICA_REFILL_CHILDREN.contains(config) || PRINTER_REFILL_CHILDREN.contains(config) ||
+                isConfluxMapExtensionChild(config) ||
+
                 FAST_SCROLLING_CHILDREN.contains(config) ||
                 CJK_LATIN_SPACING_CHILDREN.contains(config) ||
                 BRIDGING_CHILDREN.contains(config) ||
@@ -1101,6 +1297,11 @@ public final class Configs implements IConfigHandler
         if (CONFIG_GROUPING_CHILDREN.contains(config)) return CONFIG_GROUPING_GROUP;
         if (KEYMAP_SETTINGS_CHILDREN.contains(config)) return KEYMAP_SETTINGS_GROUP;
         if (config == NIGHT_VISION_FADE_SECONDS) return NIGHT_VISION_FADE;
+        if (isVoidTradingChild(config)) return VOID_TRADING;
+        if (LITEMATICA_REFILL_CHILDREN.contains(config)) return LITEMATICA_AUTO_REFILL;
+        if (PRINTER_REFILL_CHILDREN.contains(config)) return PRINTER_AUTO_REFILL;
+        if (isConfluxMapExtensionChild(config)) return CONFLUX_MAP_EXTENSIONS;
+
         if (FAST_SCROLLING_CHILDREN.contains(config)) return FAST_SCROLLING;
         if (CJK_LATIN_SPACING_CHILDREN.contains(config)) return CJK_LATIN_SPACING;
         if (BRIDGING_CHILDREN.contains(config)) return BRIDGING_ASSIST;
@@ -1139,6 +1340,7 @@ public final class Configs implements IConfigHandler
                         config != CONFIG_GROUPING_EXPANDED &&
                         config != KEYMAP_SETTINGS_EXPANDED &&
                         config != NIGHT_VISION_FADE_EXPANDED &&
+                        config != VOID_TRADING_EXPANDED &&
                         config != FAST_SCROLLING_EXPANDED &&
                         config != CJK_LATIN_SPACING_EXPANDED &&
                         config != BRIDGING_EXPANDED &&
@@ -1150,10 +1352,17 @@ public final class Configs implements IConfigHandler
                         config != ITEM_SEARCH_HISTORY_EXPANDED &&
                         config != ITEM_MANAGER_RECIPE_HISTORY_EXPANDED &&
                         config != PlantCenteringConfigs.CENTER_PLANT_MODELS_EXPANDED)
+                .filter(config -> config != CONFLUX_MAP_EXTENSIONS_EXPANDED && config != LITEMATICA_REFILL_EXPANDED && config != PRINTER_REFILL_EXPANDED)
+
                 .filter(config -> !KEYBIND_PIE_SETTINGS.contains(config) || KEYBIND_WHEEL_EXPANDED.getBooleanValue())
                 .filter(config -> !CONFIG_GROUPING_CHILDREN.contains(config) || CONFIG_GROUPING_EXPANDED.getBooleanValue())
                 .filter(config -> !KEYMAP_SETTINGS_CHILDREN.contains(config) || KEYMAP_SETTINGS_EXPANDED.getBooleanValue())
                 .filter(config -> config != NIGHT_VISION_FADE_SECONDS || NIGHT_VISION_FADE_EXPANDED.getBooleanValue())
+                .filter(config -> !isVoidTradingChild(config) || VOID_TRADING_EXPANDED.getBooleanValue())
+                .filter(config -> !isConfluxMapExtensionChild(config) || CONFLUX_MAP_EXTENSIONS_EXPANDED.getBooleanValue())
+                .filter(config -> !LITEMATICA_REFILL_CHILDREN.contains(config) || LITEMATICA_REFILL_EXPANDED.getBooleanValue())
+                .filter(config -> !PRINTER_REFILL_CHILDREN.contains(config) || PRINTER_REFILL_EXPANDED.getBooleanValue())
+
                 .filter(config -> !FAST_SCROLLING_CHILDREN.contains(config) || FAST_SCROLLING_EXPANDED.getBooleanValue())
                 .filter(config -> !CJK_LATIN_SPACING_CHILDREN.contains(config) || CJK_LATIN_SPACING_EXPANDED.getBooleanValue())
                 .filter(config -> !BRIDGING_CHILDREN.contains(config) || BRIDGING_EXPANDED.getBooleanValue())
@@ -1179,11 +1388,41 @@ public final class Configs implements IConfigHandler
 
     private static boolean isEntityAggregationChild(IConfigBase config)
     {
-        return config == ENTITY_AGGREGATION_COUNT_ONLY || config == ENTITY_AGGREGATION_RADIUS || config == ENTITY_AGGREGATION_THRESHOLD ||
+        return config == ENTITY_AGGREGATION_COUNT_ONLY ||
+//#if MC >= 26.3
+                config == ITEM_RENDER_AGGREGATION ||
+//#endif
+                config == ENTITY_AGGREGATION_RADIUS || config == ENTITY_AGGREGATION_THRESHOLD ||
                 config == ENTITY_AGGREGATION_SCAN_INTERVAL ||
                 config == ENTITY_AGGREGATION_LABEL_POSITION || config == ENTITY_AGGREGATION_LIST_MODE ||
                 config == ENTITY_AGGREGATION_WHITELIST || config == ENTITY_AGGREGATION_BLACKLIST;
     }
+
+    private static boolean isVoidTradingChild(IConfigBase config)
+    {
+        return config == VOID_TRADING_FAKE_PLAYER_NAMES ||
+                config == VOID_TRADING_AUTO_DETECT_FAKE_PLAYERS ||
+                config == VOID_TRADING_RECOVERY_MODE ||
+                config == VOID_TRADING_AUTO_TRADE ||
+                config == VOID_TRADING_AUTO_OPEN ||
+                config == VOID_TRADING_AUTO_OPEN_CANCEL ||
+                config == VOID_TRADING_TRADE_INDICES ||
+                config == VOID_TRADING_TRADE_SPECIFIED_ITEMS ||
+                config == VOID_TRADING_TRADE_ITEMS ||
+                config == VOID_TRADING_AUTO_CLOSE ||
+                config == VOID_TRADING_DROP_TRADE_ITEMS ||
+                config == VOID_TRADING_AUTO_UNCRAFT_EMERALD_BLOCKS ||
+                config == VOID_TRADING_QUICK_SHULKER;
+    }
+
+    private static boolean isConfluxMapExtensionChild(IConfigBase config)
+    {
+        return config == CONFLUX_MAP_ALL_DIMENSIONS || config == CONFLUX_MAP_PUBLIC_WAYPOINTS ||
+                config == CONFLUX_MAP_SHOW_BOTH_WAYPOINTS || config == CONFLUX_MAP_WAYPOINT_LIST_LAYOUT ||
+                config == CONFLUX_MAP_CLOSE_AFTER_TELEPORT || config == CONFLUX_MAP_UNKNOWN_HEIGHT ||
+                config == CONFLUX_MAP_TEMPORARY_WAYPOINT;
+    }
+
 
     private static List<IConfigBase> groupedPortedView()
     {
@@ -1194,8 +1433,14 @@ public final class Configs implements IConfigHandler
         java.util.ArrayList<IConfigBase> result = new java.util.ArrayList<>();
         for (IConfigBase config : PORTED)
         {
+            if (config == CONFLUX_MAP_EXTENSIONS_EXPANDED)
+            {
+                continue;
+            }
+
             if (config == MAP_IN_SLOT_EXPANDED || config == DRAGGABLE_LISTS_EXPANDED ||
                     config == NIGHT_VISION_FADE_EXPANDED ||
+                    config == VOID_TRADING_EXPANDED ||
                     config == FAST_SCROLLING_EXPANDED ||
                     config == CJK_LATIN_SPACING_EXPANDED ||
                     config == BRIDGING_EXPANDED ||
@@ -1313,6 +1558,17 @@ public final class Configs implements IConfigHandler
         {
             return NIGHT_VISION_FADE_EXPANDED.getBooleanValue();
         }
+        if (isVoidTradingChild(config))
+        {
+            return VOID_TRADING_EXPANDED.getBooleanValue();
+        }
+        if (LITEMATICA_REFILL_CHILDREN.contains(config)) return LITEMATICA_REFILL_EXPANDED.getBooleanValue();
+        if (PRINTER_REFILL_CHILDREN.contains(config)) return PRINTER_REFILL_EXPANDED.getBooleanValue();
+        if (isConfluxMapExtensionChild(config))
+        {
+            return CONFLUX_MAP_EXTENSIONS_EXPANDED.getBooleanValue();
+        }
+
         if (FAST_SCROLLING_CHILDREN.contains(config))
         {
             return FAST_SCROLLING_EXPANDED.getBooleanValue();

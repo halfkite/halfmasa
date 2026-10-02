@@ -23,7 +23,10 @@
     "xaeroworldmap": ">=1.44.0",
     "modmenu": "*",
     "carpet": "*",
+    "quickshulker": "*",
+    "halfmasa-void-trading-server": "*",
     "tweakeroo": "*",
+    "neat": "*",
     "roughlyenoughitems": "*",
     "jei": "*"
   }

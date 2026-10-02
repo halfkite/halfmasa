@@ -42,11 +42,11 @@ class ReleaseMetadataTest(unittest.TestCase):
 
     def test_repository_settings_have_no_independent_121_project(self):
         versions, publish_versions = release_metadata.load_release_settings(self.repo_root)
-        self.assertEqual(9, len(versions))
+        self.assertEqual(10, len(versions))
         self.assertNotIn("1.21", versions)
         self.assertNotIn("1.21", publish_versions)
         self.assertIn("1.21.1", publish_versions)
-        self.assertEqual(9, len(publish_versions))
+        self.assertEqual(10, len(publish_versions))
 
     def test_repository_has_no_independent_121_build_references(self):
         build_gradle = (self.repo_root / "build.gradle").read_text(encoding="utf-8")
@@ -156,6 +156,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 "1.21.11": ["1.21.11"],
                 "26.1.2": ["26.1", "26.1.1", "26.1.2"],
                 "26.2": ["26.2"],
+                "26.3": ["26.3"],
             },
             actual,
         )
@@ -166,6 +167,15 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertEqual(publish_versions, [item["mc_version"] for item in matrix["include"]])
         self.assertEqual("21", matrix["include"][0]["java"])
         self.assertEqual("25", matrix["include"][-1]["java"])
+
+    def test_ci_validates_source_dialect_root_and_263_project(self):
+        build_workflow = (self.repo_root / ".github/workflows/build.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("root=\"$(tr -d '\\r\\n' < versions/mainProject)\"", build_workflow)
+        self.assertIn("versions/26.3/gradle.properties", build_workflow)
+        self.assertIn("including 26.3", build_workflow)
+        self.assertNotIn("printf '26.2\\n' > versions/mainProject", build_workflow)
 
     def test_target_selection_rejects_removed_and_duplicate_projects(self):
         _, publish_versions = release_metadata.load_release_settings(self.repo_root)

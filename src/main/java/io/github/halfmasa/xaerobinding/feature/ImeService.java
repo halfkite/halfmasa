@@ -11,6 +11,7 @@ import fi.dy.masa.malilib.interfaces.IClientTickHandler;
 import city.windmill.ingameime.client.jni.ExternalBaseIME;
 import io.github.halfmasa.xaerobinding.config.Configs;
 import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
+import io.github.halfmasa.xaerobinding.compat.InputCompat;
 import io.github.halfmasa.xaerobinding.mixin.KeyboardHandlerAccessor;
 
 public final class ImeService implements IClientTickHandler
@@ -216,7 +217,7 @@ public final class ImeService implements IClientTickHandler
             this.previousMouseY = mouseY;
         }
 
-        boolean fullscreen = client.getWindow().isFullscreen();
+        boolean fullscreen = InputCompat.isFullscreen(client);
         if (master && fullscreen != this.previousFullscreen && ExternalBaseIME.getInstance().isInitialized())
         {
             this.previousFullscreen = fullscreen;
@@ -236,7 +237,7 @@ public final class ImeService implements IClientTickHandler
         if (master && !ExternalBaseIME.getInstance().isInitialized())
         {
             ExternalBaseIME.getInstance().initialize();
-            this.previousFullscreen = Minecraft.getInstance().getWindow().isFullscreen();
+            this.previousFullscreen = InputCompat.isFullscreen(Minecraft.getInstance());
         }
         if (ExternalBaseIME.getInstance().isInitialized() && desired != this.nativeActive)
         {

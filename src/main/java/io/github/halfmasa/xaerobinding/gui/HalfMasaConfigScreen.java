@@ -16,7 +16,7 @@ import io.github.halfmasa.xaerobinding.feature.MaLiLibConfigScrollAccess;
 
 public final class HalfMasaConfigScreen extends GuiConfigsBase implements ScrollCategoryKeyProvider
 {
-    private static Tab tab = Tab.ALL;
+    private Tab tab = Tab.ALL;
 
     public HalfMasaConfigScreen()
     {
@@ -110,7 +110,7 @@ public final class HalfMasaConfigScreen extends GuiConfigsBase implements Scroll
         @Override
         public void actionPerformedWithButton(ButtonBase button, int mouseButton)
         {
-            tab = this.selected;
+            this.screen.tab = this.selected;
             this.screen.reCreateListWidget();
             if (this.screen.getListWidget() != null)
             {

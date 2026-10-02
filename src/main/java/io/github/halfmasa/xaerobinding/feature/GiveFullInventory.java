@@ -39,7 +39,6 @@ public final class GiveFullInventory
     {
         if (!Configs.ENABLE_GIVE_FULL_INVENTORY.getBooleanValue())
         {
-            error("disabled");
             return false;
         }
 
@@ -167,7 +166,11 @@ public final class GiveFullInventory
     {
         ItemStack bundle = originalBundle.copyWithCount(1);
         BundleContents existing = bundle.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
-        BundleContents.Mutable mutable = new BundleContents.Mutable(existing);
+        //#if MC < 26.3
+        //$$ BundleContents.Mutable mutable = new BundleContents.Mutable(existing);
+        //#else
+        BundleContents.Mutable mutable = existing.asMutable();
+        //#endif
         for (int index = 0; index < Configs.BUNDLE_FILL.getIntegerValue(); index++)
         {
             mutable.tryInsert(contents.copy());

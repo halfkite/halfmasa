@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "halfmasa-void-trading-server",
+  "version": "${mod_version}",
+  "name": "HalfMasa Void Trading Server Support",
+  "description": "Optional server support for HalfMasa Void Trading material preparation.",
+  "authors": ["half_masa"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["io.github.halfmasa.xaerobinding.server.VoidTradingServerInitializer"]
+  },
+  "depends": {
+    "minecraft": ">=26.3 <26.4",
+    "fabricloader": ">=0.19.5",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "halfmasa": "*",
+    "quickshulker": "*"
+  }
+}

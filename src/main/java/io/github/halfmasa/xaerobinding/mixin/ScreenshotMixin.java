@@ -20,13 +20,17 @@ import io.github.halfmasa.xaerobinding.feature.ScreenshotClipboard;
 @Mixin(Screenshot.class)
 public abstract class ScreenshotMixin
 {
-    //#if MC >= 26.0
+    //#if MC >= 26.2
     @Redirect(
             method = "grab(Lnet/minecraft/client/Minecraft;Z)V",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/client/Screenshot;grab(Ljava/io/File;Lcom/mojang/blaze3d/pipeline/RenderTarget;Ljava/util/function/Consumer;)V"),
-            require = 0)
+            //#if MC >= 26.3
+            require = 1)
+            //#else
+            //$$ require = 0)
+            //#endif
     private static void halfmasa$markF2Screenshot(
             File gameDirectory,
             RenderTarget renderTarget,
@@ -43,7 +47,11 @@ public abstract class ScreenshotMixin
             at = @At("HEAD"),
             argsOnly = true,
             ordinal = 0,
-            require = 0)
+            //#if MC >= 26.3
+            require = 1)
+            //#else
+            //$$ require = 0)
+            //#endif
     private static Consumer<NativeImage> halfmasa$wrapScreenshotConsumer(Consumer<NativeImage> original)
     {
         //#if MC >= 26.0

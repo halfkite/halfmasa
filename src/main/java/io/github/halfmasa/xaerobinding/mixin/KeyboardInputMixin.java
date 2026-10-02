@@ -5,12 +5,12 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.player.KeyboardInput;
-import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.compat.InputCompat;
 import io.github.halfmasa.xaerobinding.gui.KeybindPieScreen;
 
 @Mixin(KeyboardInput.class)
@@ -36,20 +36,10 @@ public abstract class KeyboardInputMixin
         }
 
         InputConstants.Key key = ((KeyMappingAccessor) keyMapping).halfmasa$getBoundKey();
-        //#if MC >= 1.21.10
-        var window = minecraft.getWindow();
-        long windowHandle = window.handle();
-        //#else
-        //$$ long windowHandle = minecraft.getWindow().getWindow();
-        //#endif
         if (key.getType() == InputConstants.Type.MOUSE)
         {
-            return GLFW.glfwGetMouseButton(windowHandle, key.getValue()) == GLFW.GLFW_PRESS;
+            return InputCompat.isMouseButtonDown(minecraft, key.getValue());
         }
-        //#if MC >= 1.21.10
-        return InputConstants.isKeyDown(window, key.getValue());
-        //#else
-        //$$ return InputConstants.isKeyDown(windowHandle, key.getValue());
-        //#endif
+        return InputCompat.isKeyDown(minecraft, key.getValue());
     }
 }

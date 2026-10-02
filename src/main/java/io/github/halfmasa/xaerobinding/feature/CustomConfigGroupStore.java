@@ -23,11 +23,13 @@ public final class CustomConfigGroupStore
 {
     public static final String HALF_MASA_SOURCE = "halfmasa";
     public static final String TWEAKEROO_SOURCE = "tweakeroo";
+    private static final String BUILT_IN_GROUPS_VERSION = "v2";
     private static final String REF_SEPARATOR = "::";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final CustomConfigGroupStore INSTANCE = new CustomConfigGroupStore();
     private final List<Group> groups = new ArrayList<>();
     private final Set<String> initializedSources = new HashSet<>();
+    private final Set<String> initializedDefaultVersions = new HashSet<>();
     private boolean loaded;
 
     private CustomConfigGroupStore()
@@ -65,12 +67,14 @@ public final class CustomConfigGroupStore
         return group.copy();
     }
 
-    /** Imports built-in groups once, preserving any configs already assigned by the user. */
+    /** Migrates built-in groups once, preserving any configs already assigned by the user. */
     public synchronized boolean ensureDefaults(String source, List<GroupTemplate> templates)
     {
         ensureLoaded();
         String normalizedSource = normalizeSource(source);
-        if (templates == null || templates.isEmpty() || this.initializedSources.contains(normalizedSource))
+        String versionKey = normalizedSource + "::" + BUILT_IN_GROUPS_VERSION;
+        if (templates == null || templates.isEmpty() ||
+                this.initializedDefaultVersions.contains(versionKey))
         {
             return false;
         }
@@ -140,6 +144,7 @@ public final class CustomConfigGroupStore
             changed = true;
         }
         this.initializedSources.add(normalizedSource);
+        this.initializedDefaultVersions.add(versionKey);
         save();
         return changed;
     }
@@ -470,6 +475,10 @@ public final class CustomConfigGroupStore
                         this.initializedSources.add(normalizeSource(source));
                     }
                 }
+                if (data.initializedDefaultVersions != null)
+                {
+                    this.initializedDefaultVersions.addAll(data.initializedDefaultVersions);
+                }
                 Set<String> ids = new HashSet<>();
                 for (Group group : data.groups)
                 {
@@ -535,6 +544,7 @@ public final class CustomConfigGroupStore
             Data data = new Data();
             data.groups.addAll(this.groups);
             data.initializedSources.addAll(this.initializedSources);
+            data.initializedDefaultVersions.addAll(this.initializedDefaultVersions);
             try (Writer writer = Files.newBufferedWriter(temporary, StandardCharsets.UTF_8))
             {
                 GSON.toJson(data, writer);
@@ -615,6 +625,7 @@ public final class CustomConfigGroupStore
     {
         private List<Group> groups = new ArrayList<>();
         private List<String> initializedSources = new ArrayList<>();
+        private List<String> initializedDefaultVersions = new ArrayList<>();
     }
 
     public record GroupTemplate(String id, String name, String mainConfig, List<String> children)

@@ -16,8 +16,16 @@ import io.github.halfmasa.xaerobinding.config.PlantCenteringConfigs;
 public abstract class PlantModelOffsetMixin
 {
     @Inject(method = "getOffset", at = @At("HEAD"), cancellable = true)
+    //#if MC >= 26.1
     private void halfmasa_centerConfiguredPlantModels(
-            BlockGetter level, BlockPos pos, CallbackInfoReturnable<Vec3> cir)
+            BlockPos pos, CallbackInfoReturnable<Vec3> cir)
+    //#elseif MC >= 1.21.3
+    //$$ private void halfmasa_centerConfiguredPlantModels(
+    //$$         BlockPos pos, CallbackInfoReturnable<Vec3> cir)
+    //#else
+    //$$ private void halfmasa_centerConfiguredPlantModels(
+    //$$         BlockGetter level, BlockPos pos, CallbackInfoReturnable<Vec3> cir)
+    //#endif
     {
         BlockBehaviour.BlockStateBase state = (BlockBehaviour.BlockStateBase) (Object) this;
         if (PlantCenteringConfigs.isEnabled(state.getBlock()))

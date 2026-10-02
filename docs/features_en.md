@@ -1,6 +1,8 @@
 # halfmasa Features and Configuration
 
-> Documentation version: `1.1.5`
+Easy Place and printer refill appear under Extensions, each with foldable fake-stock permission, quantity (default32;0 means half a stack) and silent options. Printer adapters select the Hana coordinator or shared InventoryUtils method signatures. Exact quantities require updated server FGA. [Compatibility and acceptance](litematica-auto-refill.md)
+
+> Documentation version: `1.6.0`
 
 Press `X + H` to open the configuration screen, or use Mod Menu. Unless noted otherwise, features are disabled by default. An empty hotkey means that no key is bound by default.
 
@@ -46,6 +48,8 @@ The panel initializes on the first item-manager screen without requiring a recip
 
 ## Client and UI Features
 
+`litematicaRefillSilent` is an optional, hotkey-configurable Easy Place refill mode, off by default. It requires FGA's `silent_take` channel and withdraws directly from verified offline inventories without spawning fake players. Already-online sources remain online. Unsupported servers suspend refill with a message.
+
 | Config | Default | Description |
 |---|---|---|
 | `screenshotToClipboard` | `false` | Copies the complete image to the system clipboard whenever F2 saves a screenshot. |
@@ -54,6 +58,7 @@ The panel initializes on the first item-manager screen without requiring a recip
 | `nightVisionFade` | `true` | Enables smooth Night Vision fading; disabling it restores vanilla's final 10-second flicker. |
 | `nightVisionFadeSeconds` | `5` | Sets the smooth fade duration; range `0-60`, where `0` disables early fading. |
 | `boatView360` / `boatItemView` | `false` | Removes the local boat-camera rotation limit and keeps first-person held items visible while rowing. |
+| `confluxMapExtensions` | `false` | Requires Conflux Map for the matching game version and extension API. Sets waypoint-list defaults, closes the map after teleporting, uses `confluxMapUnknownHeight` (default `128`) for targets with unknown height, can show local and shared waypoint lists together side by side or stacked, and adds a hotkey that creates multiple numbered local waypoints cleared when rejoining that world. |
 | `inventoryMove` | `false` | Allows movement, jumping, and sneaking while vanilla inventory or container screens are open. |
 | `fastWorldLoadingScreen` / `fastResourcePackLoadingScreen` | `false` | Reduces avoidable waiting in world and resource-pack loading screens. |
 | `betterSavedHotbars` | `false` | Enhances creative saved hotbars with individual insertion or replacement, middle-click deletion, and retained scrolling; the legacy root `hotbar.nbt` is copied once to `config/halfmasa/better-saved-hotbars/hotbar.nbt`. |
@@ -86,6 +91,10 @@ On the default Windows instance, keybind-pie data is stored in `C:\Users\<userna
 ## Disabled Advanced Features
 
 Fluid-render suppression and entity-render aggregation are placed in the Disabled Features category. They can substantially alter rendering or compatibility and should be enabled only after reviewing their settings and impact.
+
+## Litematica Easy Place and Printer Refill (All Supported Client Versions)
+
+`litematicaAutoRefill` defaults to false and supports a custom hotkey. With the feature enabled, first take the configured amount (default 32; 0 means half a stack) directly from the plain Chinese-name fake player (requires the optional FGA direct_take channel), falling back to categorized queries when the source is missing, insufficient or invalid. Request external supplies only when the required easy-place item is absent from the player's inventory, hotbar, offhand and carried shulker boxes. A single matching item suppresses external refill. Recheck local supplies while waiting for queries and before taking; read one layer of shulker contents without extracting or modifying items. Wait for vanilla inventory synchronization before retrying the original schematic target. Both easy-place implementations are supported. The client requires Litematica and Fabric API; the server requires the FGA inventory API v1 and stock/inventoryTake permissions. Unsupported servers, denied permissions, missing stock and a full inventory produce a message and stop the request. An unresolved take suspends further transfers until reconnecting to prevent duplicate debits.
 
 ## Configuration Files
 

@@ -9,7 +9,9 @@ import java.util.HexFormat;
 import java.util.Locale;
 
 import net.minecraft.client.Minecraft;
-import org.lwjgl.glfw.GLFWNativeWin32;
+//#if MC < 26.3
+//$$ import org.lwjgl.glfw.GLFWNativeWin32;
+//#endif
 
 import io.github.halfmasa.xaerobinding.XaeroWorldBinding;
 import io.github.halfmasa.xaerobinding.config.Configs;
@@ -53,62 +55,66 @@ public final class ExternalBaseIME
             return false;
         }
 
-        String operatingSystem = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
-        if (!operatingSystem.contains("windows"))
-        {
-            XaeroWorldBinding.LOGGER.warn("ContingameIME is only available on Windows");
-            return false;
-        }
+        //#if MC < 26.3
+        //$$ String operatingSystem = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+        //$$ if (!operatingSystem.contains("windows"))
+        //$$ {
+            //$$ XaeroWorldBinding.LOGGER.warn("ContingameIME is only available on Windows");
+            //$$ return false;
+        //$$ }
 
-        String architecture = System.getProperty("os.arch", "").toLowerCase(Locale.ROOT);
-        String libraryName = architecture.contains("64") ? "jni.dll" : "jni-x86.dll";
-        String resource = "/assets/halfmasa/natives/ime/" + libraryName;
-        try (InputStream input = ExternalBaseIME.class.getResourceAsStream(resource))
-        {
-            if (input == null)
-            {
-                throw new IllegalStateException("Missing native resource " + resource);
-            }
-            byte[] bytes = input.readAllBytes();
-            String digest = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
-            Path directory = Configs.getHalfMasaDirectory()
-                    .resolve("cache")
-                    .resolve("ime")
-                    .resolve(digest.substring(0, 16));
-            Files.createDirectories(directory);
-            Path library = directory.resolve(libraryName);
-            if (!Files.isRegularFile(library) || Files.size(library) != bytes.length)
-            {
-                Path temporary = directory.resolve(libraryName + ".tmp");
-                Files.write(temporary, bytes);
-                try
-                {
-                    Files.move(temporary, library,
-                            StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-                }
-                catch (Exception ignored)
-                {
-                    Files.move(temporary, library, StandardCopyOption.REPLACE_EXISTING);
-                }
-            }
+        //$$ String architecture = System.getProperty("os.arch", "").toLowerCase(Locale.ROOT);
+        //$$ String libraryName = architecture.contains("64") ? "jni.dll" : "jni-x86.dll";
+        //$$ String resource = "/assets/halfmasa/natives/ime/" + libraryName;
+        //$$ try (InputStream input = ExternalBaseIME.class.getResourceAsStream(resource))
+        //$$ {
+            //$$ if (input == null)
+            //$$ {
+                //$$ throw new IllegalStateException("Missing native resource " + resource);
+            //$$ }
+            //$$ byte[] bytes = input.readAllBytes();
+            //$$ String digest = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+            //$$ Path directory = Configs.getHalfMasaDirectory()
+                    //$$ .resolve("cache")
+                    //$$ .resolve("ime")
+                    //$$ .resolve(digest.substring(0, 16));
+            //$$ Files.createDirectories(directory);
+            //$$ Path library = directory.resolve(libraryName);
+            //$$ if (!Files.isRegularFile(library) || Files.size(library) != bytes.length)
+            //$$ {
+                //$$ Path temporary = directory.resolve(libraryName + ".tmp");
+                //$$ Files.write(temporary, bytes);
+                //$$ try
+                //$$ {
+                    //$$ Files.move(temporary, library,
+                            //$$ StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+                //$$ }
+                //$$ catch (Exception ignored)
+                //$$ {
+                    //$$ Files.move(temporary, library, StandardCopyOption.REPLACE_EXISTING);
+                //$$ }
+            //$$ }
 
-            System.load(library.toAbsolutePath().toString());
-            Minecraft client = Minecraft.getInstance();
+            //$$ System.load(library.toAbsolutePath().toString());
+            //$$ Minecraft client = Minecraft.getInstance();
             //#if MC >= 1.21.10
-            long window = client.getWindow().handle();
+            //$$ long window = client.getWindow().handle();
             //#else
             //$$ long window = client.getWindow().getWindow();
             //#endif
-            this.nInitialize(GLFWNativeWin32.glfwGetWin32Window(window));
-            this.initialized = true;
-            this.setFullScreen(client.getWindow().isFullscreen());
-            XaeroWorldBinding.LOGGER.info("ContingameIME native bridge initialized");
-        }
-        catch (Throwable throwable)
-        {
-            XaeroWorldBinding.LOGGER.error("Failed to initialize ContingameIME", throwable);
-        }
-        return this.initialized;
+            //$$ this.nInitialize(GLFWNativeWin32.glfwGetWin32Window(window));
+            //$$ this.initialized = true;
+            //$$ this.setFullScreen(client.getWindow().isFullscreen());
+            //$$ XaeroWorldBinding.LOGGER.info("ContingameIME native bridge initialized");
+        //$$ }
+        //$$ catch (Throwable throwable)
+        //$$ {
+            //$$ XaeroWorldBinding.LOGGER.error("Failed to initialize ContingameIME", throwable);
+        //$$ }
+        //$$ return this.initialized;
+        //#else
+        return false;
+        //#endif
     }
 
     public boolean isInitialized()

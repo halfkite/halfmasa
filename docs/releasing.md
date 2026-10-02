@@ -1,12 +1,12 @@
 # 构建与发布流程
 
-halfmasa 使用 GitHub Actions 构建和发布 Minecraft `1.21.1`、`1.21.4`、`1.21.8`、`1.21.10`、`1.21.11`、`26.1.2` 和 `26.2`。
+halfmasa 使用 GitHub Actions 构建和发布 Minecraft `1.21.1`、`1.21.3`、`1.21.4`、`1.21.5`、`1.21.8`、`1.21.10`、`1.21.11`、`26.1.2`、`26.2` 和 `26.3`。
 
 ## 日常构建
 
-`.github/workflows/build.yml` 会在推送到 `main`、Pull Request 和手动触发时运行。Minecraft 1.21.x 使用 Java 21，Minecraft 26.x 使用 Java 25。每个版本执行独立的 clean build，并验证 JAR 内的模组 ID 和版本号。
+`.github/workflows/build.yml` 支持手动触发，并由发布工作流调用。每个构建任务同时安装 Java 21 和 Java 25；Minecraft 1.21.x 字节码目标为 Java 21，Minecraft 26.x 为 Java 25。每个版本执行独立的 clean build，并验证 JAR 内的模组 ID 和版本号。
 
-每个 CI 构建归档包含可安装 JAR、SHA-256 和 `build-manifest`，保留 14 天。构建成功仅代表编译和打包通过，不等于完成游戏内功能测试。
+每个 CI 构建归档包含可安装 JAR、SHA-256 和 `build-manifest`，保留 14 天。预处理源码根由 `versions/mainProject` 指定，目前统一为 26.3；新增版本时须同步构建图、版本矩阵和源码根。构建成功仅代表编译和打包通过，不等于完成游戏内功能测试。
 
 ## 正式发布
 
@@ -42,6 +42,6 @@ GitHub 仓库需要配置以下 Actions Secrets：
 ## 发布后检查
 
 - GitHub 标签、Release 标题和模组内部版本一致。
-- GitHub Release 只包含七个目标 JAR，不包含 sources、dev、JSON 或 TXT。
+- GitHub Release 只包含当前 `publishVersions` 中的目标 JAR，不包含 sources、dev、JSON 或 TXT。
 - Modrinth 与 CurseForge 的 Minecraft 版本、Fabric 加载器、客户端环境和 MaLiLib 依赖正确。
 - 三个平台对应 JAR 的 SHA-256 一致。

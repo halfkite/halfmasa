@@ -3,6 +3,8 @@ package io.github.halfmasa.xaerobinding.gui;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.halfmasa.xaerobinding.compat.InputCompat;
+
 public final class KeymapKeyboardLayout
 {
     public static final int CELL_HEIGHT = 16;
@@ -27,8 +29,8 @@ public final class KeymapKeyboardLayout
                 {"ESC:256:1", "_:0:1", "F1:290:1", "F2:291:1", "F3:292:1", "F4:293:1", "_:0:0.5",
                         "F5:294:1", "F6:295:1", "F7:296:1", "F8:297:1", "_:0:0.5",
                         "F9:298:1", "F10:299:1", "F11:300:1", "F12:301:1"},
-                {"`:96:1", "1:48:1", "2:49:1", "3:50:1", "4:51:1", "5:52:1", "6:53:1", "7:54:1",
-                        "8:55:1", "9:56:1", "0:57:1", "-:45:1", "=:61:1", "⌫:259:2"},
+                {"`:96:1", "1:49:1", "2:50:1", "3:51:1", "4:52:1", "5:53:1", "6:54:1", "7:55:1",
+                        "8:56:1", "9:57:1", "0:48:1", "-:45:1", "=:61:1", "⌫:259:2"},
                 {"TAB:258:1.5", "Q:81:1", "W:87:1", "E:69:1", "R:82:1", "T:84:1", "Y:89:1", "U:85:1",
                         "I:73:1", "O:79:1", "P:80:1", "[:91:1", "]:93:1", "\\:92:1.5"},
                 {"CAPS:280:1.75", "A:65:1", "S:83:1", "D:68:1", "F:70:1", "G:71:1", "H:72:1", "J:74:1",
@@ -79,7 +81,7 @@ public final class KeymapKeyboardLayout
         for (String cell : cells)
         {
             String[] parts = cell.split(":");
-            int code = Integer.parseInt(parts[1]);
+            int code = InputCompat.layoutKeyCode(Integer.parseInt(parts[1]));
             float units = Float.parseFloat(parts[2]);
             int cellWidth = (int) (unit * units) - CELL_GAP;
             int cellHeight = parts.length > 3 && "2".equals(parts[3])

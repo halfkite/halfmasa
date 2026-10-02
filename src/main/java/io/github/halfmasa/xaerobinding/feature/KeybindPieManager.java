@@ -15,11 +15,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.input.KeyEvent;
 //#endif
 import net.minecraft.client.gui.screens.Screen;
-import org.lwjgl.glfw.GLFW;
 
 import fi.dy.masa.malilib.interfaces.IClientTickHandler;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.compat.InputCompat;
 import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
 import io.github.halfmasa.xaerobinding.gui.KeybindPieScreen;
 import io.github.halfmasa.xaerobinding.mixin.KeyMappingAccessor;
@@ -98,7 +98,9 @@ public final class KeybindPieManager implements IClientTickHandler
         }
 
         List<KeyMapping> conflicts = mappingsFor(key, screen);
-        if (hasJeiBinding(conflicts))
+        if (hasJeiBinding(conflicts)
+                || hasJadeDetailsBinding(conflicts)
+                )
         {
             return false;
         }
@@ -137,7 +139,9 @@ public final class KeybindPieManager implements IClientTickHandler
             return false;
         }
         List<KeyMapping> conflicts = mappingsFor(key, screen);
-        if (hasJeiBinding(conflicts))
+        if (hasJeiBinding(conflicts)
+                || hasJadeDetailsBinding(conflicts)
+                )
         {
             return false;
         }
@@ -424,6 +428,14 @@ public final class KeybindPieManager implements IClientTickHandler
         return mappings.stream().anyMatch(KeybindPieManager::isJeiMapping);
     }
 
+    private static boolean hasJadeDetailsBinding(List<KeyMapping> mappings)
+    {
+        // Jade's hold-to-show-details action must pass through immediately,
+        // including when it shares a key with other mappings.
+        return mappings.stream().anyMatch(mapping ->
+                "key.jade.show_details".equals(mapping.getName()));
+    }
+
     private static boolean isJeiMapping(KeyMapping mapping)
     {
         String name = mapping.getName().toLowerCase(java.util.Locale.ROOT);
@@ -433,7 +445,8 @@ public final class KeybindPieManager implements IClientTickHandler
     private static boolean isDefaultWheelExcludedMapping(Minecraft client, KeyMapping mapping)
     {
         InputConstants.Key key = ((KeyMappingAccessor) mapping).halfmasa$getBoundKey();
-        if (key.getType() == InputConstants.Type.MOUSE && key.getValue() == GLFW.GLFW_MOUSE_BUTTON_MIDDLE)
+        if (key.getType() == InputConstants.Type.MOUSE &&
+                key.getValue() == InputConstants.MOUSE_BUTTON_MIDDLE)
         {
             return true;
         }
@@ -539,7 +552,7 @@ public final class KeybindPieManager implements IClientTickHandler
         if (screen != null && !combo.isEmpty() && combo.get(0) >= 0)
         {
             InputConstants.Key previousKey = ((KeyMappingAccessor) mapping).halfmasa$getBoundKey();
-            InputConstants.Key triggerKey = InputConstants.Type.KEYSYM.getOrCreate(combo.get(0));
+            InputConstants.Key triggerKey = InputCompat.keyboardKey(combo.get(0));
             mapping.setKey(triggerKey);
             boolean handled;
             try
@@ -596,24 +609,17 @@ public final class KeybindPieManager implements IClientTickHandler
 
     private static int keyCode(InputConstants.Key key)
     {
-        return key.getType() == InputConstants.Type.MOUSE ? -(key.getValue() + 1) : key.getValue();
+        return key.getType() == InputConstants.Type.MOUSE
+                ? InputCompat.mouseButtonToLayoutCode(key.getValue()) : key.getValue();
     }
 
     private static boolean isInputCodeDown(Minecraft client, int code)
     {
         if (code < 0)
         {
-            //#if MC >= 1.21.10
-            return GLFW.glfwGetMouseButton(client.getWindow().handle(), -code - 1) == GLFW.GLFW_PRESS;
-            //#else
-            //$$ return GLFW.glfwGetMouseButton(client.getWindow().getWindow(), -code - 1) == GLFW.GLFW_PRESS;
-            //#endif
+            return InputCompat.isMouseButtonDown(client, InputCompat.layoutCodeToMouseButton(code));
         }
-        //#if MC >= 1.21.10
-        return InputConstants.isKeyDown(client.getWindow(), code);
-        //#else
-        //$$ return InputConstants.isKeyDown(client.getWindow().getWindow(), code);
-        //#endif
+        return InputCompat.isKeyDown(client, code);
     }
 
     private static boolean isDebugOnlyMapping(KeyMapping mapping)
@@ -662,26 +668,19 @@ public final class KeybindPieManager implements IClientTickHandler
             {
             }
         }
-        boolean listed = key.getType() == InputConstants.Type.KEYSYM && ignored.contains(key.getValue());
+        boolean listed = InputCompat.isKeyboardKey(key) && ignored.contains(key.getValue());
         return Configs.KEYBIND_INVERT_IGNORED_KEYS.getBooleanValue() ? !listed : listed;
     }
 
     private static boolean isPhysicallyDown(Minecraft client, InputConstants.Key key)
     {
-        //#if MC >= 1.21.10
-        com.mojang.blaze3d.platform.Window window = client.getWindow();
-        long handle = window.handle();
-        //#else
-        //$$ long window = client.getWindow().getWindow();
-        //$$ long handle = window;
-        //#endif
         if (key.getType() == InputConstants.Type.MOUSE)
         {
-            return GLFW.glfwGetMouseButton(handle, key.getValue()) == GLFW.GLFW_PRESS;
+            return InputCompat.isMouseButtonDown(client, key.getValue());
         }
-        if (key.getType() == InputConstants.Type.KEYSYM)
+        if (InputCompat.isKeyboardKey(key))
         {
-            return InputConstants.isKeyDown(window, key.getValue());
+            return InputCompat.isKeyDown(client, key.getValue());
         }
         return false;
     }

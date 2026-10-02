@@ -16,8 +16,9 @@ import io.github.halfmasa.xaerobinding.config.ActionHotkey;
 import io.github.halfmasa.xaerobinding.feature.GiveFullInventory;
 import io.github.halfmasa.xaerobinding.feature.ElytraTimeService;
 import io.github.halfmasa.xaerobinding.feature.ImeService;
-import io.github.halfmasa.xaerobinding.feature.KeybindCustomizationStore;
 import io.github.halfmasa.xaerobinding.feature.KeybindPieManager;
+import io.github.halfmasa.xaerobinding.feature.KeybindCustomizationStore;
+
 import io.github.halfmasa.xaerobinding.feature.CooldownAutoAttack;
 import io.github.halfmasa.xaerobinding.feature.FastLoadingController;
 import io.github.halfmasa.xaerobinding.feature.ServerIconCache;
@@ -25,17 +26,22 @@ import io.github.halfmasa.xaerobinding.feature.EntityRenderAggregation;
 import io.github.halfmasa.xaerobinding.feature.ConfigScrollMemory;
 import io.github.halfmasa.xaerobinding.feature.ItemSearchHistoryService;
 import io.github.halfmasa.xaerobinding.feature.ItemManagerHistoryOverlay;
+import io.github.halfmasa.xaerobinding.feature.VoidTrading;
+import io.github.halfmasa.xaerobinding.feature.ConfluxMapTemporaryWaypoint;
+
 import io.github.halfmasa.xaerobinding.feature.bridging.BridgingAssist;
 import io.github.halfmasa.xaerobinding.gui.HalfMasaConfigScreen;
 import io.github.halfmasa.xaerobinding.gui.CustomConfigGroupScreen;
 import io.github.halfmasa.xaerobinding.gui.KeybindCustomizationScreen;
 import io.github.halfmasa.xaerobinding.gui.KeymapBrowserScreen;
+
 import io.github.halfmasa.xaerobinding.waypoint.WaypointClientActions;
 import io.github.halfmasa.xaerobinding.waypoint.WaypointBundleService.ExportScope;
 import io.github.halfmasa.xaerobinding.binding.WorldBindingStore;
 
 import java.util.function.BooleanSupplier;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 
 final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindProvider
@@ -44,6 +50,12 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
     public void registerModHandlers()
     {
         ConfigManager.getInstance().registerConfigHandler(XaeroWorldBinding.MOD_ID, new Configs());
+        if (FabricLoader.getInstance().isModLoaded("fabric-api"))
+        {
+            io.github.halfmasa.xaerobinding.feature.VoidTradingClientNetwork.initialize();
+            io.github.halfmasa.xaerobinding.feature.LitematicaRefillNetwork.initialize();
+        }
+
         Registry.CONFIG_SCREEN.registerConfigScreenFactory(new ModInfo(
                 XaeroWorldBinding.MOD_ID,
                 XaeroWorldBinding.MOD_NAME,
@@ -53,6 +65,8 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
             GuiBase.openGui(new HalfMasaConfigScreen());
             return true;
         });
+        Configs.VOID_TRADING_AUTO_OPEN_CANCEL.getKeybind().setCallback(
+                (action, key) -> VoidTrading.cancelAutoOpen(Minecraft.getInstance()));
         Configs.IMPORT_WAYPOINT_BUNDLE.setAction(0, WaypointClientActions::importBundle);
         Configs.EXPORT_ALL_DIMENSIONS.setAction(0,
                 () -> WaypointClientActions.exportToClipboard(ExportScope.ALL_DIMENSIONS));
@@ -80,17 +94,39 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
             GuiBase.openGui(new KeymapBrowserScreen());
             return true;
         });
-        registerTrigger(Configs.OPEN_CUSTOM_CONFIG_GROUPS, () -> {
-            GuiBase.openGui(new CustomConfigGroupScreen(MinecraftClientCompat.getScreen(Minecraft.getInstance())));
-            return true;
-        });
         registerTrigger(Configs.RELOAD_KEYBIND_DATA, () -> {
             KeybindCustomizationStore.getInstance().reload();
             KeybindPieManager.getInstance().invalidateCustomMappingSync();
             return true;
         });
+
+        registerTrigger(Configs.OPEN_CUSTOM_CONFIG_GROUPS, () -> {
+            GuiBase.openGui(new CustomConfigGroupScreen(MinecraftClientCompat.getScreen(Minecraft.getInstance())));
+            return true;
+        });
         registerTrigger(Configs.CLEAR_SERVER_ICON_CACHE, ServerIconCache::requestClear);
         registerTrigger(Configs.CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION, ItemManagerHistoryOverlay::cyclePosition);
+        registerTrigger(Configs.CONFLUX_MAP_TEMPORARY_WAYPOINT, ConfluxMapTemporaryWaypoint::placeAtPlayer);
+        TickHandler.getInstance().registerClientTickHandler(ConfluxMapTemporaryWaypoint.getInstance());
+        TickHandler.getInstance().registerClientTickHandler(
+                io.github.halfmasa.xaerobinding.feature.LitematicaMaterialRefill.getInstance());
+        Configs.LITEMATICA_AUTO_REFILL.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.LitematicaMaterialRefill.getInstance().onToggle());
+        Configs.LITEMATICA_REFILL_SILENT.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.LitematicaMaterialRefill.getInstance().onToggle());
+        Configs.LITEMATICA_REFILL_ALLOW_FAKE.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.LitematicaMaterialRefill.getInstance().onToggle());
+        Configs.LITEMATICA_REFILL_AMOUNT.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.LitematicaMaterialRefill.getInstance().onToggle());
+        Configs.PRINTER_AUTO_REFILL.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.LitematicaMaterialRefill.getInstance().onToggle());
+        Configs.PRINTER_REFILL_ALLOW_FAKE.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.LitematicaMaterialRefill.getInstance().onToggle());
+        Configs.PRINTER_REFILL_SILENT.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.LitematicaMaterialRefill.getInstance().onToggle());
+        Configs.PRINTER_REFILL_AMOUNT.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.LitematicaMaterialRefill.getInstance().onToggle());
+
         Configs.CONTINGAME_IME.getKeybind().setCallback((action, key) -> ImeService.getInstance().onModeHotkey());
         //#if MC >= 26.1
         Configs.CONTINGAME_IME.setComment("halfmasa.config.ported.comment.contingameIme.mc261");
@@ -105,6 +141,11 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         Configs.DISABLE_FLUID_RENDERING.setValueChangeCallback(config -> refreshWorldRendering());
         Configs.DISABLE_NON_SOURCE_FLUID_RENDERING.setValueChangeCallback(config -> refreshWorldRendering());
         Configs.ENTITY_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
+        //#if MC >= 26.3
+        Configs.ITEM_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
+        Configs.ENTITY_RENDER_AGGREGATION.setComment("halfmasa.config.disabled.comment.entityRenderAggregation.mc263");
+        Configs.ENTITY_AGGREGATION_THRESHOLD.setComment("halfmasa.config.disabled.comment.entityAggregationThreshold.mc263");
+        //#endif
         Configs.ENTITY_AGGREGATION_RADIUS.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
         Configs.ENTITY_AGGREGATION_THRESHOLD.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
         Configs.ENTITY_AGGREGATION_SCAN_INTERVAL.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
@@ -128,6 +169,7 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         TickHandler.getInstance().registerClientTickHandler(FastLoadingController.getInstance());
         TickHandler.getInstance().registerClientTickHandler(EntityRenderAggregation.getInstance());
         TickHandler.getInstance().registerClientTickHandler(ItemSearchHistoryService.getInstance());
+        TickHandler.getInstance().registerClientTickHandler(VoidTrading.getInstance());
         TickHandler.getInstance().registerClientTickHandler(WorldBindingStore.getInstance());
     }
 

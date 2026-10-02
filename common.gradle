@@ -1,6 +1,8 @@
 final int mcVersion = project.mcVersion
 final boolean unobfuscated = mcVersion >= 26_00_00
-final String loaderVersion = unobfuscated ? '0.18.4' : rootProject.fabric_loader_version
+final String loaderVersion = mcVersion >= 26_03_00
+        ? '0.19.5'
+        : (unobfuscated ? '0.18.4' : rootProject.fabric_loader_version)
 
 apply plugin: unobfuscated ? 'net.fabricmc.fabric-loom' : 'net.fabricmc.fabric-loom-remap'
 apply plugin: 'com.replaymod.preprocess'
@@ -23,7 +25,9 @@ dependencies {
     }
 
     def loader = "net.fabricmc:fabric-loader:${loaderVersion}"
-    def malilib = "fi.dy.masa.malilib:malilib-fabric-${project.malilib_mc_version}:${project.malilib_version}"
+    def malilib = project.mcVersion >= 26_03_00 && project.hasProperty('malilib_local_path')
+            ? files(project.property('malilib_local_path'))
+            : "fi.dy.masa.malilib:malilib-fabric-${project.malilib_mc_version}:${project.malilib_version}"
     def xaeroMinimap = "maven.modrinth:xaeros-minimap:${project.xaero_minimap_version}"
     def xaeroWorldMap = "maven.modrinth:xaeros-world-map:${project.xaero_world_map_version}"
     if (unobfuscated) {
@@ -60,6 +64,19 @@ dependencies {
             modLocalRuntime "me.shedaniel:RoughlyEnoughItems-fabric:${project.rei_compile_version}"
         }
     }
+}
+
+def refillFabricApiVersions = [
+        '1.21.1': '0.116.13+1.21.1', '1.21.3': '0.114.1+1.21.3',
+        '1.21.4': '0.119.4+1.21.4', '1.21.5': '0.128.2+1.21.5',
+        '1.21.8': '0.136.1+1.21.8', '1.21.10': '0.138.4+1.21.10',
+        '1.21.11': '0.141.5+1.21.11', '26.1.2': '0.155.2+26.1.2',
+        '26.2': '0.158.0+26.2', '26.3': '0.161.0+26.3'
+]
+dependencies {
+    def api = "net.fabricmc.fabric-api:fabric-api:${refillFabricApiVersions[project.name]}"
+    if (unobfuscated) compileOnly api
+    else modCompileOnly api
 }
 
 configurations.configureEach {
@@ -137,6 +154,10 @@ processResources {
             if (project.mcVersion < 26_01_00 && line.contains('"ImePreeditOverlayMixin"')) {
                 return null
             }
+            if ((project.mcVersion < 26_01_00 || project.mcVersion >= 26_02_00) &&
+                    line.contains('"ScreenshotKeyboardHandlerMixin"')) {
+                return null
+            }
             line.replace('{{COMPATIBILITY_LEVEL}}', properties.compatibility_level)
         }
     }
@@ -174,6 +195,47 @@ sourceSets {
                 exclude 'io/github/halfmasa/xaerobinding/mixin/ReiItemHistoryFavoritesMixin.java'
             }
         }
+    }
+}
+
+// Preprocess expects every node in the graph to have matching source set names.
+// Older nodes have no companion sources or distributable tasks.
+sourceSets.maybeCreate('voidTradingServer')
+
+if (project.mcVersion >= 26_03_00) {
+    def voidTradingServer = sourceSets.getByName('voidTradingServer')
+    sourceSets.named('voidTradingServer') {
+        java.srcDirs = [
+                rootProject.file('src/server/void-trading/java'),
+                rootProject.file('src/shared/void-trading/java')
+        ]
+        resources.srcDir rootProject.file('src/server/void-trading/resources')
+    }
+
+    configurations[voidTradingServer.implementationConfigurationName]
+            .extendsFrom(configurations.implementation)
+    configurations[voidTradingServer.compileOnlyConfigurationName]
+            .extendsFrom(configurations.compileOnly)
+    voidTradingServer.compileClasspath += sourceSets.main.compileClasspath
+
+    tasks.named(voidTradingServer.processResourcesTaskName) {
+        filesMatching('fabric.mod.json') {
+            expand(mod_version: project.version)
+        }
+    }
+
+    tasks.register('voidTradingServerJar', Jar) {
+        dependsOn tasks.named(voidTradingServer.classesTaskName)
+        from voidTradingServer.output
+        archiveBaseName = "halfmasa-void-trading-server-${project.artifact_mc_version}"
+        archiveClassifier = ''
+        from(rootProject.file('LICENSE')) {
+            rename { 'LICENSE_halfmasa-void-trading-server' }
+        }
+    }
+
+    tasks.named('build') {
+        dependsOn tasks.named('voidTradingServerJar')
     }
 }
 

@@ -6,7 +6,9 @@ import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.input.KeyEvent;
 //#endif
 
-import org.lwjgl.glfw.GLFW;
+//#if MC < 26.3
+//$$ import org.lwjgl.glfw.GLFW;
+//#endif
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,11 +26,20 @@ public abstract class KeyboardHandlerComboMixin
     //$$ private void halfmasa_trackCombinationInput(long window, int action, int keyCode, int scanCode, int modifiers, CallbackInfo ci)
     //#endif
     {
-        if (action == GLFW.GLFW_PRESS || action == GLFW.GLFW_RELEASE)
+        //#if MC < 26.3
+        //$$ if (action == GLFW.GLFW_PRESS || action == GLFW.GLFW_RELEASE)
+        //#else
+        if (action == InputConstants.PRESS || action == InputConstants.RELEASE)
+        //#endif
         {
             //#if MC >= 1.21.10
             KeybindPieManager.getInstance().handleKeyboardEvent(
-                    InputConstants.getKey(event), action == GLFW.GLFW_PRESS);
+                    InputConstants.getKey(event),
+                    //#if MC < 26.3
+                    //$$ action == GLFW.GLFW_PRESS);
+                    //#else
+                    action == InputConstants.PRESS);
+                    //#endif
             //#else
             //$$ KeybindPieManager.getInstance().handleKeyboardEvent(
             //$$         InputConstants.getKey(keyCode, scanCode), action == GLFW.GLFW_PRESS);

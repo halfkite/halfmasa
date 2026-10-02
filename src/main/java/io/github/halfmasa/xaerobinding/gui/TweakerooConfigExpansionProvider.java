@@ -200,6 +200,7 @@ public final class TweakerooConfigExpansionProvider implements ConfigExpansionPr
         this.inlineCompanions.clear();
         List<ConfigOptionWrapper> source = new ArrayList<>(entries);
         this.normalizeDuplicateHotkeys(source);
+        this.collectInlineFlightPairs(source);
         if (Configs.CUSTOM_CONFIG_GROUPS.getBooleanValue())
         {
             CustomConfigGroupStore.getInstance().ensureDefaults(
@@ -215,7 +216,6 @@ public final class TweakerooConfigExpansionProvider implements ConfigExpansionPr
         this.primaryByConfig.clear();
 
         this.addMissingPrimaryGroupEntries(source);
-        this.collectInlineFlightPairs(source);
         Map<String, GroupDefinition> definitions = GROUPS.stream()
                 .flatMap(group -> group.members().stream().map(name -> Map.entry(name, group)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (first, ignored) -> first));

@@ -19,6 +19,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+//#if MC >= 26.3
+import net.minecraft.client.renderer.culling.Frustum;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+//#endif
 
 import io.github.halfmasa.xaerobinding.feature.EntityRenderAggregation;
 
@@ -53,6 +57,21 @@ public abstract class EntityRenderAggregationMixin
     {
         return EntityRenderAggregation.getInstance().filterForRendering(level.entitiesForRendering());
     }
+
+    //#if MC >= 26.3
+    // Check the visibility boundary as well: renderer replacements may bypass
+    // the entitiesForRendering redirect while still calling isEntityVisible.
+    @Inject(method = "isEntityVisible", at = @At("HEAD"), cancellable = true)
+    private void halfmasa_hideGroupedVisibleEntity(Entity entity, Frustum frustum,
+            double cameraX, double cameraY, double cameraZ, float partialTick, long fadeTime,
+            CallbackInfoReturnable<Boolean> cir)
+    {
+        if (EntityRenderAggregation.getInstance().shouldHide(entity))
+        {
+            cir.setReturnValue(false);
+        }
+    }
+    //#endif
 
     //#if MC < 1.21.10
     //$$ @Inject(method = "renderEntity", at = @At("HEAD"), cancellable = true)

@@ -77,6 +77,17 @@
     "32": { "key": "fast_interface_scrolling", "status": "implemented" },
     "33": { "key": "keep_world_selection_on_empty", "status": "implemented" },
     "34": { "key": "reach_around_bridging_assist", "status": "implemented" },
-    "35": { "key": "cjk_latin_spacing", "status": "implemented" }
+    "35": { "key": "cjk_latin_spacing", "status": "implemented" },
+    "36": { "key": "void_trading", "status": "implemented" },
+      "37": { "key": "conflux_map_extensions", "status": "implemented" },
+      "37-A": { "key": "conflux_map_close_after_teleport", "status": "implemented" },
+      "37-B": { "key": "conflux_map_temporary_waypoint", "status": "implemented" },
+      "37-C": { "key": "conflux_map_dual_waypoint_list", "status": "implemented" },
+      "37-D": { "key": "conflux_map_unknown_height_teleport", "status": "implemented" },
+      "38": { "key": "litematica_auto_refill", "status": "implemented" },
+      "38-A": { "key": "litematica_refill_silent", "status": "implemented" },
+      "38-B": { "key": "litematica_refill_quantity", "status": "implemented" },
+      "38-C": { "key": "printer_auto_refill", "status": "implemented" },
+      "38-D": { "key": "printer_refill_silent", "status": "implemented" }
   }
 }

@@ -33,6 +33,7 @@
     "KeyboardInputMixin",
     "IntegratedServerExitMixin",
     "ScreenshotMixin",
+    "ScreenshotKeyboardHandlerMixin",
     "PackCompatibilityMixin",
     "ItemStackTooltipMixin",
     "NightVisionFadeMixin",
@@ -75,16 +76,26 @@
     "SodiumLevelSliceFluidMixin",
     "PlantModelOffsetMixin",
     "EntityRenderAggregationMixin",
-    "EntityRenderDispatcherAggregationMixin"
-    ,"DraggableListsMinecraftMixin"
-    ,"draggable.packs.PackSelectionModelMixin"
-    ,"draggable.packs.PackSelectionScreenMixin"
-    ,"draggable.packs.TransferableSelectionList_PackEntryMixin"
-    ,"draggable.packs.TransferableSelectionListMixin"
-    ,"draggable.server.JoinMultiplayerScreenMixin"
-    ,"draggable.server.OnlineServerEntryMixin"
-    ,"draggable.server.ServerListMixin"
-    ,"draggable.server.ServerSelectionListMixin"
+    "EntityRenderDispatcherAggregationMixin",
+    "DraggableListsMinecraftMixin",
+    "draggable.packs.PackSelectionModelMixin",
+    "draggable.packs.PackSelectionScreenMixin",
+    "draggable.packs.TransferableSelectionList_PackEntryMixin",
+    "draggable.packs.TransferableSelectionListMixin",
+    "draggable.server.JoinMultiplayerScreenMixin",
+    "draggable.server.OnlineServerEntryMixin",
+    "draggable.server.ServerListMixin",
+    "draggable.server.ServerSelectionListMixin",
+    "VoidTradeGuiMixin",
+    "VoidTradeInteractionMixin",
+    "ConfluxMapWaypointListMixin",
+    "ConfluxMapDualWaypointListMixin",
+    "LitematicaEasyPlaceRefillMixin",
+    "LitematicaLegacyEasyPlaceRefillMixin",
+    "PrinterMaterialRequestMixin",
+    "PrinterInventoryRefillMixin",
+    "PrinterZxyInventoryRefillMixin",
+    "ConfluxMapTeleportScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

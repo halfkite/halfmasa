@@ -1,6 +1,8 @@
 # halfmasa 功能与配置
 
-> 文档版本：`1.1.5`
+两项投影补货功能位于“扩展功能”栏：轻松放置与打印机各自拥有允许从假人库存取货、取货数量（默认32，0为半组）和静默子选项，并支持折叠。打印机按Hana协调器或同系InventoryUtils实际方法接入；指定数量需更新FGA服务端。[兼容范围与验收](litematica-auto-refill.md)
+
+> 文档版本：`1.6.0`
 
 按 `X + H` 打开配置界面，也可以从 Mod Menu 进入。除特别说明外，功能默认关闭；热键为空表示默认不绑定按键。
 
@@ -46,6 +48,10 @@
 
 ## 客户端与界面功能
 
+投影补货子选项 `litematicaRefillSilent`（“投影补货静默取物”）默认关闭，可绑定快捷键；需要新版 FGA `silent_take` 服务端接口，直接扣减已验证的离线来源库存，不召唤或下线假人。已经在线的来源保持在线；服务端不支持时提示并暂停补货。
+
+所有支持版本提供 `litematicaAutoRefill`（投影轻松放置自动补货，默认关闭，可绑定快捷键）。开启后，仅当轻松放置所需物品在背包、快捷栏、副手及随身潜影盒内全部耗尽时，优先直接从无前后缀中文名假人按配置数量取货（默认32，0为半组），未找到有效且足量的来源后再按物品 ID 查询分类库存（直接取货需要新版 FGA direct_take 接口）；取货前再次检查本地材料，等待原版背包同步后重试原位置。客户端需要 Litematica 和 Fabric API，服务端需要支持库存 API v1 的 FGA；无频道、无权限、缺货或背包满时会提示并停止当前补货。取物结果不确定时暂停自动补货至重连，避免重复扣货。[设置与验收步骤](litematica-auto-refill.md)
+
 | 配置 | 默认值 | 说明 |
 |---|---|---|
 | `screenshotToClipboard` | `false` | 按 F2 保存截图时把完整图片同时复制到系统剪贴板。 |
@@ -54,6 +60,7 @@
 | `nightVisionFade` | `true` | 启用夜视平滑淡出；关闭后恢复原版结束前 10 秒闪烁。 |
 | `nightVisionFadeSeconds` | `5` | 指定平滑淡出秒数；范围 `0-60`，`0` 表示不提前淡出。 |
 | `boatView360` / `boatItemView` | `false` | 解除乘船视角旋转限制，并在划船时保留第一人称手持物品显示。 |
+| `confluxMapExtensions` | `false` | 需要匹配游戏版本及扩展 API 的 Conflux Map；打开路径点列表时可默认展示所有维度或公共路径点，传送后可关闭地图；未知高度的目标使用 `confluxMapUnknownHeight`（默认 `128`）传送；可在列表同时显示本地和共享路径点（左右或上下排列），并可用快捷键连续创建多个临时本地路径点（重进该世界后清除）。 |
 | `inventoryMove` | `false` | 原版背包和容器界面打开时继续移动、跳跃和潜行。 |
 | `fastWorldLoadingScreen` / `fastResourcePackLoadingScreen` | `false` | 减少世界与资源包加载界面的额外等待。 |
 | `betterSavedHotbars` | `false` | 增强创造保存工具栏：支持拖入或替换单个物品、中键删除，并记住滚动位置；旧版游戏根目录 `hotbar.nbt` 首次自动复制到 `config/halfmasa/better-saved-hotbars/hotbar.nbt`。 |

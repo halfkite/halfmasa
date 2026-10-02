@@ -1,6 +1,8 @@
 package io.github.halfmasa.xaerobinding.waypoint;
 
 import java.awt.HeadlessException;
+import java.awt.FileDialog;
+import java.awt.Frame;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -14,9 +16,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
-import org.lwjgl.PointerBuffer;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
+//#if MC < 26.3
+//$$ import org.lwjgl.PointerBuffer;
+//$$ import org.lwjgl.system.MemoryStack;
+//$$ import org.lwjgl.util.tinyfd.TinyFileDialogs;
+//#endif
 
 import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
@@ -50,16 +54,26 @@ public final class WaypointClientActions
             String fileName = "halfmasa-xaero-" + FILE_TIME.format(LocalDateTime.now()) + ".txt";
             Path defaultPath = Minecraft.getInstance().gameDirectory.toPath().resolve(fileName).toAbsolutePath();
             String selected;
-            try (MemoryStack stack = MemoryStack.stackPush())
-            {
-                PointerBuffer filters = stack.mallocPointer(1);
-                filters.put(stack.UTF8("*.txt")).flip();
-                selected = TinyFileDialogs.tinyfd_saveFileDialog(
-                        StringUtils.translate("halfmasa.dialog.waypoint_export_title"),
-                        defaultPath.toString(),
-                        filters,
-                        StringUtils.translate("halfmasa.dialog.waypoint_text_files"));
-            }
+            //#if MC < 26.3
+            //$$ try (MemoryStack stack = MemoryStack.stackPush())
+            //$$ {
+                //$$ PointerBuffer filters = stack.mallocPointer(1);
+                //$$ filters.put(stack.UTF8("*.txt")).flip();
+                //$$ selected = TinyFileDialogs.tinyfd_saveFileDialog(
+                        //$$ StringUtils.translate("halfmasa.dialog.waypoint_export_title"),
+                        //$$ defaultPath.toString(),
+                        //$$ filters,
+                        //$$ StringUtils.translate("halfmasa.dialog.waypoint_text_files"));
+            //$$ }
+            //#else
+            FileDialog dialog = new FileDialog((Frame) null,
+                    StringUtils.translate("halfmasa.dialog.waypoint_export_title"), FileDialog.SAVE);
+            dialog.setDirectory(defaultPath.getParent().toString());
+            dialog.setFile(defaultPath.getFileName().toString());
+            dialog.setVisible(true);
+            selected = dialog.getFile() == null ? null
+                    : Path.of(dialog.getDirectory(), dialog.getFile()).toString();
+            //#endif
             if (selected == null)
             {
                 return;
@@ -86,13 +100,14 @@ public final class WaypointClientActions
 
     private static boolean confirmOverwrite(Path output)
     {
+        //#if MC < 26.3
         //#if MC >= 26.1
-        return TinyFileDialogs.tinyfd_messageBox(
-                StringUtils.translate("halfmasa.dialog.waypoint_overwrite_title"),
-                StringUtils.translate("halfmasa.dialog.waypoint_overwrite", output),
-                "yesno",
-                "warning",
-                0) != 0;
+        //$$ return TinyFileDialogs.tinyfd_messageBox(
+                //$$ StringUtils.translate("halfmasa.dialog.waypoint_overwrite_title"),
+                //$$ StringUtils.translate("halfmasa.dialog.waypoint_overwrite", output),
+                //$$ "yesno",
+                //$$ "warning",
+                //$$ 0) != 0;
         //#else
         //$$ return TinyFileDialogs.tinyfd_messageBox(
         //$$         StringUtils.translate("halfmasa.dialog.waypoint_overwrite_title"),
@@ -100,6 +115,16 @@ public final class WaypointClientActions
         //$$         "yesno",
         //$$         "warning",
         //$$         false);
+        //#endif
+        //#else
+        java.awt.Toolkit.getDefaultToolkit().beep();
+        int result = javax.swing.JOptionPane.showConfirmDialog(
+                null,
+                StringUtils.translate("halfmasa.dialog.waypoint_overwrite", output),
+                StringUtils.translate("halfmasa.dialog.waypoint_overwrite_title"),
+                javax.swing.JOptionPane.YES_NO_OPTION,
+                javax.swing.JOptionPane.WARNING_MESSAGE);
+        return result == javax.swing.JOptionPane.YES_OPTION;
         //#endif
     }
 

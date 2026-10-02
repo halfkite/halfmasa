@@ -93,13 +93,27 @@ jobs:
 
       - name: Select preprocessing root
         shell: bash
-        run: printf '26.2\n' > versions/mainProject
+        run: |
+          set -euo pipefail
+          root="$(tr -d '\r\n' < versions/mainProject)"
+          if [[ -z "$root" || ! -f "versions/$root/gradle.properties" ]]; then
+            echo "Invalid preprocessing root: $root" >&2
+            exit 1
+          fi
+          if [[ ! -f versions/26.3/gradle.properties ]]; then
+            echo '26.3 is in the publish matrix but versions/26.3/gradle.properties is missing' >&2
+            exit 1
+          fi
+          printf '%s\n' "$root" > versions/mainProject
+          echo "Using source dialect root $root for the supported matrix, including 26.3"
 
       - name: Set up Java ${{ matrix.java }}
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: ${{ matrix.java }}
+          java-version: |
+            21
+            25
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -132,7 +146,7 @@ jobs:
 
           $buildDir = Join-Path 'versions' $env:MC_VERSION
           $jarFiles = @(Get-ChildItem (Join-Path $buildDir 'build/libs') -Filter '*.jar' |
-            Where-Object { $_.Name -notmatch '(-dev|-sources|-javadoc)\.jar$' })
+            Where-Object { $_.Name -like 'halfmasa-fabric-*' -and $_.Name -notmatch '(-dev|-sources|-javadoc)\.jar$' })
           if ($jarFiles.Count -ne 1) {
             throw "Expected exactly one distributable JAR for $env:MC_VERSION, found $($jarFiles.Count)"
           }
@@ -185,4 +199,4 @@ jobs:
           if-no-files-found: error
           overwrite: true
           retention-days: 14
-
+

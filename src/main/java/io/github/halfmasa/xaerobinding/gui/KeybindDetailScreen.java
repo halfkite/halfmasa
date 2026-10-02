@@ -8,7 +8,7 @@ import java.util.Set;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 //#if MC < 1.21.10
-import net.minecraft.client.gui.screens.Screen;
+//$$ import net.minecraft.client.gui.screens.Screen;
 //#endif
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.network.chat.Component;
@@ -33,6 +33,7 @@ import fi.dy.masa.malilib.hotkeys.KeybindSettings;
 import fi.dy.masa.malilib.util.StringUtils;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.compat.InputCompat;
 import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
 import io.github.halfmasa.xaerobinding.feature.KeybindCustomizationStore;
 import io.github.halfmasa.xaerobinding.feature.KeybindCustomizationStore.ActivationContext;
@@ -151,7 +152,7 @@ public final class KeybindDetailScreen extends GuiBase
     {
         if (key == null || key.equals(InputConstants.UNKNOWN)) return new ArrayList<>();
         return new ArrayList<>(List.of(key.getType() == InputConstants.Type.MOUSE
-                ? -(key.getValue() + 1) : key.getValue()));
+                ? InputCompat.mouseButtonToLayoutCode(key.getValue()) : key.getValue()));
     }
 
     private boolean isVanilla()
@@ -181,7 +182,7 @@ public final class KeybindDetailScreen extends GuiBase
         if (this.draftHotkeyKeys.isEmpty()) return StringUtils.translate("halfmasa.gui.keymap_browser.unbound");
         List<String> names = new ArrayList<>();
         for (int code : this.draftHotkeyKeys)
-            names.add(InputConstants.Type.KEYSYM.getOrCreate(code).getDisplayName().getString());
+            names.add(InputCompat.keyboardKey(code).getDisplayName().getString());
         return String.join(" + ", names);
     }
 
@@ -193,7 +194,7 @@ public final class KeybindDetailScreen extends GuiBase
         {
             names.add(code < 0
                     ? StringUtils.translate("halfmasa.gui.keymap_browser.mouse." + (-code - 1))
-                    : InputConstants.Type.KEYSYM.getOrCreate(code).getDisplayName().getString());
+                    : InputCompat.keyboardKey(code).getDisplayName().getString());
         }
         return String.join(" + ", names);
     }
@@ -377,7 +378,7 @@ public final class KeybindDetailScreen extends GuiBase
 
     private void captureKeyboardKey(int keyCode)
     {
-        if (keyCode == 256)
+        if (keyCode == InputCompat.escapeKeyCode())
         {
             this.capturing = false;
             this.physicalCapture = false;
@@ -387,7 +388,7 @@ public final class KeybindDetailScreen extends GuiBase
             return;
         }
         if (this.isConfirmKey(keyCode)) { this.commitPendingKeys(); return; }
-        if (keyCode == 259)
+        if (keyCode == InputCompat.backspaceKeyCode())
         {
             if (!this.pendingKeys.isEmpty()) this.pendingKeys.remove(this.pendingKeys.size() - 1);
             return;
@@ -434,8 +435,8 @@ public final class KeybindDetailScreen extends GuiBase
 
     private InputConstants.Key keyFromCode(int code)
     {
-        return code < 0 ? InputConstants.Type.MOUSE.getOrCreate(-code - 1)
-                : InputConstants.Type.KEYSYM.getOrCreate(code);
+        return code < 0 ? InputConstants.Type.MOUSE.getOrCreate(InputCompat.layoutCodeToMouseButton(code))
+                : InputCompat.keyboardKey(code);
     }
 
     private void commitPendingKeys()
@@ -526,7 +527,7 @@ public final class KeybindDetailScreen extends GuiBase
     @Override
     public boolean keyPressed(KeyEvent event)
     {
-        if (event.key() == 256)
+        if (event.key() == InputCompat.escapeKeyCode())
         {
             if (this.capturing)
             {
@@ -572,10 +573,11 @@ public final class KeybindDetailScreen extends GuiBase
         return super.keyReleased(event);
     }
 
+    //#if MC >= 26.3
     @Override
-    public boolean onMouseClicked(MouseButtonEvent event, boolean doubleClick)
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
     {
-        if (event.button() == 0)
+        if (InputCompat.isPrimaryMouseButton(event.button()))
         {
             for (KeymapKeyboardLayout.Key cell : this.keyboardKeys)
             {
@@ -587,8 +589,27 @@ public final class KeybindDetailScreen extends GuiBase
                 }
             }
         }
-        return super.onMouseClicked(event, doubleClick);
+        return super.mouseClicked(event, doubleClick);
     }
+    //#else
+    //$$ @Override
+    //$$ public boolean onMouseClicked(MouseButtonEvent event, boolean doubleClick)
+    //$$ {
+    //$$     if (event.button() == 0)
+    //$$     {
+    //$$         for (KeymapKeyboardLayout.Key cell : this.keyboardKeys)
+    //$$         {
+    //$$             if (event.x() >= cell.x() && event.x() < cell.x() + cell.width() &&
+    //$$                     event.y() >= cell.y() && event.y() < cell.y() + cell.height())
+    //$$             {
+    //$$                 this.clickKeyboardKey(cell, event.hasControlDown());
+    //$$                 return true;
+    //$$             }
+    //$$         }
+    //$$     }
+    //$$     return super.onMouseClicked(event, doubleClick);
+    //$$ }
+    //#endif
     //#else
     //$$ @Override
     //$$ public boolean keyPressed(int keyCode, int scanCode, int modifiers)
@@ -669,7 +690,7 @@ public final class KeybindDetailScreen extends GuiBase
                 {
                     names.add(code < 0
                             ? StringUtils.translate("halfmasa.gui.keymap_browser.mouse." + (-code - 1))
-                            : InputConstants.Type.KEYSYM.getOrCreate(code).getDisplayName().getString());
+                            : InputCompat.keyboardKey(code).getDisplayName().getString());
                 }
                 descriptionY += this.drawWrapped(graphics, StringUtils.translate("halfmasa.gui.keybind_detail.pending",
                         String.join(" + ", names)), 10, descriptionY, this.getScreenWidth() - 20, 0xFFFFE080) * 11;
@@ -761,7 +782,7 @@ public final class KeybindDetailScreen extends GuiBase
                 {
                     names.add(code < 0
                             ? StringUtils.translate("halfmasa.gui.keymap_browser.mouse." + (-code - 1))
-                            : InputConstants.Type.KEYSYM.getOrCreate(code).getDisplayName().getString());
+                            : InputCompat.keyboardKey(code).getDisplayName().getString());
                 }
                 lines += this.wrappedLineCount(StringUtils.translate("halfmasa.gui.keybind_detail.pending",
                         String.join(" + ", names)), width) + 1;
@@ -816,7 +837,7 @@ public final class KeybindDetailScreen extends GuiBase
         @Override
         public boolean keyPressed(KeyEvent event)
         {
-            if (event.key() == 256)
+            if (event.key() == InputCompat.escapeKeyCode())
             {
                 MinecraftClientCompat.setScreen(this.minecraft, this.owner);
                 return true;
