@@ -27,7 +27,7 @@ dependencies {
     def loader = "net.fabricmc:fabric-loader:${loaderVersion}"
     def malilib = project.mcVersion >= 26_03_00 && project.hasProperty('malilib_local_path')
             ? files(project.property('malilib_local_path'))
-            : "fi.dy.masa.malilib:malilib-fabric-${project.malilib_mc_version}:${project.malilib_version}"
+            : "maven.modrinth:GcWjdA9I:${project.malilib_modrinth_version_id}"
     def xaeroMinimap = "maven.modrinth:xaeros-minimap:${project.xaero_minimap_version}"
     def xaeroWorldMap = "maven.modrinth:xaeros-world-map:${project.xaero_world_map_version}"
     if (unobfuscated) {
