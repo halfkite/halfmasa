@@ -6,7 +6,7 @@
 [![MC Versions](https://cf.way2muchnoise.eu/versions/For%20MC_1661919_all.svg)](https://www.curseforge.com/minecraft/mc-mods/halfmasa)
 [![GitHub](https://img.shields.io/github/downloads/halfkite/halfmasa/total?color=161616&label=GitHub%20downloads&logo=github)](https://github.com/halfkite/halfmasa/releases)
 
-halfmasa（半马萨）是一个面向 Xaero 与 MaLiLib 用户的 Minecraft Fabric 客户端工具模组，集中提供路径点管理、投影补货、虚空交易、创造模式工具和界面效率功能。多数可选功能默认关闭，具体默认值见配置说明。
+halfmasa是Minecraft Fabric 客户端辅助模组，集中提供路径点管理、投影补货、虚空交易、创造模式工具和界面效率功能。多数可选功能默认关闭，具体默认值见配置说明。
 
 ## 依赖
 
@@ -14,10 +14,11 @@ halfmasa（半马萨）是一个面向 Xaero 与 MaLiLib 用户的 Minecraft Fab
 |---|---|---|
 | [Fabric Loader](https://fabricmc.net/use/installer/) | 必需 | Minecraft 1.21.x 使用 `0.17.3+`；Minecraft 26.x 使用 `0.18.4+`。 |
 | [MaLiLib](https://modrinth.com/mod/malilib) | 必需 | 安装与 Minecraft 版本匹配的 MaLiLib。 |
-| Xaero's Minimap / World Map、Mod Menu | 可选联动 | 提供路径点绑定、地图功能和从 Mod Menu 打开配置的入口。 |
-| Litematica、Fabric API | 功能可选 | 投影轻松放置补货需要相应版本的 Litematica 与 Fabric API。 |
+| [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) / [World Map](https://modrinth.com/mod/xaeros-world-map)| 可选联动 | 提供路径点绑定、地图功能 |
+| [Mod Menu 模组菜单](https://github.com/TerraformersMC/ModMenu) |可选联动 |[Mod Menu 模组菜单](https://github.com/TerraformersMC/ModMenu) 本次游戏进程的位置 |
+| [Litematica](https://link.mcmod.cn/target/aHR0cHM6Ly9naXRodWIuY29tL3Nha3VyYS1yeW9rby9saXRlbWF0aWNh)| 功能可选 | 投影轻松放置补货需要相应版本的 Litematica 。 |
 | [Carpet-FGA-Addition](https://github.com/halfkite/Carpet-FGA-Addition) | 服务端可选 | 投影与打印机补货需要服务端提供兼容的 FGA 库存接口和相应权限。 |
-| QuickShulker、虚空交易服务端扩展 | 功能可选 | 虚空交易材料准备可从随身 QuickShulker 潜影盒取出绿宝石；此功能需要匹配的服务端支持。 |
+| [QuickShulker](https://github.com/MoRanpcy/quickshulker) | 功能可选 | 虚空交易材料准备可从随身 QuickShulker 潜影盒取出绿宝石；此功能需要匹配的服务端支持。 |
 | [Conflux Map](https://github.com/Conflux-Union/conflux-map) | 可选联动 | 提供路径点列表、临时路径点和传送相关扩展功能。 |
 
 halfmasa 本体是客户端模组，普通客户端功能不要求服务器安装 halfmasa。依赖服务端库存 API 或虚空交易扩展的功能，需要服务器安装对应组件；详情见[兼容与设置说明](docs/features.md)。
@@ -69,11 +70,6 @@ halfmasa 本体是客户端模组，普通客户端功能不要求服务器安�
 
 默认按 `X + H` 打开 halfmasa 配置界面，也可从 Mod Menu 进入。完整功能和快捷键设置见功能文档。
 
-## 开发构建
-
-```powershell
-.\gradlew.bat buildAllVersions
-```
 
 ## 许可证
 
