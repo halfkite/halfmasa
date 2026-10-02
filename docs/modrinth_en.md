@@ -1,6 +1,6 @@
 # halfmasa
 
-halfmasa is a client-side Minecraft Fabric utility mod for Xaero, MaLiLib, creative tools, inventory screens, and JEI/REI lookup history.
+halfmasa is a client-side Minecraft Fabric utility mod for Xaero waypoint tools, Litematica and printer refill, villager trading, creative tools, inventory screens, and JEI/REI lookup history.
 
 It combines practical client features in one MaLiLib-style configuration screen. The server does not need to install halfmasa.
 
@@ -9,16 +9,19 @@ It combines practical client features in one MaLiLib-style configuration screen.
 - Bind singleplayer worlds to Xaero Minimap and Xaero World Map roots. The binding follows renamed, moved, and restored worlds.
 - Switch between multiple singleplayer saves directories from the world-selection screen. The button can be moved by holding it for one second and dragging.
 - Import and export multi-dimension Xaero waypoint bundles as `XWB2:` clipboard text or files, with legacy `XWB1:` support, deduplication, undo, and redo.
+- Extend Conflux Map with side-by-side or stacked local and shared waypoint lists, session-only local waypoints, close-map-after-teleport behavior, and a configurable fallback height for locations with unknown elevation.
 - Fill shulker boxes, chests, offhand containers, and bundles in creative mode.
 - Keep separate JEI and REI recipe and usage lookup histories with a configurable four-corner overlay.
 - Preview filled maps in hotbar, inventory, and container slots.
+- Refill materials for Litematica Easy Place and supported printer integrations from server fake-player stock, with configurable amounts and silent withdrawal options.
+- Automate villager trades through the open trading screen: select offer rows or output items, recover boat or minecart fake players after trading, and optionally prepare emeralds from emerald blocks or QuickShulker boxes.
 - Drag resource-pack and server lists, with independent drag modes and optional arrow hiding.
 - Configure fast interface scrolling, reach-around bridging assistance, saved-hotbar improvements, boat camera and held-item rendering, inventory movement, and cooldown-based auto attack.
 - Add smooth Night Vision fading, elytra flight-time information, screenshot clipboard copying, clickable chat sending, server icon caching, server ping recovery, toast suppression, and a Windows in-game IME.
 - Optionally add Chinese-English spacing to translations, signs, and editable or written books with independent controls and a toggle hotkey.
 - Customize the keybind radial menu, HUD-like overlays, configuration folding, and per-category scroll positions.
 
-Unless a feature explicitly says otherwise, it is disabled by default.
+Most optional features are disabled by default; see the configuration guide for individual defaults.
 
 ## Compatibility
 
@@ -29,7 +32,9 @@ Required dependencies:
 - Fabric Loader `0.17.3` or newer for Minecraft 1.21.x; `0.18.4` or newer for Minecraft 26.x
 - MaLiLib matching the Minecraft version
 
-Optional integrations include Xaero's Minimap, Xaero's World Map, Mod Menu, Carpet, Tweakeroo, REI, and JEI.
+Optional integrations include Xaero's Minimap, Xaero's World Map, Mod Menu, Conflux Map, Litematica, QuickShulker, Carpet, Tweakeroo, REI, and JEI.
+
+Most features are client-side and need no server installation. Litematica and printer refill require a server with the compatible Carpet FGA Addition inventory API and permissions. Villager-trading material preparation needs its matching server support; QuickShulker box retrieval also requires the QuickShulker API on the server.
 
 ## Installation
 

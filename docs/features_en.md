@@ -72,6 +72,14 @@ The panel initializes on the first item-manager screen without requiring a recip
 | `disablePausedItemTrajectoryPrediction` | `false` | Stops client-side dropped-item trajectory prediction while Carpet or vanilla ticks are frozen. |
 | `keepModMenuScroll` | `false` | Remembers separate scroll positions for Mod Menu and every MaLiLib configuration category. |
 
+## Void Trading (Extension)
+
+Void Trading is disabled by default. When enabled, opening a trade screen for a villager in a boat or minecart can take configured fake-player names—or players detected on that vehicle—offline. Closing the screen restores them with `rejoin` by default; the alternative waits for `spawn` to appear in the player list before sending `mount`. Automatic detection can mistake real riders for fake players, so use it only when no real player is aboard.
+
+After the villager disappears or all configured fake players go offline, automatic trading buys offers through the local player's open villager screen; keep the screen open while it runs. Enter one-based offer row numbers such as `1,2,3`; each offer is purchased until its input materials run out. Alternatively, enable the output-item whitelist to select offers by item ID. After trading, the screen can close automatically and the items obtained in that run can be dropped. Auto-open has a separate cancel hotkey, defaulting to `Esc`.
+
+Material preparation can uncraft emerald blocks and use the QuickShulker API to retrieve emeralds or emerald blocks from carried boxes. It requires Fabric API on the client and server plus a compatible Void Trading server extension; QuickShulker retrieval also requires QuickShulker on the server.
+
 ## Input, Maps, and Utilities
 
 | Config | Default | Description |

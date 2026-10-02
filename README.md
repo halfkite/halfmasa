@@ -6,57 +6,75 @@
 [![MC Versions](https://cf.way2muchnoise.eu/versions/For%20MC_1661919_all.svg)](https://www.curseforge.com/minecraft/mc-mods/halfmasa)
 [![GitHub](https://img.shields.io/github/downloads/halfkite/halfmasa/total?color=161616&label=GitHub%20downloads&logo=github)](https://github.com/halfkite/halfmasa/releases)
 
-halfmasa is a client-side Minecraft Fabric utility mod for Xaero and MaLiLib users, providing save and waypoint binding, creative tools, input and UI improvements, and JEI/REI recipe lookup history.
+halfmasa（半马萨）是一个面向 Xaero 与 MaLiLib 用户的 Minecraft Fabric 客户端工具模组，集中提供路径点管理、投影补货、虚空交易、创造模式工具和界面效率功能。多数可选功能默认关闭，具体默认值见配置说明。
 
-halfmasa（半马萨）是一个面向 Minecraft Fabric 客户端的 Xaero 与 MaLiLib 实用工具模组。它把存档与路径点绑定、路径点分享、创造模式工具、输入和界面增强，以及 JEI/REI 查询历史集中到统一的 MaLiLib 配置界面中。除特别说明外，功能默认关闭。
+## 依赖
 
-## 支持版本
+| 名称 | 类型 | 说明 |
+|---|---|---|
+| [Fabric Loader](https://fabricmc.net/use/installer/) | 必需 | Minecraft 1.21.x 使用 `0.17.3+`；Minecraft 26.x 使用 `0.18.4+`。 |
+| [MaLiLib](https://modrinth.com/mod/malilib) | 必需 | 安装与 Minecraft 版本匹配的 MaLiLib。 |
+| Xaero's Minimap / World Map、Mod Menu | 可选联动 | 提供路径点绑定、地图功能和从 Mod Menu 打开配置的入口。 |
+| Litematica、Fabric API | 功能可选 | 投影轻松放置补货需要相应版本的 Litematica 与 Fabric API。 |
+| [Carpet-FGA-Addition](https://github.com/halfkite/Carpet-FGA-Addition) | 服务端可选 | 投影与打印机补货需要服务端提供兼容的 FGA 库存接口和相应权限。 |
+| QuickShulker、虚空交易服务端扩展 | 功能可选 | 虚空交易材料准备可从随身 QuickShulker 潜影盒取出绿宝石；此功能需要匹配的服务端支持。 |
+| [Conflux Map](https://github.com/Conflux-Union/conflux-map) | 可选联动 | 提供路径点列表、临时路径点和传送相关扩展功能。 |
 
-当前版本为 `1.6.0`，构建配置支持 Minecraft `1.21.1`、`1.21.3`、`1.21.4`、`1.21.5`、`1.21.8`、`1.21.10`、`1.21.11`、`26.1.2`、`26.2` 和 `26.3`。
+halfmasa 本体是客户端模组，普通客户端功能不要求服务器安装 halfmasa。依赖服务端库存 API 或虚空交易扩展的功能，需要服务器安装对应组件；详情见[兼容与设置说明](docs/features.md)。
+
+## 版本支持
+
+| Minecraft 版本 | halfmasa 版本 | 最低 Fabric Loader |
+|---|---|---|
+| `1.21.1`、`1.21.3`、`1.21.4`、`1.21.5`、`1.21.8`、`1.21.10`、`1.21.11` | `1.6.0` | `0.17.3` |
+| `26.1.2`、`26.2`、`26.3` | `1.6.0` | `0.18.4` |
+
+## 下载
+
+- [GitHub Releases](https://github.com/halfkite/halfmasa/releases)
+- [Modrinth](https://modrinth.com/project/9ZHJ1Ue9)
+- [CurseForge](https://www.curseforge.com/minecraft/mc-mods/halfmasa)
+
+选择对应 Minecraft 版本的 JAR，放入该游戏实例的 `mods` 文件夹。使用自定义游戏目录时，请将文件放入启动器配置所指向的绝对路径。
+
+## 功能简介
+
+### 路径点与地图
+
+- 绑定单人存档与 Xaero 路径点目录；存档改名、移动或恢复备份后仍可沿用原路径点。
+- 切换多个单人存档目录，导入或导出多维度路径点，并支持去重、撤销和重做。
+- 扩展 Conflux Map：同时展示本地和共享路径点、创建重进世界后失效的临时路径点、传送后关闭地图，并为未知高度的目标设置传送高度。
+
+### 投影补货与虚空交易
+
+- 为 Litematica 轻松放置和兼容打印机补充材料；可配置是否从假人库存取货、取货数量和静默取物。
+- 自动打开村民交易界面，并由当前玩家按交易栏序号或产出物品白名单购买；可在交易完成后关闭界面或丢出所得物品。
+- 虚空交易可识别同一船只或矿车上的假人，并在关闭交易界面后按配置恢复；材料准备支持拆分绿宝石块和从 QuickShulker 取货。
+- 自动补货依赖服务端库存接口；虚空交易材料准备依赖对应服务端扩展。具体兼容条件见[投影补货说明](docs/litematica-auto-refill.md)及[功能配置文档](docs/features.md)。
+
+### 创造模式与界面效率
+
+- 填充潜影盒、箱子、副手容器和收纳袋；整理创造物品搜索历史、可展开的创造物品条目及已保存工具栏。
+- 提供 JEI/REI 配方与用途查询历史、背包内移动、快速滚动、可拖动列表和快捷键圆盘。
+- 包含船只视角与手持物显示、截图复制到剪贴板、鞘翅时间提示、中英文显示空格、输入法和其他客户端界面辅助功能。
 
 ## 文档
 
-- [中文功能与配置说明](https://github.com/halfkite/halfmasa/blob/main/docs/features.md)
-- [English features and configuration](https://github.com/halfkite/halfmasa/blob/main/docs/features_en.md)
-- [Modrinth English description](https://github.com/halfkite/halfmasa/blob/main/docs/modrinth_en.md)
-- [构建与发布流程](https://github.com/halfkite/halfmasa/blob/main/docs/releasing.md)
+- [中文功能与配置说明](docs/features.md)
+- [English features and configuration](docs/features_en.md)
+- [Litematica 与打印机补货兼容说明](docs/litematica-auto-refill.md)
+- [版本兼容记录](docs/version_compatibility.md)
+- [English Modrinth description](docs/modrinth_en.md)
+- [构建与发布流程](docs/releasing.md)
 
-## 功能概览
+默认按 `X + H` 打开 halfmasa 配置界面，也可从 Mod Menu 进入。完整功能和快捷键设置见功能文档。
 
-- 绑定单人存档与 Xaero 路径点、地图目录，存档改名、移动或恢复备份后仍可复用原有数据。
-- 通过剪贴板或文本文件导入、导出 `XWB2:` 多维度路径点包，兼容旧版 `XWB1:`，并支持去重、撤回和反撤回。
-- 创造模式容器填充、创造搜索历史和可展开的合并创造物品条目。
-- JEI/REI 配方与用途查询历史，支持首次打开初始化、四角定位、原生列表避让和位置切换快捷键。
-- 截图复制到剪贴板、鞘翅飞行时间、夜视平滑淡出、资源包检查跳过、服务器图标缓存和地图物品预览。
-- 船只 360°视角、划船手持物显示、背包移动、冷却自动攻击、列表拖动、快速界面滚动、环绕放置搭桥辅助和快捷键圆盘。
-- 游戏内输入法、点击发送、快速加载、提示消息屏蔽和服务器列表刷新修复。
-- 可选的中英文自动空格，支持快捷键，并可分别控制翻译文本、告示牌以及书与笔/成书显示。
-- 配置说明按当前屏幕宽度自动换行，配置页与 Mod Menu 分别记忆滚动位置。
-
-## 重要说明
-
-Minecraft 1.21.x 需要 Fabric Loader `0.17.3+`，Minecraft 26.x 需要 Fabric Loader `0.18.4+`；MaLiLib 是必需依赖。Xaero's Minimap、Xaero's World Map、Mod Menu、Carpet、REI 和 JEI 为可选联动模组，不会打进 halfmasa JAR；未安装对应模组时，相关兼容功能不会启用。
-
-在默认 Windows 游戏目录中，全局配置位于绝对路径 `C:\Users\<username>\AppData\Roaming\.minecraft\config\halfmasa\`。搜索与查询历史、快捷键圆盘数据和服务器图标缓存使用该目录下的独立文件或子目录；跟随单人存档的持久化数据位于 `C:\Users\<username>\AppData\Roaming\.minecraft\saves\<world>\config\halfmasa\`。如果启动器使用自定义游戏目录，请将 `.minecraft` 替换为该绝对路径。模组是纯客户端工具，不要求服务器安装 halfmasa。
-
-## 主要入口
-
-按 `X + H` 打开 halfmasa 配置界面，也可以从 Mod Menu 进入。配置页按“推荐”“路径点工具”“创造模式工具”“移植功能”“扩展”和“已停用功能”分类。普通动作项可绑定 MaLiLib 快捷键；路径点导入、导出、去重和历史操作使用界面按钮触发。
-
-## 构建
+## 开发构建
 
 ```powershell
 .\gradlew.bat buildAllVersions
 ```
 
-全部版本的可安装 JAR 会归档到 `build/libs/<timestamp>/`。单独构建 1.21.1：
+## 许可证
 
-```powershell
-.\gradlew.bat :1.21.1:build
-```
-
-单版本产物位于对应的 `versions/<version>/build/libs/`。
-
-## 许可证与致谢
-
-项目主体按 [MIT License](https://github.com/halfkite/halfmasa/blob/main/LICENSE) 发布。部分功能参考或移植自 TechUtils、JEI Recipe History、REI、InvMove、BoatView360、Boat Item View、ElytraTime 等项目；对应许可证和归属说明见源码及 JAR 内的 `META-INF/halfmasa/THIRD_PARTY_NOTICES.md`。
+项目主体使用 [MIT License](LICENSE)。第三方实现的归属及其许可证见 [THIRD_PARTY_NOTICES.md](src/main/resources/META-INF/halfmasa/THIRD_PARTY_NOTICES.md)。
