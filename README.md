@@ -1,5 +1,7 @@
 # halfmasa
 
+**中文** | [English](https://github.com/halfkite/halfmasa/blob/main/README_en.md)
+
 [![License](https://img.shields.io/github/license/halfkite/halfmasa)](https://choosealicense.com/licenses/mit/)
 [![Modrinth](https://img.shields.io/modrinth/dt/9ZHJ1Ue9?color=00AF5C&label=Modrinth%20downloads&logo=modrinth)](https://modrinth.com/project/9ZHJ1Ue9)
 [![CurseForge](https://img.shields.io/curseforge/dt/1661919?logo=curseforge&label=CurseForge%20downloads&color=f16436)](https://www.curseforge.com/minecraft/mc-mods/halfmasa)
@@ -15,7 +17,7 @@ halfmasa是Minecraft Fabric 客户端辅助模组，集中提供路径点管理�
 | [Fabric Loader](https://fabricmc.net/use/installer/) | 必需 | Minecraft 1.21.x 使用 `0.17.3+`；Minecraft 26.x 使用 `0.18.4+`。 |
 | [MaLiLib](https://modrinth.com/mod/malilib) | 必需 | 安装与 Minecraft 版本匹配的 MaLiLib。 |
 | [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) / [World Map](https://modrinth.com/mod/xaeros-world-map)| 可选联动 | 提供路径点绑定、地图功能 |
-| [Mod Menu 模组菜单](https://github.com/TerraformersMC/ModMenu) |可选联动 |[Mod Menu 模组菜单](https://github.com/TerraformersMC/ModMenu) 本次游戏进程的位置 |
+| [Mod Menu 模组菜单](https://github.com/TerraformersMC/ModMenu) | 可选联动 | 提供从模组列表进入 halfmasa 配置界面的入口。 |
 | [Litematica](https://link.mcmod.cn/target/aHR0cHM6Ly9naXRodWIuY29tL3Nha3VyYS1yeW9rby9saXRlbWF0aWNh)| 功能可选 | 投影轻松放置补货需要相应版本的 Litematica 。 |
 | [Carpet-FGA-Addition](https://github.com/halfkite/Carpet-FGA-Addition) | 服务端可选 | 投影与打印机补货需要服务端提供兼容的 FGA 库存接口和相应权限。 |
 | [QuickShulker](https://github.com/MoRanpcy/quickshulker) | 功能可选 | 虚空交易材料准备可从随身 QuickShulker 潜影盒取出绿宝石；此功能需要匹配的服务端支持。 |
