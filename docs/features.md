@@ -1,26 +1,34 @@
 # halfmasa 功能与配置
 
-两项投影补货功能位于“扩展功能”栏：轻松放置与打印机各自拥有允许从假人库存取货、取货数量（默认32，0为半组）和静默子选项，并支持折叠。打印机按Hana协调器或同系InventoryUtils实际方法接入；指定数量需更新FGA服务端。[兼容范围与验收](litematica-auto-refill.md)
+两项投影补货功能位于“其他模组扩展”栏：轻松放置与打印机各自拥有允许从假人库存取货、取货数量（默认32，0为半组）和静默子选项，并支持折叠。打印机按Hana协调器或同系InventoryUtils实际方法接入；指定数量需更新FGA服务端。[兼容范围与验收](litematica-auto-refill.md)
 
 > 文档版本：`1.6.0`
 
+Minecraft 26.3 新增[投影保存、删除与粘贴黑白名单](litematica-block-filters.md)，三组设置位于“其他模组扩展”栏，按方块 ID 独立筛选。
+
 按 `X + H` 打开配置界面，也可以从 Mod Menu 进入。除特别说明外，功能默认关闭；热键为空表示默认不绑定按键。
 
-## Xaero 与路径点工具
+## 其他模组扩展：Xaero 路径点与 Conflux Map
 
 | 配置或动作 | 默认值 | 说明 |
 |---|---|---|
-| `enableWorldBinding` | `false` | 在默认 Windows 游戏目录的绝对路径 `C:\Users\<username>\AppData\Roaming\.minecraft\saves\<world>\config\halfmasa\xaero-world-binding.json` 保存 Xaero Minimap 与 World Map 的根目录 ID，使改名、移动和备份恢复后的存档继续使用同一路径点与地图数据；旧版 `C:\Users\<username>\AppData\Roaming\.minecraft\saves\<world>\.halfmasa-xaero-binding.json` 会自动迁移。 |
-| `customSavesPaths` | 空列表 | 自定义存档路径列表；支持绝对路径和相对游戏目录的路径。在单人游戏的“选择世界”界面左上角点击当前路径即可即时切换，原版 `saves` 始终可选。 |
-| `keepWorldSelectionOnEmpty` | `false` | 开启后，当前存档路径没有世界时点击“单人游戏”仍显示世界选择界面，不再自动跳转到创建世界界面。 |
+| `enableWorldBinding` | `false` | 配置名为“Xaero 路径点与单人存档绑定”。在默认 Windows 游戏目录的绝对路径 `C:\Users\<username>\AppData\Roaming\.minecraft\saves\<world>\config\halfmasa\xaero-world-binding.json` 保存 Xaero Minimap 与 World Map 的根目录 ID，使改名、移动和备份恢复后的存档继续使用同一路径点与地图数据；旧版 `C:\Users\<username>\AppData\Roaming\.minecraft\saves\<world>\.halfmasa-xaero-binding.json` 会自动迁移。 |
 | `importWaypointBundle` | 操作按钮 | 自动识别剪贴板中的 `XWB1:`/`XWB2:` 文本或复制的第一个文本文件；旧 `XWB1` 导入当前维度，`XWB2` 保持原维度与分类。 |
 | `exportAllDimensions` | 操作按钮 | 将当前 Xaero 世界根容器中的全部维度、全部分类导出为 `XWB2:` 文本或 UTF-8 `.txt` 文件；包括 VC 等模组创建的额外维度，不限于主世界、下界和末地。每个维度同时保存正式维度 ID、Xaero 等效维度 ID、完整容器节点、完整世界路径、本地世界键、Xaero 维度名和自定义名称。 |
 | `exportCurrentDimension` | 操作按钮 | 将当前维度的全部分类导出为文本或文件。 |
 | `exportCurrentWaypointSet` | 操作按钮 | 将当前维度的当前分类导出为文本或文件。 |
 | `dedupeWaypoints` | 操作按钮 | “合并当前”处理当前分类，“合并全部”分别处理本维度全部分类；按坐标和名称去重并保留较早的路径点。 |
 | `waypointHistory` | 操作按钮 | 撤回或反撤回当前游戏会话内最近的导入与去重操作，最多保留 5 步；切换 Xaero 世界后清空。 |
+| `confluxMapExtensions` | `false` | 需要匹配游戏版本及扩展 API 的 Conflux Map；打开路径点列表时可默认展示所有维度或公共路径点，传送后可关闭地图；未知高度的目标使用 `confluxMapUnknownHeight`（默认 `128`）传送；可在列表同时显示本地和共享路径点（左右或上下排列），并可用快捷键连续创建多个临时本地路径点（重进该世界后清除）。 |
 
 文件导出默认命名为 `halfmasa-xaero-yyyyMMdd-HHmm.txt`，保存成功后同一内容也会复制到剪贴板。临时路径点、服务器路径点和第三方动态路径点不会进入分享包。导入和去重操作会保存完整的 Xaero 路径点快照用于撤回，导出不会进入操作历史。导入 `XWB2:` 时按正式维度 ID、Xaero 等效维度 ID、完整容器节点和本地世界键逐级匹配，避免多个 VC 维度因共享 `waypoints` 节点而合并。
+
+## 单人存档路径
+
+| 配置 | 默认值 | 说明 |
+|---|---|---|
+| `customSavesPaths` | 空列表 | 自定义存档路径列表；支持绝对路径和相对游戏目录的路径。在单人游戏的“选择世界”界面左上角点击当前路径即可即时切换，原版 `saves` 始终可选。 |
+| `keepWorldSelectionOnEmpty` | `false` | 开启后，当前存档路径没有世界时点击“单人游戏”仍显示世界选择界面，不再自动跳转到创建世界界面。 |
 
 ## 创造模式工具
 
@@ -34,8 +42,21 @@
 | `itemSearchHistoryRows` | `3` | 创造搜索历史的最大显示行数，范围 `1-9`。 |
 | `itemSearchHistoryDuringSearch` | `false` | 输入搜索文字时仍显示历史栏；关闭时只在清空搜索栏后显示。 |
 | `condensedCreative` | `false` | 将附魔书、药水、药箭和多种方块变体合并为可展开的创造物品条目。 |
+| `trialCreativeTab` | `false` | 在创造模式物品栏末尾新增「试炼栏」，收录全部试炼刷怪笼配置与试炼宝库（详见下节）。 |
 
-## JEI/REI 查询历史（扩展）
+### 试炼栏
+
+开启 `trialCreativeTab` 后，创造模式物品栏的页签列表末尾会出现一个「试炼栏」，只在本模组的客户端可见。
+
+- **试炼刷怪笼**：收录全部 14 种原版试炼密室配置，每种包含三个条目——普通、不祥，以及进入冷却（cooldown）状态的版本，共 42 个条目。
+- 条目为携带方块实体数据的原版试炼刷怪笼，放置后即为对应的预设状态；冷却版本的 `cooldown_ends_at` 设为未来时间，放置后立即处于冷却中。
+- **试炼宝库**：普通与不祥各一个条目，共 2 个条目。
+
+条目覆盖的原版配置为 `trial_chamber/breeze`、`melee/{husk,spider,zombie}`、`ranged/{poison_skeleton,skeleton,stray}`、`slow_ranged/{poison_skeleton,skeleton,stray}`、`small_melee/{baby_zombie,cave_spider,silverfish,slime}`。
+
+> 注：1.21.1 尚未把试炼刷怪笼配置放入注册表，该版本改用等价的内联配置对象实现相同效果。
+
+## JEI/REI 查询历史（其他模组扩展）
 
 | 配置或动作 | 默认值 | 说明 |
 |---|---|---|
@@ -60,7 +81,6 @@
 | `nightVisionFade` | `true` | 启用夜视平滑淡出；关闭后恢复原版结束前 10 秒闪烁。 |
 | `nightVisionFadeSeconds` | `5` | 指定平滑淡出秒数；范围 `0-60`，`0` 表示不提前淡出。 |
 | `boatView360` / `boatItemView` | `false` | 解除乘船视角旋转限制，并在划船时保留第一人称手持物品显示。 |
-| `confluxMapExtensions` | `false` | 需要匹配游戏版本及扩展 API 的 Conflux Map；打开路径点列表时可默认展示所有维度或公共路径点，传送后可关闭地图；未知高度的目标使用 `confluxMapUnknownHeight`（默认 `128`）传送；可在列表同时显示本地和共享路径点（左右或上下排列），并可用快捷键连续创建多个临时本地路径点（重进该世界后清除）。 |
 | `inventoryMove` | `false` | 原版背包和容器界面打开时继续移动、跳跃和潜行。 |
 | `fastWorldLoadingScreen` / `fastResourcePackLoadingScreen` | `false` | 减少世界与资源包加载界面的额外等待。 |
 | `betterSavedHotbars` | `false` | 增强创造保存工具栏：支持拖入或替换单个物品、中键删除，并记住滚动位置；旧版游戏根目录 `hotbar.nbt` 首次自动复制到 `config/halfmasa/better-saved-hotbars/hotbar.nbt`。 |
@@ -73,6 +93,10 @@
 | `skipResourcePackCompatibilityCheck` | `false` | 将添加的资源包视为兼容并跳过版本不匹配确认。 |
 | `disablePausedItemTrajectoryPrediction` | `false` | Carpet 或原版 `/tick freeze` 暂停时停止客户端继续预测掉落物轨迹。 |
 | `keepModMenuScroll` | `false` | 分别记忆 Mod Menu 和每个 MaLiLib 配置分类的滚动位置。 |
+| `keepConfigSearchPosition`（26.3） | `true` | “保持配置界面位置”的子选项；主开关开启时，按 MaLiLib 配置分类分别恢复搜索文字、按键搜索、搜索栏开合及列表滚动位置。仅在本次游戏内记忆。 |
+| `keepConfigSelectedTab`（26.3） | `true` | 主开关开启时，重新打开 halfmasa 配置恢复上次选中的栏位；只支持全部、建议开启、创造模式工具、移植功能、其他模组扩展、禁用。 |
+
+26.3 中展开“保持配置界面位置”即可设置上述子项。开启主开关后，在一个栏位输入搜索并滚动，切到其他栏位再切回来或关闭后重开，即可检查各栏位的内容和位置是否恢复。关闭搜索/位置子选项会清除这部分记忆；关闭栏位记忆后，普通配置入口恢复默认“全部”。重启游戏清除所有界面记忆。
 
 ## 虚空交易（扩展）
 
@@ -83,6 +107,8 @@
 材料准备选项可在交易前把绿宝石块拆成绿宝石，或通过 QuickShulker API 从随身潜影盒取出绿宝石和绿宝石块。材料准备需要客户端与服务端的 Fabric API，以及兼容的虚空交易服务端扩展；使用 QuickShulker 取物时服务端还需 QuickShulker。
 
 ## 输入、地图与实用功能
+
+Minecraft 26.3 的“更好的按键设置”按键浏览界面会在本次游戏中默认记住列表位置和每个模组的折叠状态。折叠或展开时保留当前浏览位置；按键冲突在键帽右侧用分开的浅红、深红色条标识。
 
 | 配置 | 默认值 | 说明 |
 |---|---|---|

@@ -16,6 +16,22 @@ public abstract class MaLiLibConfigScrollMixin implements MaLiLibConfigScrollAcc
 {
     @Unique private String halfmasa$currentScrollKey;
 
+    //#if MC >= 26.3
+    @Inject(method = "initGui", at = @At("HEAD"), remap = false)
+    private void halfmasa$saveBeforeInit(CallbackInfo ci)
+    {
+        this.halfmasa$saveConfigScroll();
+    }
+
+    @Override
+    public void halfmasa$beforeConfigCategoryChange()
+    {
+        this.halfmasa$saveConfigScroll();
+        // The next init belongs to a new list/category. Do not save its empty state over the old category.
+        this.halfmasa$currentScrollKey = null;
+    }
+    //#endif
+
     @Inject(method = "initGui", at = @At("TAIL"), remap = false)
     private void halfmasa_restoreAfterInit(CallbackInfo ci)
     {

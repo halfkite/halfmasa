@@ -50,6 +50,8 @@ Download the JAR for your Minecraft version and place it in that game instance's
 
 ### Schematic Refills and Void Trading
 
+- Minecraft 26.3 adds independent [schematic save, deletion, and paste block filters](docs/litematica-block-filters_en.md) in the Other Mod Extensions tab, using block ID whitelists or blacklists.
+
 - Refill materials for Litematica Easy Place and compatible printer integrations. Configure fake-player stock access, refill amounts, and silent withdrawals.
 - Automatically open villager trade screens and buy offers through the local player's trading interface by row number or output-item whitelist. The screen can close or the acquired items can be dropped after trading.
 - Void Trading can identify fake players aboard the same boat or minecart and restore them after the trade screen closes. Material preparation can uncraft emerald blocks and retrieve emeralds from QuickShulker boxes.
@@ -58,6 +60,7 @@ Download the JAR for your Minecraft version and place it in that game instance's
 ### Creative Tools and Interface Improvements
 
 - Fill shulker boxes, chests, offhand containers, and bundles; manage creative search history, expandable creative entries, and saved hotbars.
+- Adds a "Trial" creative tab that gathers trial spawners for every vanilla mob (normal / ominous / cooldown) plus trial vaults.
 - Use JEI/REI recipe and usage histories, inventory movement, fast scrolling, draggable lists, and a configurable hotkey radial menu.
 - Includes boat camera and held-item options, screenshot clipboard copying, elytra time information, Chinese-English display spacing, an in-game IME, and other client-side interface helpers.
 

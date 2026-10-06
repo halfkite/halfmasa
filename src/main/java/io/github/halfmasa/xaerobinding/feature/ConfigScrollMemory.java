@@ -11,6 +11,10 @@ import fi.dy.masa.malilib.gui.widgets.WidgetSearchBar;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
 import io.github.halfmasa.xaerobinding.gui.ScrollCategoryKeyProvider;
+//#if MC >= 26.3
+import fi.dy.masa.malilib.gui.widgets.WidgetSearchBarConfigs;
+import io.github.halfmasa.xaerobinding.mixin.ConfigSearchBarAccessor;
+//#endif
 
 public final class ConfigScrollMemory
 {
@@ -20,6 +24,29 @@ public final class ConfigScrollMemory
     private static final String CUSTOM_GROUP_CHOICE_PREFIX = "custom-groups:choice:";
     private static final Map<String, Double> POSITIONS = new HashMap<>();
     private static String customGroupSource = "halfmasa";
+    //#if MC >= 26.3
+    private record SearchState(String text, boolean open, List<Integer> keys, int position) {}
+    private static final Map<String, SearchState> SEARCHES = new HashMap<>();
+    private static String selectedHalfMasaTab = "ALL";
+
+    public static void clearConfigState()
+    {
+        SEARCHES.clear();
+        POSITIONS.keySet().removeIf(key -> key.contains("|"));
+    }
+
+    public static void clearSelectedTab() { selectedHalfMasaTab = "ALL"; }
+
+    public static String restoreSelectedTab()
+    {
+        return enabled() && Configs.KEEP_CONFIG_SELECTED_TAB.getBooleanValue() ? selectedHalfMasaTab : "ALL";
+    }
+
+    public static void saveSelectedTab(String tab)
+    {
+        if (enabled() && Configs.KEEP_CONFIG_SELECTED_TAB.getBooleanValue()) selectedHalfMasaTab = tab;
+    }
+    //#endif
 
     private ConfigScrollMemory() {}
 
@@ -27,6 +54,10 @@ public final class ConfigScrollMemory
     {
         POSITIONS.clear();
         customGroupSource = "halfmasa";
+        //#if MC >= 26.3
+        SEARCHES.clear();
+        clearSelectedTab();
+        //#endif
     }
 
     public static void saveCustomGroupEditor(String source, int position)
@@ -76,14 +107,49 @@ public final class ConfigScrollMemory
 
     public static void save(GuiConfigsBase screen, WidgetListBase<?, ?> widget, String key)
     {
-        if (!enabled() || widget == null || key == null || hasFilter(widget)) return;
+        if (!enabled() || widget == null || key == null) return;
+        //#if MC >= 26.3
+        if (!Configs.KEEP_CONFIG_SEARCH_POSITION.getBooleanValue()) return;
+        WidgetSearchBar search = widget.getSearchBarWidget();
+        if (search != null)
+        {
+            String text = ((ConfigSearchBarAccessor) search).halfmasa$getSearchBox().getValueWrapper();
+            List<Integer> keys = search instanceof WidgetSearchBarConfigs configs
+                    ? List.copyOf(configs.getKeybind().getKeys()) : List.of();
+            SEARCHES.put(key, new SearchState(text, search.isSearchOpen(), keys, widget.getScrollbar().getValue()));
+        }
+        //#endif
+        if (hasFilter(widget)) return;
         POSITIONS.put(key, (double) widget.getScrollbar().getValue());
     }
 
     public static String restore(GuiConfigsBase screen, WidgetListBase<?, ?> widget)
     {
         String key = key(screen);
-        if (!enabled() || widget == null || hasFilter(widget)) return key;
+        if (!enabled() || widget == null) return key;
+        //#if MC >= 26.3
+        if (!Configs.KEEP_CONFIG_SEARCH_POSITION.getBooleanValue()) return key;
+        SearchState state = SEARCHES.get(key);
+        WidgetSearchBar search = widget.getSearchBarWidget();
+        if (state != null && search != null)
+        {
+            var textField = ((ConfigSearchBarAccessor) search).halfmasa$getSearchBox();
+            // Restore filters first, then clamp against the rebuilt result list.
+            textField.setValueWrapper(state.text());
+            search.setSearchOpen(state.open());
+            textField.setFocusedWrapper(false);
+            if (search instanceof WidgetSearchBarConfigs configs)
+            {
+                configs.getKeybind().clearKeys();
+                state.keys().forEach(configs.getKeybind()::addKey);
+            }
+            widget.refreshEntries();
+            int maximum = Math.max(0, widget.getScrollbar().getMaxValue());
+            widget.getScrollbar().setValue(Math.max(0, Math.min(maximum, state.position())));
+            return key;
+        }
+        //#endif
+        if (hasFilter(widget)) return key;
         Double saved = POSITIONS.get(key);
         if (saved != null)
         {

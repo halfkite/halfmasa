@@ -62,6 +62,10 @@ public final class KeymapBrowserScreen extends GuiBase
     private static final int COMBINATION_CONFLICT_FILL = 0xB0401414;
     private static final int SINGLE_CONFLICT_BORDER = 0xFFE09090;
     private static final int COMBINATION_CONFLICT_BORDER = 0xFFB04040;
+    //#if MC >= 26.3
+    private static int rememberedScrollOffset;
+    private static final Set<String> rememberedCollapsedGroups = new HashSet<>();
+    //#endif
 
     private final List<BrowserEntry> allEntries = new ArrayList<>();
     private final List<BrowserEntry> visibleEntries = new ArrayList<>();
@@ -92,7 +96,22 @@ public final class KeymapBrowserScreen extends GuiBase
     public KeymapBrowserScreen()
     {
         this.setTitle(StringUtils.translate("halfmasa.gui.keymap_browser.title"));
+        //#if MC >= 26.3
+        this.scrollOffset = rememberedScrollOffset;
+        this.collapsedGroups.addAll(rememberedCollapsedGroups);
+        //#endif
     }
+
+    //#if MC >= 26.3
+    @Override
+    public void removed()
+    {
+        rememberedScrollOffset = Math.max(0, this.scrollOffset);
+        rememberedCollapsedGroups.clear();
+        rememberedCollapsedGroups.addAll(this.collapsedGroups);
+        super.removed();
+    }
+    //#endif
 
     private enum ConflictType
     {
@@ -215,7 +234,9 @@ public final class KeymapBrowserScreen extends GuiBase
                             this.collapsedGroups.add(this.groupKey(entry));
                         }
                     }
-                    this.scrollOffset = 0;
+                    //#if MC < 26.3
+                    //$$ this.scrollOffset = 0;
+                    //#endif
                     this.initGui();
                 });
 
@@ -449,7 +470,9 @@ public final class KeymapBrowserScreen extends GuiBase
         {
             this.collapsedGroups.remove(group);
         }
-        this.scrollOffset = 0;
+        //#if MC < 26.3
+        //$$ this.scrollOffset = 0;
+        //#endif
         this.initGui();
     }
 
@@ -986,32 +1009,36 @@ public final class KeymapBrowserScreen extends GuiBase
                 sourceFill = 0x66285028;
             }
 
-            int split = left + cellWidth / 2;
-            if (selected)
-            {
-                this.drawRect(graphics, left, y, right, y + cellHeight, 0x90605820);
-            }
-            else if (conflictKinds.any())
-            {
-                this.drawRect(graphics, left, y, split, y + cellHeight, sourceFill);
-                if (conflictKinds.both())
-                {
-                    int conflictSplitY = y + cellHeight / 2;
-                    this.drawRect(graphics, split, y, right, conflictSplitY,
-                            SINGLE_CONFLICT_FILL);
-                    this.drawRect(graphics, split, conflictSplitY, right, y + cellHeight,
-                            COMBINATION_CONFLICT_FILL);
-                }
-                else
-                {
-                    this.drawRect(graphics, split, y, right, y + cellHeight,
-                            conflictKinds.combination() ? COMBINATION_CONFLICT_FILL : SINGLE_CONFLICT_FILL);
-                }
-            }
-            else
-            {
-                this.drawRect(graphics, left, y, right, y + cellHeight, sourceFill);
-            }
+            //#if MC >= 26.3
+            this.drawRect(graphics, left, y, right, y + cellHeight,
+                    selected ? 0x90605820 : sourceFill);
+            //#else
+            //$$ int split = left + cellWidth / 2;
+            //$$ if (selected)
+            //$$ {
+            //$$     this.drawRect(graphics, left, y, right, y + cellHeight, 0x90605820);
+            //$$ }
+            //$$ else if (conflictKinds.any())
+            //$$ {
+            //$$     this.drawRect(graphics, left, y, split, y + cellHeight, sourceFill);
+            //$$     if (conflictKinds.both())
+            //$$     {
+            //$$         int conflictSplitY = y + cellHeight / 2;
+            //$$         this.drawRect(graphics, split, y, right, conflictSplitY, SINGLE_CONFLICT_FILL);
+            //$$         this.drawRect(graphics, split, conflictSplitY, right, y + cellHeight,
+            //$$                 COMBINATION_CONFLICT_FILL);
+            //$$     }
+            //$$     else
+            //$$     {
+            //$$         this.drawRect(graphics, split, y, right, y + cellHeight,
+            //$$                 conflictKinds.combination() ? COMBINATION_CONFLICT_FILL : SINGLE_CONFLICT_FILL);
+            //$$     }
+            //$$ }
+            //$$ else
+            //$$ {
+            //$$     this.drawRect(graphics, left, y, right, y + cellHeight, sourceFill);
+            //$$ }
+            //#endif
 
             int sourceBorder = selected ? 0xFFF0D080 : (hasVanilla || hasMalilib) ? 0xFF787888 : 0xFF3C3C46;
             this.drawRect(graphics, left, y, right, y + 1, sourceBorder);
@@ -1020,25 +1047,41 @@ public final class KeymapBrowserScreen extends GuiBase
             this.drawRect(graphics, right - 1, y, right, y + cellHeight, sourceBorder);
             if (!selected && conflictKinds.any())
             {
-                if (conflictKinds.both())
+                //#if MC >= 26.3
+                int markerLeft = Math.max(left + 1, right - 4);
+                int markerRight = right - 1;
+                int markerMiddle = y + cellHeight / 2;
+                if (conflictKinds.single())
                 {
-                    int conflictSplitY = y + cellHeight / 2;
-                    this.drawRect(graphics, split, y, right, y + 1, SINGLE_CONFLICT_BORDER);
-                    this.drawRect(graphics, split, conflictSplitY - 1,
-                            right, conflictSplitY + 1, COMBINATION_CONFLICT_BORDER);
-                    this.drawRect(graphics, split, y + cellHeight - 1,
-                            right, y + cellHeight, COMBINATION_CONFLICT_BORDER);
+                    this.drawRect(graphics, markerLeft, y + 2, markerRight,
+                            markerMiddle - 1, SINGLE_CONFLICT_BORDER);
                 }
-                else
+                if (conflictKinds.combination())
                 {
-                    int conflictBorder = conflictKinds.combination()
-                            ? COMBINATION_CONFLICT_BORDER : SINGLE_CONFLICT_BORDER;
-                    this.drawRect(graphics, split, y, right, y + 1, conflictBorder);
-                    this.drawRect(graphics, split, y + cellHeight - 1, right, y + cellHeight, conflictBorder);
+                    this.drawRect(graphics, markerLeft, markerMiddle + 1, markerRight,
+                            y + cellHeight - 2, COMBINATION_CONFLICT_BORDER);
                 }
-                int rightBorder = conflictKinds.combination()
-                        ? COMBINATION_CONFLICT_BORDER : SINGLE_CONFLICT_BORDER;
-                this.drawRect(graphics, right - 1, y, right, y + cellHeight, rightBorder);
+                //#else
+                //$$ if (conflictKinds.both())
+                //$$ {
+                //$$     int conflictSplitY = y + cellHeight / 2;
+                //$$     this.drawRect(graphics, split, y, right, y + 1, SINGLE_CONFLICT_BORDER);
+                //$$     this.drawRect(graphics, split, conflictSplitY - 1,
+                //$$             right, conflictSplitY + 1, COMBINATION_CONFLICT_BORDER);
+                //$$     this.drawRect(graphics, split, y + cellHeight - 1,
+                //$$             right, y + cellHeight, COMBINATION_CONFLICT_BORDER);
+                //$$ }
+                //$$ else
+                //$$ {
+                //$$     int conflictBorder = conflictKinds.combination()
+                //$$             ? COMBINATION_CONFLICT_BORDER : SINGLE_CONFLICT_BORDER;
+                //$$     this.drawRect(graphics, split, y, right, y + 1, conflictBorder);
+                //$$     this.drawRect(graphics, split, y + cellHeight - 1, right, y + cellHeight, conflictBorder);
+                //$$ }
+                //$$ int rightBorder = conflictKinds.combination()
+                //$$         ? COMBINATION_CONFLICT_BORDER : SINGLE_CONFLICT_BORDER;
+                //$$ this.drawRect(graphics, right - 1, y, right, y + cellHeight, rightBorder);
+                //#endif
             }
 
             String label = mouseKey

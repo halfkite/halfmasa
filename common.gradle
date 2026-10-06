@@ -132,6 +132,15 @@ processResources {
     filesMatching('fabric.mod.json') { expand properties }
     filesMatching('halfmasa.mixins.json') {
         filter { line ->
+            if (project.mcVersion < 26_03_00 && [
+                    '"LitematicaSaveBlockFilterMixin"', '"LitematicaDeleteBlockFilterMixin"',
+                    '"LitematicaAreaDeleteBlockFilterMixin"', '"LitematicaFilteredContainerAccessor"',
+                    '"LitematicaTaskWorldAccessor"',
+                    '"LitematicaPasteDirectBlockFilterMixin"', '"LitematicaPasteCommandBlockFilterMixin"',
+                    '"ConfigSearchBarAccessor"', '"MaLiLibConfigListRecreationMixin"'
+            ].any { line.contains(it) }) {
+                return null
+            }
             if (!project.hasProperty('jei_compile_version') &&
                     jeiHistoryLayoutMixins.any { line.contains(it) }) {
                 return null

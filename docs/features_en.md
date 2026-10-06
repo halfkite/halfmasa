@@ -1,26 +1,34 @@
 # halfmasa Features and Configuration
 
-Easy Place and printer refill appear under Extensions, each with foldable fake-stock permission, quantity (default32;0 means half a stack) and silent options. Printer adapters select the Hana coordinator or shared InventoryUtils method signatures. Exact quantities require updated server FGA. [Compatibility and acceptance](litematica-auto-refill.md)
+Easy Place and printer refill appear under Other Mod Extensions, each with foldable fake-stock permission, quantity (default32;0 means half a stack) and silent options. Printer adapters select the Hana coordinator or shared InventoryUtils method signatures. Exact quantities require updated server FGA. [Compatibility and acceptance](litematica-auto-refill.md)
 
 > Documentation version: `1.6.0`
 
+Minecraft 26.3 adds independent [schematic save, deletion, and paste block filters](litematica-block-filters_en.md) under Other Mod Extensions, matching block registry IDs.
+
 Press `X + H` to open the configuration screen, or use Mod Menu. Unless noted otherwise, features are disabled by default. An empty hotkey means that no key is bound by default.
 
-## Xaero and Waypoint Tools
+## Other Mod Extensions: Xaero Waypoints and Conflux Map
 
 | Config or action | Default | Description |
 |---|---|---|
-| `enableWorldBinding` | `false` | Stores the selected Xaero Minimap and World Map root IDs in `C:\Users\<username>\AppData\Roaming\.minecraft\saves\<world>\config\halfmasa\xaero-world-binding.json` so renamed, moved, or restored worlds can keep using the same waypoint and map data. The legacy `C:\Users\<username>\AppData\Roaming\.minecraft\saves\<world>\.halfmasa-xaero-binding.json` is migrated automatically. |
-| `customSavesPaths` | empty list | Custom saves path list. Absolute paths and paths relative to the game directory are supported. Click the current path in the top-left of the singleplayer world selection screen to switch immediately; the vanilla `saves` directory is always available. |
-| `keepWorldSelectionOnEmpty` | `false` | When enabled, clicking Singleplayer with no worlds in the current saves path stays on world selection instead of opening world creation automatically. |
+| `enableWorldBinding` | `false` | Named “Xaero Waypoints and Singleplayer Save Binding” in the config. Stores the selected Xaero Minimap and World Map root IDs in `C:\Users\<username>\AppData\Roaming\.minecraft\saves\<world>\config\halfmasa\xaero-world-binding.json` so renamed, moved, or restored worlds can keep using the same waypoint and map data. The legacy `C:\Users\<username>\AppData\Roaming\.minecraft\saves\<world>\.halfmasa-xaero-binding.json` is migrated automatically. |
 | `importWaypointBundle` | action button | Automatically imports `XWB1:`/`XWB2:` clipboard text or the first copied text file. Legacy XWB1 data targets the current dimension; XWB2 preserves dimensions and sets. |
 | `exportAllDimensions` | action buttons | Exports every dimension and set in the current Xaero root container as `XWB2:` text or a UTF-8 `.txt` file, including extra dimensions created by VC and similar mods rather than only the overworld, Nether, and End. Each dimension also stores its formal dimension ID, Xaero equivalent dimension ID, complete container nodes, full world path, local world key, Xaero dimension name, and custom name. |
 | `exportCurrentDimension` | action buttons | Exports every set in the current dimension as text or a file. |
 | `exportCurrentWaypointSet` | action buttons | Exports the current set in the current dimension as text or a file. |
 | `dedupeWaypoints` | action buttons | Merge Current processes the current set; Merge All processes every set in this dimension independently, removing later waypoints with matching coordinates and names. |
 | `waypointHistory` | action buttons | Undoes or redoes the latest import and deduplication operations in the current game session, up to 5 steps; cleared when the Xaero world changes. |
+| `confluxMapExtensions` | `false` | Requires Conflux Map for the matching game version and extension API. Sets waypoint-list defaults, closes the map after teleporting, uses `confluxMapUnknownHeight` (default `128`) for targets with unknown height, can show local and shared waypoint lists side by side or stacked, and adds a hotkey for multiple temporary local waypoints cleared when rejoining that world. |
 
 File exports default to `halfmasa-xaero-yyyyMMdd-HHmm.txt` and also copy the same content to the clipboard after saving. Temporary, server-provided, and third-party dynamic waypoints are excluded from bundles. Import and deduplication operations keep complete Xaero waypoint snapshots for undo; exports are not added to the operation history. XWB2 imports match dimensions in order by formal dimension ID, Xaero equivalent dimension ID, complete container nodes, and local world key, preventing VC dimensions that share the `waypoints` world node from being merged.
+
+## Singleplayer Save Paths
+
+| Config | Default | Description |
+|---|---|---|
+| `customSavesPaths` | empty list | Custom saves path list. Absolute paths and paths relative to the game directory are supported. Click the current path in the top-left of the singleplayer world selection screen to switch immediately; the vanilla `saves` directory is always available. |
+| `keepWorldSelectionOnEmpty` | `false` | When enabled, clicking Singleplayer with no worlds in the current saves path stays on world selection instead of opening world creation automatically. |
 
 ## Creative Tools
 
@@ -34,8 +42,21 @@ File exports default to `halfmasa-xaero-yyyyMMdd-HHmm.txt` and also copy the sam
 | `itemSearchHistoryRows` | `3` | Maximum creative-history rows, from `1` to `9`. |
 | `itemSearchHistoryDuringSearch` | `false` | Keeps history visible while search text is present. |
 | `condensedCreative` | `false` | Groups enchanted books, potions, tipped arrows, and many block variants into expandable creative entries. |
+| `trialCreativeTab` | `false` | Adds a "Trial" tab at the end of the creative inventory with every trial spawner configuration and both trial vaults (see below). |
 
-## JEI/REI Lookup History (Extensions)
+### Trial Tab
+
+With `trialCreativeTab` enabled, a "Trial" tab appears at the end of the creative inventory tab list and is visible on this mod's client only.
+
+- **Trial spawners**: all 14 vanilla trial chamber configurations, each with three entries — normal, ominous, and a cooldown variant — for 42 entries total.
+- Each entry is a vanilla trial spawner carrying block entity data, so it places in the preset state; the cooldown variants set `cooldown_ends_at` to a future time and start in cooldown.
+- **Trial vaults**: one normal and one ominous entry, 2 entries total.
+
+The covered vanilla configs are `trial_chamber/breeze`, `melee/{husk,spider,zombie}`, `ranged/{poison_skeleton,skeleton,stray}`, `slow_ranged/{poison_skeleton,skeleton,stray}`, and `small_melee/{baby_zombie,cave_spider,silverfish,slime}`.
+
+> Note: 1.21.1 predates the trial spawner config registry, so that version uses an equivalent inline config object instead.
+
+## JEI/REI Lookup History (Other Mod Extensions)
 
 | Config or action | Default | Description |
 |---|---|---|
@@ -58,7 +79,6 @@ The panel initializes on the first item-manager screen without requiring a recip
 | `nightVisionFade` | `true` | Enables smooth Night Vision fading; disabling it restores vanilla's final 10-second flicker. |
 | `nightVisionFadeSeconds` | `5` | Sets the smooth fade duration; range `0-60`, where `0` disables early fading. |
 | `boatView360` / `boatItemView` | `false` | Removes the local boat-camera rotation limit and keeps first-person held items visible while rowing. |
-| `confluxMapExtensions` | `false` | Requires Conflux Map for the matching game version and extension API. Sets waypoint-list defaults, closes the map after teleporting, uses `confluxMapUnknownHeight` (default `128`) for targets with unknown height, can show local and shared waypoint lists together side by side or stacked, and adds a hotkey that creates multiple numbered local waypoints cleared when rejoining that world. |
 | `inventoryMove` | `false` | Allows movement, jumping, and sneaking while vanilla inventory or container screens are open. |
 | `fastWorldLoadingScreen` / `fastResourcePackLoadingScreen` | `false` | Reduces avoidable waiting in world and resource-pack loading screens. |
 | `betterSavedHotbars` | `false` | Enhances creative saved hotbars with individual insertion or replacement, middle-click deletion, and retained scrolling; the legacy root `hotbar.nbt` is copied once to `config/halfmasa/better-saved-hotbars/hotbar.nbt`. |
@@ -71,6 +91,10 @@ The panel initializes on the first item-manager screen without requiring a recip
 | `skipResourcePackCompatibilityCheck` | `false` | Treats added resource packs as compatible and skips version mismatch confirmation. |
 | `disablePausedItemTrajectoryPrediction` | `false` | Stops client-side dropped-item trajectory prediction while Carpet or vanilla ticks are frozen. |
 | `keepModMenuScroll` | `false` | Remembers separate scroll positions for Mod Menu and every MaLiLib configuration category. |
+| `keepConfigSearchPosition` (26.3) | `true` | Sub-option of configuration position memory. With the main switch enabled, remember text/key searches, search bar visibility, and scroll position separately for each MaLiLib config category during this session. |
+| `keepConfigSelectedTab` (26.3) | `true` | With the main switch enabled, reopen halfmasa on the last selected tab. Limited to All, Recommended, Creative Utilities, Ported Features, Other Mod Extensions, and Disabled. |
+
+On 26.3, expand the configuration position memory option to edit these settings. Enable the main switch, search and scroll in one tab, then switch away and back or close and reopen to check restoration. Disabling search/position memory clears that state; disabling selected-tab memory makes the normal config entry open All again. Restarting the game clears all interface memory.
 
 ## Void Trading (Extension)
 
@@ -81,6 +105,8 @@ After the villager disappears or all configured fake players go offline, automat
 Material preparation can uncraft emerald blocks and use the QuickShulker API to retrieve emeralds or emerald blocks from carried boxes. It requires Fabric API on the client and server plus a compatible Void Trading server extension; QuickShulker retrieval also requires QuickShulker on the server.
 
 ## Input, Maps, and Utilities
+
+On Minecraft 26.3, the Better Key Settings browser remembers its list position and each mod group's collapsed state for the current game session. Folding a group keeps the list near its current position, and separate light and dark red marks inside each key show single-key and combination conflicts.
 
 | Config | Default | Description |
 |---|---|---|

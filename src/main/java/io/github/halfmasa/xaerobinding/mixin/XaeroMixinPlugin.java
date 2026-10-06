@@ -23,6 +23,16 @@ public final class XaeroMixinPlugin implements IMixinConfigPlugin
             boolean coordinator = hasPrinterCoordinator();
             return mixinClassName.endsWith("PrinterMaterialRequestMixin") ? coordinator : !coordinator && hasPrinterInventoryCheck();
         }
+    //#if MC >= 26.3
+        if (mixinClassName.endsWith("LitematicaSaveBlockFilterMixin") ||
+                mixinClassName.endsWith("LitematicaDeleteBlockFilterMixin") ||
+                mixinClassName.endsWith("LitematicaAreaDeleteBlockFilterMixin") ||
+                mixinClassName.endsWith("LitematicaPasteDirectBlockFilterMixin") ||
+                mixinClassName.endsWith("LitematicaPasteCommandBlockFilterMixin") ||
+                mixinClassName.endsWith("LitematicaTaskWorldAccessor") ||
+                mixinClassName.endsWith("LitematicaFilteredContainerAccessor"))
+            return FabricLoader.getInstance().isModLoaded("litematica");
+    //#endif
         if (mixinClassName.endsWith("LitematicaEasyPlaceRefillMixin") ||
                 mixinClassName.endsWith("LitematicaLegacyEasyPlaceRefillMixin"))
         {

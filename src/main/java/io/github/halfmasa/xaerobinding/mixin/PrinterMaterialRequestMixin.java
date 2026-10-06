@@ -14,7 +14,13 @@ import io.github.halfmasa.xaerobinding.feature.PrinterRefillBridge;
 @Mixin(targets = "me.aleksilassila.litematica.printer.integration.inventory.MaterialRequestCoordinator", remap = false)
 public abstract class PrinterMaterialRequestMixin
 {
-    @Inject(method = "request",
+    // beta25 also exposes Item and Item[] overloads. Both delegate to this List overload.
+    // Select its complete descriptor so the callback cannot be applied to a different signature.
+    //#if MC >= 26.3
+    @Inject(method = "request(Ljava/util/List;Lnet/minecraft/world/item/Item;Lme/aleksilassila/litematica/printer/integration/inventory/MaterialRequest$Source;)Lme/aleksilassila/litematica/printer/integration/inventory/MaterialReservation;",
+    //#else
+    //$$ @Inject(method = "request",
+    //#endif
             at = @At("RETURN"), cancellable = true, require = 0)
     private void halfmasa$requestStock(List<Item> items, Item preferred, @Coerce Object source, CallbackInfoReturnable<Object> cir)
     {

@@ -42,7 +42,7 @@ public final class Configs implements IConfigHandler
 {
     private static final String CONFIG_DIRECTORY_NAME = "halfmasa";
     private static final String CONFIG_FILE_NAME = "halfmasa.json";
-    private static final int CONFIG_VERSION = 38;
+    private static final int CONFIG_VERSION = 39;
     private static final String GENERIC_KEY = "halfmasa.config.generic";
     private static volatile boolean configLoaded;
 
@@ -97,6 +97,8 @@ public final class Configs implements IConfigHandler
             "fillSafety", true, "").apply(CREATIVE_KEY);
     public static final ConfigBoolean GIVE_FULL_INVENTORY_EXPANDED = new ConfigBoolean(
             "giveFullInventoryExpanded", false).apply(CREATIVE_KEY);
+    public static final ConfigBooleanHotkeyed TRIAL_CREATIVE_TAB = new ConfigBooleanHotkeyed(
+            "trialCreativeTab", false, "").apply(CREATIVE_KEY);
     public static final ConfigBooleanHotkeyed ITEM_SEARCH_HISTORY = new ConfigBooleanHotkeyed(
             "itemSearchHistory", false, "").apply(CREATIVE_KEY);
     public static final ConfigBoolean ITEM_SEARCH_HISTORY_EXPANDED = new ConfigBoolean(
@@ -116,6 +118,7 @@ public final class Configs implements IConfigHandler
             BUNDLE_FILL,
             FILL_SAFETY,
             GIVE_FULL_INVENTORY_EXPANDED,
+            TRIAL_CREATIVE_TAB,
             ITEM_SEARCH_HISTORY,
             ITEM_SEARCH_HISTORY_ROWS,
             ITEM_SEARCH_HISTORY_DURING_SEARCH,
@@ -222,6 +225,49 @@ public final class Configs implements IConfigHandler
             List.of(LITEMATICA_AUTO_REFILL, LITEMATICA_REFILL_EXPANDED), LITEMATICA_REFILL_CHILDREN,
             List.of(PRINTER_AUTO_REFILL, PRINTER_REFILL_EXPANDED), PRINTER_REFILL_CHILDREN)
             .flatMap(list -> list.stream().map(config -> (IConfigBase) config)).toList();
+    //#if MC >= 26.3
+    public static final ConfigBooleanHotkeyed LITEMATICA_SAVE_FILTER = new ConfigBooleanHotkeyed(
+            "litematicaSaveFilter", false, "").apply(PORTED_KEY);
+    public static final ConfigBoolean LITEMATICA_SAVE_FILTER_EXPANDED = new ConfigBoolean(
+            "litematicaSaveFilterExpanded", false).apply(PORTED_KEY);
+    public static final ConfigOptionList LITEMATICA_SAVE_FILTER_MODE = new ConfigOptionList(
+            "litematicaSaveFilterMode", SchematicBlockFilterMode.BLACKLIST).apply(PORTED_KEY);
+    public static final ConfigStringList LITEMATICA_SAVE_WHITELIST = new ConfigStringList(
+            "litematicaSaveWhitelist", ImmutableList.of()).apply(PORTED_KEY);
+    public static final ConfigStringList LITEMATICA_SAVE_BLACKLIST = new ConfigStringList(
+            "litematicaSaveBlacklist", ImmutableList.of()).apply(PORTED_KEY);
+    public static final List<IConfigBase> LITEMATICA_SAVE_FILTER_CHILDREN = List.of(
+            LITEMATICA_SAVE_FILTER_MODE, LITEMATICA_SAVE_WHITELIST, LITEMATICA_SAVE_BLACKLIST);
+    public static final ConfigBooleanHotkeyed LITEMATICA_DELETE_FILTER = new ConfigBooleanHotkeyed(
+            "litematicaDeleteFilter", false, "").apply(PORTED_KEY);
+    public static final ConfigBoolean LITEMATICA_DELETE_FILTER_EXPANDED = new ConfigBoolean(
+            "litematicaDeleteFilterExpanded", false).apply(PORTED_KEY);
+    public static final ConfigOptionList LITEMATICA_DELETE_FILTER_MODE = new ConfigOptionList(
+            "litematicaDeleteFilterMode", SchematicBlockFilterMode.BLACKLIST).apply(PORTED_KEY);
+    public static final ConfigStringList LITEMATICA_DELETE_WHITELIST = new ConfigStringList(
+            "litematicaDeleteWhitelist", ImmutableList.of()).apply(PORTED_KEY);
+    public static final ConfigStringList LITEMATICA_DELETE_BLACKLIST = new ConfigStringList(
+            "litematicaDeleteBlacklist", ImmutableList.of()).apply(PORTED_KEY);
+    public static final List<IConfigBase> LITEMATICA_DELETE_FILTER_CHILDREN = List.of(
+            LITEMATICA_DELETE_FILTER_MODE, LITEMATICA_DELETE_WHITELIST, LITEMATICA_DELETE_BLACKLIST);
+    public static final ConfigBooleanHotkeyed LITEMATICA_PASTE_FILTER = new ConfigBooleanHotkeyed(
+            "litematicaPasteFilter", false, "").apply(PORTED_KEY);
+    public static final ConfigBoolean LITEMATICA_PASTE_FILTER_EXPANDED = new ConfigBoolean(
+            "litematicaPasteFilterExpanded", false).apply(PORTED_KEY);
+    public static final ConfigOptionList LITEMATICA_PASTE_FILTER_MODE = new ConfigOptionList(
+            "litematicaPasteFilterMode", SchematicBlockFilterMode.BLACKLIST).apply(PORTED_KEY);
+    public static final ConfigStringList LITEMATICA_PASTE_WHITELIST = new ConfigStringList(
+            "litematicaPasteWhitelist", ImmutableList.of()).apply(PORTED_KEY);
+    public static final ConfigStringList LITEMATICA_PASTE_BLACKLIST = new ConfigStringList(
+            "litematicaPasteBlacklist", ImmutableList.of()).apply(PORTED_KEY);
+    public static final List<IConfigBase> LITEMATICA_PASTE_FILTER_CHILDREN = List.of(
+            LITEMATICA_PASTE_FILTER_MODE, LITEMATICA_PASTE_WHITELIST, LITEMATICA_PASTE_BLACKLIST);
+    public static final List<IConfigBase> SCHEMATIC_FILTER_CONFIGS = Stream.of(
+            List.of(LITEMATICA_SAVE_FILTER, LITEMATICA_SAVE_FILTER_EXPANDED), LITEMATICA_SAVE_FILTER_CHILDREN,
+            List.of(LITEMATICA_DELETE_FILTER, LITEMATICA_DELETE_FILTER_EXPANDED), LITEMATICA_DELETE_FILTER_CHILDREN,
+            List.of(LITEMATICA_PASTE_FILTER, LITEMATICA_PASTE_FILTER_EXPANDED), LITEMATICA_PASTE_FILTER_CHILDREN)
+            .flatMap(list -> list.stream().map(config -> (IConfigBase) config)).toList();
+    //#endif
     public static final ConfigBooleanHotkeyed CONFLUX_MAP_EXTENSIONS = new ConfigBooleanHotkeyed(
             "confluxMapExtensions", false, "").apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed CONFLUX_MAP_EXTENSIONS_EXPANDED = new ConfigBooleanHotkeyed(
@@ -240,6 +286,16 @@ public final class Configs implements IConfigHandler
             "confluxMapUnknownHeight", 128, -2048, 4096, true).apply(PORTED_KEY);
     public static final ActionHotkey CONFLUX_MAP_TEMPORARY_WAYPOINT = new ActionHotkey(
             "confluxMapTemporaryWaypoint", "").applyTranslationKey(PORTED_KEY);
+    private static final List<IConfigBase> CONFLUX_MAP_CONFIGS = List.of(
+            CONFLUX_MAP_EXTENSIONS,
+            CONFLUX_MAP_EXTENSIONS_EXPANDED,
+            CONFLUX_MAP_ALL_DIMENSIONS,
+            CONFLUX_MAP_PUBLIC_WAYPOINTS,
+            CONFLUX_MAP_SHOW_BOTH_WAYPOINTS,
+            CONFLUX_MAP_WAYPOINT_LIST_LAYOUT,
+            CONFLUX_MAP_CLOSE_AFTER_TELEPORT,
+            CONFLUX_MAP_UNKNOWN_HEIGHT,
+            CONFLUX_MAP_TEMPORARY_WAYPOINT);
 
     private static final ConfigString LEGACY_VOID_TRADING_FAKE_PLAYER_PREFIX = new ConfigString(
             "voidTradingFakePlayerPrefix", "").apply(PORTED_KEY);
@@ -388,6 +444,16 @@ public final class Configs implements IConfigHandler
             "reloadKeybindPieData", "").applyTranslationKey(PORTED_KEY);
     public static final ActionHotkey OPEN_KEYMAP_BROWSER = new ActionHotkey(
             "openKeymapBrowser", "").applyTranslationKey(PORTED_KEY);
+    //#if MC >= 26.3
+    public static final ConfigBoolean KEEP_CONFIG_POSITION_EXPANDED = new ConfigBoolean(
+            "keepConfigPositionExpanded", false).apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed KEEP_CONFIG_SEARCH_POSITION = new ConfigBooleanHotkeyed(
+            "keepConfigSearchPosition", true, "").apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed KEEP_CONFIG_SELECTED_TAB = new ConfigBooleanHotkeyed(
+            "keepConfigSelectedTab", true, "").apply(PORTED_KEY);
+    public static final List<IConfigBase> KEEP_CONFIG_POSITION_CHILDREN = List.of(
+            KEEP_CONFIG_SEARCH_POSITION, KEEP_CONFIG_SELECTED_TAB);
+    //#endif
     public static final ConfigBooleanHotkeyed CLICK_AND_SEND = new ConfigBooleanHotkeyed(
             "clickAndSend", false, "").apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed CJK_LATIN_SPACING = new ConfigBooleanHotkeyed(
@@ -570,7 +636,11 @@ public final class Configs implements IConfigHandler
             ITEM_SEARCH_HISTORY_CHILDREN,
             List.of(ITEM_MANAGER_RECIPE_HISTORY),
             ITEM_MANAGER_RECIPE_HISTORY_CHILDREN,
-            List.of(BETTER_SAVED_HOTBARS, KEEP_MOD_MENU_SCROLL))
+            List.of(BETTER_SAVED_HOTBARS, KEEP_MOD_MENU_SCROLL)
+    //#if MC >= 26.3
+            , KEEP_CONFIG_POSITION_CHILDREN
+    //#endif
+            )
             .flatMap(list -> list.stream().map(config -> (IConfigBase) config))
             .toList();
 
@@ -601,16 +671,6 @@ public final class Configs implements IConfigHandler
             VOID_TRADING_DROP_TRADE_ITEMS,
             VOID_TRADING_AUTO_UNCRAFT_EMERALD_BLOCKS,
             VOID_TRADING_QUICK_SHULKER,
-            CONFLUX_MAP_EXTENSIONS,
-            CONFLUX_MAP_EXTENSIONS_EXPANDED,
-            CONFLUX_MAP_ALL_DIMENSIONS,
-            CONFLUX_MAP_PUBLIC_WAYPOINTS,
-            CONFLUX_MAP_SHOW_BOTH_WAYPOINTS,
-            CONFLUX_MAP_WAYPOINT_LIST_LAYOUT,
-            CONFLUX_MAP_CLOSE_AFTER_TELEPORT,
-            CONFLUX_MAP_UNKNOWN_HEIGHT,
-            CONFLUX_MAP_TEMPORARY_WAYPOINT,
-
             INVENTORY_MOVE,
             FAST_WORLD_LOADING_SCREEN,
             FAST_RESOURCE_PACK_LOADING_SCREEN,
@@ -675,7 +735,11 @@ public final class Configs implements IConfigHandler
             GIVE_FULL_INVENTORY,
             BUNDLE_FILL,
             FILL_SAFETY,
-            GIVE_FULL_INVENTORY_EXPANDED))
+            GIVE_FULL_INVENTORY_EXPANDED)
+    //#if MC >= 26.3
+            , List.of(KEEP_CONFIG_POSITION_EXPANDED), KEEP_CONFIG_POSITION_CHILDREN
+    //#endif
+            )
             .flatMap(list -> list.stream().map(config -> (IConfigBase) config))
             .toList();
 
@@ -717,8 +781,13 @@ public final class Configs implements IConfigHandler
             .flatMap(list -> list.stream().map(config -> (IConfigBase) config))
             .toList();
 
-    public static final List<IConfigBase> EXTENSIONS = Stream.of(ITEM_MANAGER_RECIPE_HISTORY_CONFIGS
+    public static final List<IConfigBase> EXTENSIONS = Stream.of(
+            CONFLUX_MAP_CONFIGS,
+            ITEM_MANAGER_RECIPE_HISTORY_CONFIGS
             , REFILL_EXTENSION_CONFIGS
+    //#if MC >= 26.3
+            , SCHEMATIC_FILTER_CONFIGS
+    //#endif
 
             ).flatMap(List::stream).toList();
 
@@ -848,6 +917,11 @@ public final class Configs implements IConfigHandler
                     VOID_TRADING_DROP_TRADE_ITEMS,
                     VOID_TRADING_AUTO_UNCRAFT_EMERALD_BLOCKS,
                     VOID_TRADING_QUICK_SHULKER,
+    //#if MC >= 26.3
+                    LITEMATICA_SAVE_FILTER,
+                    LITEMATICA_DELETE_FILTER,
+                    LITEMATICA_PASTE_FILTER,
+    //#endif
                     LITEMATICA_AUTO_REFILL,
                     LITEMATICA_REFILL_SILENT,
                     LITEMATICA_REFILL_ALLOW_FAKE,
@@ -878,6 +952,10 @@ public final class Configs implements IConfigHandler
                     ITEM_MANAGER_RECIPE_HISTORY,
                     CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION,
                     KEEP_MOD_MENU_SCROLL,
+    //#if MC >= 26.3
+                    KEEP_CONFIG_SEARCH_POSITION,
+                    KEEP_CONFIG_SELECTED_TAB,
+    //#endif
                     COOLDOWN_AUTO_ATTACK,
                     DRAGGABLE_LISTS,
                     BRIDGING_ASSIST,
@@ -898,6 +976,7 @@ public final class Configs implements IConfigHandler
                     SERVER_PINGER_FIX,
                     CONTINGAME_IME,
                     CONDENSED_CREATIVE,
+                    TRIAL_CREATIVE_TAB,
                     FILL_SAFETY),
             PlantCenteringConfigs.HOTKEYS.stream()).toList();
 
@@ -952,6 +1031,7 @@ public final class Configs implements IConfigHandler
             ConfigUtils.readConfigBase(root, "Creative", CREATIVE);
             ConfigUtils.readConfigBase(root, "Ported", PORTED);
             ConfigUtils.readConfigBase(root, "Ported", ITEM_MANAGER_RECIPE_HISTORY_CONFIGS);
+            ConfigUtils.readConfigBase(root, "Ported", CONFLUX_MAP_CONFIGS); // Preserve settings before moving them to Extensions.
             ConfigUtils.readConfigBase(root, "Ported", CUSTOM_SAVES_INTERNAL);
             if (configVersion < 36)
             {
@@ -1182,7 +1262,11 @@ public final class Configs implements IConfigHandler
 
     public static List<IConfigBase> getExtensionsView()
     {
-        return keepRelatedConfigsTogether(visibleConfigs(EXTENSIONS));
+        List<IConfigBase> waypointConfigs = getWaypointView();
+        return keepRelatedConfigsTogether(Stream.concat(
+                waypointConfigs.stream(),
+                visibleConfigs(EXTENSIONS).stream())
+                .toList());
     }
 
     public static List<IConfigBase> getDisabledView()
@@ -1243,11 +1327,19 @@ public final class Configs implements IConfigHandler
 
     public static ConfigBoolean getExpansionConfig(IConfigBase config)
     {
+    //#if MC >= 26.3
+        if (config == KEEP_MOD_MENU_SCROLL) return KEEP_CONFIG_POSITION_EXPANDED;
+    //#endif
         if (config == KEYBIND_PIE_MENU) return KEYBIND_WHEEL_EXPANDED;
         if (config == CONFIG_GROUPING_GROUP) return CONFIG_GROUPING_EXPANDED;
         if (config == KEYMAP_SETTINGS_GROUP) return KEYMAP_SETTINGS_EXPANDED;
         if (config == NIGHT_VISION_FADE) return NIGHT_VISION_FADE_EXPANDED;
         if (config == VOID_TRADING) return VOID_TRADING_EXPANDED;
+    //#if MC >= 26.3
+        if (config == LITEMATICA_SAVE_FILTER) return LITEMATICA_SAVE_FILTER_EXPANDED;
+        if (config == LITEMATICA_DELETE_FILTER) return LITEMATICA_DELETE_FILTER_EXPANDED;
+        if (config == LITEMATICA_PASTE_FILTER) return LITEMATICA_PASTE_FILTER_EXPANDED;
+    //#endif
         if (config == LITEMATICA_AUTO_REFILL) return LITEMATICA_REFILL_EXPANDED;
         if (config == PRINTER_AUTO_REFILL) return PRINTER_REFILL_EXPANDED;
         if (config == CONFLUX_MAP_EXTENSIONS) return CONFLUX_MAP_EXTENSIONS_EXPANDED;
@@ -1270,11 +1362,19 @@ public final class Configs implements IConfigHandler
 
     public static boolean isExpandedChild(IConfigBase config)
     {
-        return KEYBIND_PIE_SETTINGS.contains(config) ||
+        return
+    //#if MC >= 26.3
+                KEEP_CONFIG_POSITION_CHILDREN.contains(config) ||
+    //#endif
+                KEYBIND_PIE_SETTINGS.contains(config) ||
                 CONFIG_GROUPING_CHILDREN.contains(config) ||
                 KEYMAP_SETTINGS_CHILDREN.contains(config) ||
                 config == NIGHT_VISION_FADE_SECONDS ||
                 isVoidTradingChild(config) ||
+    //#if MC >= 26.3
+                LITEMATICA_SAVE_FILTER_CHILDREN.contains(config) || LITEMATICA_DELETE_FILTER_CHILDREN.contains(config) ||
+                LITEMATICA_PASTE_FILTER_CHILDREN.contains(config) ||
+    //#endif
                 LITEMATICA_REFILL_CHILDREN.contains(config) || PRINTER_REFILL_CHILDREN.contains(config) ||
                 isConfluxMapExtensionChild(config) ||
 
@@ -1293,11 +1393,19 @@ public final class Configs implements IConfigHandler
 
     public static IConfigBase getExpansionParent(IConfigBase config)
     {
+    //#if MC >= 26.3
+        if (KEEP_CONFIG_POSITION_CHILDREN.contains(config)) return KEEP_MOD_MENU_SCROLL;
+    //#endif
         if (KEYBIND_PIE_SETTINGS.contains(config)) return KEYBIND_PIE_MENU;
         if (CONFIG_GROUPING_CHILDREN.contains(config)) return CONFIG_GROUPING_GROUP;
         if (KEYMAP_SETTINGS_CHILDREN.contains(config)) return KEYMAP_SETTINGS_GROUP;
         if (config == NIGHT_VISION_FADE_SECONDS) return NIGHT_VISION_FADE;
         if (isVoidTradingChild(config)) return VOID_TRADING;
+    //#if MC >= 26.3
+        if (LITEMATICA_SAVE_FILTER_CHILDREN.contains(config)) return LITEMATICA_SAVE_FILTER;
+        if (LITEMATICA_DELETE_FILTER_CHILDREN.contains(config)) return LITEMATICA_DELETE_FILTER;
+        if (LITEMATICA_PASTE_FILTER_CHILDREN.contains(config)) return LITEMATICA_PASTE_FILTER;
+    //#endif
         if (LITEMATICA_REFILL_CHILDREN.contains(config)) return LITEMATICA_AUTO_REFILL;
         if (PRINTER_REFILL_CHILDREN.contains(config)) return PRINTER_AUTO_REFILL;
         if (isConfluxMapExtensionChild(config)) return CONFLUX_MAP_EXTENSIONS;
@@ -1354,12 +1462,23 @@ public final class Configs implements IConfigHandler
                         config != PlantCenteringConfigs.CENTER_PLANT_MODELS_EXPANDED)
                 .filter(config -> config != CONFLUX_MAP_EXTENSIONS_EXPANDED && config != LITEMATICA_REFILL_EXPANDED && config != PRINTER_REFILL_EXPANDED)
 
+    //#if MC >= 26.3
+                .filter(config -> config != KEEP_CONFIG_POSITION_EXPANDED)
+                .filter(config -> !KEEP_CONFIG_POSITION_CHILDREN.contains(config) || KEEP_CONFIG_POSITION_EXPANDED.getBooleanValue())
+    //#endif
                 .filter(config -> !KEYBIND_PIE_SETTINGS.contains(config) || KEYBIND_WHEEL_EXPANDED.getBooleanValue())
                 .filter(config -> !CONFIG_GROUPING_CHILDREN.contains(config) || CONFIG_GROUPING_EXPANDED.getBooleanValue())
                 .filter(config -> !KEYMAP_SETTINGS_CHILDREN.contains(config) || KEYMAP_SETTINGS_EXPANDED.getBooleanValue())
                 .filter(config -> config != NIGHT_VISION_FADE_SECONDS || NIGHT_VISION_FADE_EXPANDED.getBooleanValue())
                 .filter(config -> !isVoidTradingChild(config) || VOID_TRADING_EXPANDED.getBooleanValue())
                 .filter(config -> !isConfluxMapExtensionChild(config) || CONFLUX_MAP_EXTENSIONS_EXPANDED.getBooleanValue())
+    //#if MC >= 26.3
+                .filter(config -> config != LITEMATICA_SAVE_FILTER_EXPANDED && config != LITEMATICA_DELETE_FILTER_EXPANDED)
+                .filter(config -> !LITEMATICA_SAVE_FILTER_CHILDREN.contains(config) || LITEMATICA_SAVE_FILTER_EXPANDED.getBooleanValue())
+                .filter(config -> !LITEMATICA_DELETE_FILTER_CHILDREN.contains(config) || LITEMATICA_DELETE_FILTER_EXPANDED.getBooleanValue())
+                .filter(config -> config != LITEMATICA_PASTE_FILTER_EXPANDED)
+                .filter(config -> !LITEMATICA_PASTE_FILTER_CHILDREN.contains(config) || LITEMATICA_PASTE_FILTER_EXPANDED.getBooleanValue())
+    //#endif
                 .filter(config -> !LITEMATICA_REFILL_CHILDREN.contains(config) || LITEMATICA_REFILL_EXPANDED.getBooleanValue())
                 .filter(config -> !PRINTER_REFILL_CHILDREN.contains(config) || PRINTER_REFILL_EXPANDED.getBooleanValue())
 
@@ -1433,6 +1552,9 @@ public final class Configs implements IConfigHandler
         java.util.ArrayList<IConfigBase> result = new java.util.ArrayList<>();
         for (IConfigBase config : PORTED)
         {
+    //#if MC >= 26.3
+            if (config == KEEP_CONFIG_POSITION_EXPANDED) continue;
+    //#endif
             if (config == CONFLUX_MAP_EXTENSIONS_EXPANDED)
             {
                 continue;
@@ -1554,6 +1676,9 @@ public final class Configs implements IConfigHandler
 
     private static boolean isGenericExpandedChildVisible(IConfigBase config)
     {
+    //#if MC >= 26.3
+        if (KEEP_CONFIG_POSITION_CHILDREN.contains(config)) return KEEP_CONFIG_POSITION_EXPANDED.getBooleanValue();
+    //#endif
         if (config == NIGHT_VISION_FADE_SECONDS)
         {
             return NIGHT_VISION_FADE_EXPANDED.getBooleanValue();
@@ -1562,6 +1687,11 @@ public final class Configs implements IConfigHandler
         {
             return VOID_TRADING_EXPANDED.getBooleanValue();
         }
+    //#if MC >= 26.3
+        if (LITEMATICA_SAVE_FILTER_CHILDREN.contains(config)) return LITEMATICA_SAVE_FILTER_EXPANDED.getBooleanValue();
+        if (LITEMATICA_DELETE_FILTER_CHILDREN.contains(config)) return LITEMATICA_DELETE_FILTER_EXPANDED.getBooleanValue();
+        if (LITEMATICA_PASTE_FILTER_CHILDREN.contains(config)) return LITEMATICA_PASTE_FILTER_EXPANDED.getBooleanValue();
+    //#endif
         if (LITEMATICA_REFILL_CHILDREN.contains(config)) return LITEMATICA_REFILL_EXPANDED.getBooleanValue();
         if (PRINTER_REFILL_CHILDREN.contains(config)) return PRINTER_REFILL_EXPANDED.getBooleanValue();
         if (isConfluxMapExtensionChild(config))

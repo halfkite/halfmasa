@@ -13,6 +13,9 @@ import fi.dy.masa.malilib.util.StringUtils;
 import io.github.halfmasa.xaerobinding.XaeroWorldBinding;
 import io.github.halfmasa.xaerobinding.config.Configs;
 import io.github.halfmasa.xaerobinding.feature.MaLiLibConfigScrollAccess;
+//#if MC >= 26.3
+import io.github.halfmasa.xaerobinding.feature.ConfigScrollMemory;
+//#endif
 
 public final class HalfMasaConfigScreen extends GuiConfigsBase implements ScrollCategoryKeyProvider
 {
@@ -21,7 +24,29 @@ public final class HalfMasaConfigScreen extends GuiConfigsBase implements Scroll
     public HalfMasaConfigScreen()
     {
         super(10, 52, XaeroWorldBinding.MOD_ID, null, "halfmasa.gui.title");
+        //#if MC >= 26.3
+        this.tab = Tab.valueOf(ConfigScrollMemory.restoreSelectedTab());
+        //#endif
     }
+
+    //#if MC >= 26.3
+    @Override
+    public void removed()
+    {
+        ConfigScrollMemory.saveSelectedTab(this.tab.name());
+        super.removed();
+    }
+
+    private void selectTab(Tab selected)
+    {
+        ConfigScrollMemory.saveSelectedTab(selected.name());
+        if (this.tab == selected) return;
+        ((MaLiLibConfigScrollAccess) (Object) this).halfmasa$beforeConfigCategoryChange();
+        this.tab = selected;
+        this.reCreateListWidget();
+        this.initGui();
+    }
+    //#endif
 
     @Override
     public void initGui()
@@ -47,7 +72,6 @@ public final class HalfMasaConfigScreen extends GuiConfigsBase implements Scroll
         {
             case ALL -> Configs.getAllView();
             case RECOMMENDED -> Configs.getRecommendedView();
-            case WAYPOINT_TOOLS -> Configs.getWaypointView();
             case CREATIVE_UTILITIES -> Configs.getCreativeView();
             case PORTED_FEATURES -> Configs.getPortedView();
             case EXTENSIONS -> Configs.getExtensionsView();
@@ -110,21 +134,28 @@ public final class HalfMasaConfigScreen extends GuiConfigsBase implements Scroll
         @Override
         public void actionPerformedWithButton(ButtonBase button, int mouseButton)
         {
-            this.screen.tab = this.selected;
-            this.screen.reCreateListWidget();
-            if (this.screen.getListWidget() != null)
-            {
-                this.screen.getListWidget().resetScrollbarPosition();
-            }
-            this.screen.initGui();
+            //#if MC >= 26.3
+            this.screen.selectTab(this.selected);
+            //#else
+            //$$ this.screen.tab = this.selected;
+            //$$ this.screen.reCreateListWidget();
+            //$$ if (this.screen.getListWidget() != null)
+            //$$ {
+            //$$     this.screen.getListWidget().resetScrollbarPosition();
+            //$$ }
+            //$$ this.screen.initGui();
+            //#endif
         }
     }
 
+    //#if MC >= 26.3
     private enum Tab
+    //#else
+    //$$ private enum Tab
+    //#endif
     {
         ALL("halfmasa.gui.tab.all"),
         RECOMMENDED("halfmasa.gui.tab.recommended"),
-        WAYPOINT_TOOLS("halfmasa.gui.tab.waypoint_tools"),
         CREATIVE_UTILITIES("halfmasa.gui.tab.creative_utilities"),
         PORTED_FEATURES("halfmasa.gui.tab.ported_features"),
         EXTENSIONS("halfmasa.gui.tab.extensions"),

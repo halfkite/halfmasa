@@ -65,6 +65,14 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
             GuiBase.openGui(new HalfMasaConfigScreen());
             return true;
         });
+        //#if MC >= 26.3
+        Configs.KEEP_CONFIG_SEARCH_POSITION.setValueChangeCallback(config -> {
+            if (!Configs.KEEP_CONFIG_SEARCH_POSITION.getBooleanValue()) ConfigScrollMemory.clearConfigState();
+        });
+        Configs.KEEP_CONFIG_SELECTED_TAB.setValueChangeCallback(config -> {
+            if (!Configs.KEEP_CONFIG_SELECTED_TAB.getBooleanValue()) ConfigScrollMemory.clearSelectedTab();
+        });
+        //#endif
         Configs.VOID_TRADING_AUTO_OPEN_CANCEL.getKeybind().setCallback(
                 (action, key) -> VoidTrading.cancelAutoOpen(Minecraft.getInstance()));
         Configs.IMPORT_WAYPOINT_BUNDLE.setAction(0, WaypointClientActions::importBundle);
