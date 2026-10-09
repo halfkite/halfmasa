@@ -1,4 +1,4 @@
-[中文](https://github.com/halfkite/halfmasa/blob/ds1/docs/features.cn_md) | [English](https://github.com/halfkite/halfmasa/blob/ds1/docs/features.en_md)
+[中文](https://github.com/halfkite/halfmasa/blob/ds1/features_cn.md) | [English](https://github.com/halfkite/halfmasa/blob/ds1/features_en.md)
 
 # halfmasa Features and Configuration
 

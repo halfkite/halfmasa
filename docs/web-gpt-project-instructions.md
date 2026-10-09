@@ -23,7 +23,7 @@ halfmasa 是 Minecraft Fabric 客户端辅助模组，基于 MaLiLib 提供配�
 以下是根据 2026-10-09 本地工作树整理的阅读入口。网页版无法仅凭这些说明确认远端最新实现；审查时以用户提供的当前提交、diff、源码和日志为准。
 
 - 项目与依赖：`README.md`、`README_en.md`、`src/main/resources/fabric.mod.json`。
-- 功能与默认值：`docs/features.cn_md`、`docs/features.en_md`；具体配置以 `src/main/java/io/github/halfmasa/xaerobinding/config/` 为准。
+- 功能与默认值：`features_cn.md`、`features_en.md`；具体配置以 `src/main/java/io/github/halfmasa/xaerobinding/config/` 为准。
 - 客户端源码：`src/main/java/io/github/halfmasa/xaerobinding/`，重点按任务阅读 `feature/`、`gui/`、`compat/`、`mixin/`。
 - Mixin 声明与可选依赖门控：`src/main/resources/halfmasa.mixins.json`、`mixin/XaeroMixinPlugin.java`。
 - 中英文翻译：`src/main/resources/assets/halfmasa/lang/zh_cn.json`、`en_us.json`。

@@ -23,7 +23,7 @@ halfmasa is a Minecraft Fabric client utility mod for Xaero and MaLiLib users. I
 | [QuickShulker](https://github.com/MoRanpcy/quickshulker), Void Trading server extension | Feature-specific | Void Trading material preparation can retrieve emeralds from carried QuickShulker boxes and requires compatible server support. |
 | [Conflux Map](https://github.com/Conflux-Union/conflux-map) | Optional integration | Adds waypoint-list, temporary waypoint, and teleport-related extensions. |
 
-The halfmasa mod itself is client-side; ordinary client features do not require halfmasa on the server. Features that use a server inventory API or the Void Trading extension require the corresponding server component. See the [feature and configuration guide](docs/features.en_md) for details.
+The halfmasa mod itself is client-side; ordinary client features do not require halfmasa on the server. Features that use a server inventory API or the Void Trading extension require the corresponding server component. See the [feature and configuration guide](features_en.md) for details.
 
 ## Supported Versions
 
@@ -55,7 +55,7 @@ Download the JAR for your Minecraft version and place it in that game instance's
 - Refill materials for Litematica Easy Place and compatible printer integrations. Configure fake-player stock access, refill amounts, and silent withdrawals.
 - Automatically open villager trade screens and buy offers through the local player's trading interface by row number or output-item whitelist. The screen can close or the acquired items can be dropped after trading.
 - Void Trading can identify fake players aboard the same boat or minecart and restore them after the trade screen closes. Material preparation can uncraft emerald blocks and retrieve emeralds from QuickShulker boxes.
-- Automatic refills require a server inventory API; Void Trading material preparation requires its server extension. See the [refill compatibility guide](docs/litematica-auto-refill.md) and [feature guide](docs/features.en_md) for details.
+- Automatic refills require a server inventory API; Void Trading material preparation requires its server extension. See the [refill compatibility guide](docs/litematica-auto-refill.md) and [feature guide](features_en.md) for details.
 
 ### Creative Tools and Interface Improvements
 
@@ -66,8 +66,8 @@ Download the JAR for your Minecraft version and place it in that game instance's
 
 ## Documentation
 
-- [English features and configuration](docs/features.en_md)
-- [中文功能与配置说明](docs/features.cn_md)
+- [English features and configuration](features_en.md)
+- [中文功能与配置说明](features_cn.md)
 - [Litematica and printer refill compatibility](docs/litematica-auto-refill.md)
 - [Version compatibility notes](docs/version_compatibility.md)
 - [Modrinth English description](docs/modrinth_en.md)
