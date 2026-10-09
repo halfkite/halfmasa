@@ -73,6 +73,9 @@ public abstract class EntityRenderDispatcherAggregationMixin
                     side ? entity.getBbHeight() * 0.5D : entity.getBbHeight() + 0.5D,
                     0.0D);
             halfmasa_applyNeatName(state, label);
+            //#if MC >= 26.3
+            EntityRenderAggregation.getInstance().trackLabel(entity, state);
+            //#endif
         }
         if (EntityRenderAggregation.getInstance().shouldHideModel(entity))
         {

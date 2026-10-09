@@ -11,6 +11,7 @@ public final class KeymapKeyboardLayout
     public static final int CELL_GAP = 2;
     public static final int ROWS = 6;
     public static final int HEIGHT = ROWS * (CELL_HEIGHT + CELL_GAP) + 8;
+    public static final int HEIGHT_122 = (ROWS + 1) * (CELL_HEIGHT + CELL_GAP) + 8;
 
     private KeymapKeyboardLayout() {}
 
@@ -74,27 +75,97 @@ public final class KeymapKeyboardLayout
         return result;
     }
 
+    /** A PC/5250-style layout: the usual 104 keys, F13-F24, and six terminal keys. */
+    public static List<Key> keys122(int x, int y, int width)
+    {
+        int rowStep = CELL_HEIGHT + CELL_GAP;
+        int terminalWidth = Math.max(30, width / 20);
+        int mainX = x + terminalWidth + 6;
+        int remainingWidth = width - terminalWidth - 6;
+        List<Key> result = keys(mainX, y + rowStep, remainingWidth);
+
+        int gap = 12;
+        int mainWidth = (int) ((remainingWidth - 2 * gap) * 0.635D);
+        String[] extraFunctions = new String[12];
+        for (int index = 0; index < extraFunctions.length; index++)
+        {
+            int number = index + 13;
+            extraFunctions[index] = "F" + number + ":" + (302 + index) + ":1";
+        }
+        addRow(result, extraFunctions, mainX, y, mainWidth, 12.0F);
+
+        addTerminalKey(result, "SYSR", x, y + rowStep, terminalWidth, 340, 256);
+        addTerminalKey(result, "REC", x, y + 2 * rowStep, terminalWidth, 341, 340, 51);
+        addTerminalKey(result, "PLAY", x, y + 3 * rowStep, terminalWidth, 341, 340, 52);
+        addTerminalKey(result, "HELP", x, y + 4 * rowStep, terminalWidth, 342, 290);
+        addTerminalKey(result, "ZOOM", x, y + 5 * rowStep, terminalWidth, 342, 260);
+        addTerminalKey(result, "RULE", x, y + 6 * rowStep, terminalWidth, 342, 267);
+        return result;
+    }
+
+    private static void addTerminalKey(List<Key> result, String label, int x, int y, int width,
+            int... legacyCodes)
+    {
+        List<Integer> codes = new ArrayList<>(legacyCodes.length);
+        for (int code : legacyCodes)
+        {
+            codes.add(InputCompat.layoutKeyCode(code));
+        }
+        result.add(new Key(codes.get(codes.size() - 1), label, x, y, width, CELL_HEIGHT, false,
+                List.copyOf(codes)));
+    }
+
     private static void addRow(List<Key> result, String[] cells, int x, int y, int width, float totalUnits)
     {
         float unit = width / totalUnits;
-        float cellX = x;
+        //#if MC >= 26.3
+        float usedUnits = 0.0F;
+        //#else
+        //$$ float cellX = x;
+        //#endif
         for (String cell : cells)
         {
             String[] parts = cell.split(":");
             int code = InputCompat.layoutKeyCode(Integer.parseInt(parts[1]));
             float units = Float.parseFloat(parts[2]);
-            int cellWidth = (int) (unit * units) - CELL_GAP;
+            //#if MC >= 26.3
+            int cellX = x + Math.round(unit * usedUnits);
+            int cellRight = x + Math.round(unit * (usedUnits + units)) - CELL_GAP;
+            int cellWidth = Math.max(1, cellRight - cellX);
+            //#else
+            //$$ int cellWidth = (int) (unit * units) - CELL_GAP;
+            //#endif
             int cellHeight = parts.length > 3 && "2".equals(parts[3])
                     ? 2 * CELL_HEIGHT + CELL_GAP : CELL_HEIGHT;
             if (code != 0)
             {
-                result.add(new Key(code, parts[0], (int) cellX, y, cellWidth, cellHeight, code < 0));
+                //#if MC >= 26.3
+                result.add(new Key(code, parts[0], cellX, y, cellWidth, cellHeight, code < 0));
+                //#else
+                //$$ result.add(new Key(code, parts[0], (int) cellX, y, cellWidth, cellHeight, code < 0));
+                //#endif
             }
-            cellX += cellWidth + CELL_GAP;
+            //#if MC >= 26.3
+            usedUnits += units;
+            //#else
+            //$$ cellX += cellWidth + CELL_GAP;
+            //#endif
         }
     }
 
-    public record Key(int code, String label, int x, int y, int width, int height, boolean mouse)
+    public record Key(int code, String label, int x, int y, int width, int height, boolean mouse,
+            List<Integer> codes)
     {
+        //#if MC >= 26.3
+        public boolean contains(double mouseX, double mouseY)
+        {
+            return mouseX >= this.x && mouseX < this.x + this.width &&
+                    mouseY >= this.y && mouseY < this.y + this.height;
+        }
+        //#endif
+        public Key(int code, String label, int x, int y, int width, int height, boolean mouse)
+        {
+            this(code, label, x, y, width, height, mouse, List.of(code));
+        }
     }
 }

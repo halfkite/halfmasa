@@ -373,7 +373,11 @@ public final class KeybindDetailScreen extends GuiBase
 
     private boolean isConfirmKey(int keyCode)
     {
-        return Configs.KEYMAP_CONFIRM_SETTING.getKeybind().getKeys().contains(keyCode);
+        //#if MC >= 26.3
+        return false;
+        //#else
+        //$$ return Configs.KEYMAP_CONFIRM_SETTING.getKeybind().getKeys().contains(keyCode);
+        //#endif
     }
 
     private void captureKeyboardKey(int keyCode)
@@ -740,8 +744,12 @@ public final class KeybindDetailScreen extends GuiBase
 
     private String confirmKeyText()
     {
-        String text = Configs.KEYMAP_CONFIRM_SETTING.getKeybind().getKeysDisplayString();
-        return text == null || text.isEmpty() ? StringUtils.translate("halfmasa.gui.keymap_browser.unbound") : text;
+        //#if MC >= 26.3
+        return "";
+        //#else
+        //$$ String text = Configs.KEYMAP_CONFIRM_SETTING.getKeybind().getKeysDisplayString();
+        //$$ return text == null || text.isEmpty() ? StringUtils.translate("halfmasa.gui.keymap_browser.unbound") : text;
+        //#endif
     }
 
     //#if MC >= 1.21.11

@@ -94,19 +94,31 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         Configs.WAYPOINT_HISTORY.setAction(1, WaypointClientActions::redo);
         registerTrigger(Configs.GIVE_FULL_INVENTORY, GiveFullInventory::onKeybind);
         registerTrigger(Configs.REPORT_ELYTRA_TIME, ElytraTimeService::reportEquippedElytra);
-        registerTrigger(Configs.OPEN_KEYBIND_EDITOR, () -> {
-            GuiBase.openGui(new KeybindCustomizationScreen());
+        //#if MC >= 26.3
+        BooleanSupplier openKeymap = () -> {
+            if (!Configs.KEYMAP_SETTINGS_GROUP.getBooleanValue()) return false;
+            if (!KeymapBrowserScreen.isEditingBindings(MinecraftClientCompat.getScreen(Minecraft.getInstance())))
+                GuiBase.openGui(new KeymapBrowserScreen());
             return true;
-        });
-        registerTrigger(Configs.OPEN_KEYMAP_BROWSER, () -> {
-            GuiBase.openGui(new KeymapBrowserScreen());
-            return true;
-        });
-        registerTrigger(Configs.RELOAD_KEYBIND_DATA, () -> {
-            KeybindCustomizationStore.getInstance().reload();
-            KeybindPieManager.getInstance().invalidateCustomMappingSync();
-            return true;
-        });
+        };
+        Configs.KEYMAP_SETTINGS_GROUP.getKeybind().setCallback((action, key) -> openKeymap.getAsBoolean());
+        Configs.OPEN_KEYMAP_BROWSER.setAction(openKeymap);
+        Configs.OPEN_KEYMAP_BROWSER.getKeybind().setCallback((action, key) -> openKeymap.getAsBoolean());
+        //#else
+        //$$ registerTrigger(Configs.OPEN_KEYBIND_EDITOR, () -> {
+        //$$     GuiBase.openGui(new KeybindCustomizationScreen());
+        //$$     return true;
+        //$$ });
+        //$$ registerTrigger(Configs.OPEN_KEYMAP_BROWSER, () -> {
+        //$$     GuiBase.openGui(new KeymapBrowserScreen());
+        //$$     return true;
+        //$$ });
+        //$$ registerTrigger(Configs.RELOAD_KEYBIND_DATA, () -> {
+        //$$     KeybindCustomizationStore.getInstance().reload();
+        //$$     KeybindPieManager.getInstance().invalidateCustomMappingSync();
+        //$$     return true;
+        //$$ });
+        //#endif
 
         registerTrigger(Configs.OPEN_CUSTOM_CONFIG_GROUPS, () -> {
             GuiBase.openGui(new CustomConfigGroupScreen(MinecraftClientCompat.getScreen(Minecraft.getInstance())));
@@ -151,6 +163,7 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         Configs.ENTITY_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
         //#if MC >= 26.3
         Configs.ITEM_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
+        Configs.ENTITY_AGGREGATION_SEPARATE_SIZES.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
         Configs.ENTITY_RENDER_AGGREGATION.setComment("halfmasa.config.disabled.comment.entityRenderAggregation.mc263");
         Configs.ENTITY_AGGREGATION_THRESHOLD.setComment("halfmasa.config.disabled.comment.entityAggregationThreshold.mc263");
         //#endif
@@ -176,6 +189,9 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         TickHandler.getInstance().registerClientTickHandler(BridgingAssist.getInstance());
         TickHandler.getInstance().registerClientTickHandler(FastLoadingController.getInstance());
         TickHandler.getInstance().registerClientTickHandler(EntityRenderAggregation.getInstance());
+        //#if MC >= 26.3
+        TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.SpawnerPickCapture.getInstance());
+        //#endif
         TickHandler.getInstance().registerClientTickHandler(ItemSearchHistoryService.getInstance());
         TickHandler.getInstance().registerClientTickHandler(VoidTrading.getInstance());
         TickHandler.getInstance().registerClientTickHandler(WorldBindingStore.getInstance());

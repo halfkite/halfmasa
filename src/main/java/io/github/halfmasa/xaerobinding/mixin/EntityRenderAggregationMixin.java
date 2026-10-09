@@ -21,6 +21,9 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 //#if MC >= 26.3
 import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.renderer.state.level.LevelRenderState;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 //#endif
 
@@ -59,6 +62,13 @@ public abstract class EntityRenderAggregationMixin
     }
 
     //#if MC >= 26.3
+    @Inject(method = "extractVisibleEntities", at = @At("TAIL"))
+    private void halfmasa_layoutAggregationLabels(Camera camera, Frustum frustum,
+            DeltaTracker delta, LevelRenderState levelState, CallbackInfo ci)
+    {
+        EntityRenderAggregation.getInstance().layoutLabels(levelState);
+    }
+
     // Check the visibility boundary as well: renderer replacements may bypass
     // the entitiesForRendering redirect while still calling isEntityVisible.
     @Inject(method = "isEntityVisible", at = @At("HEAD"), cancellable = true)

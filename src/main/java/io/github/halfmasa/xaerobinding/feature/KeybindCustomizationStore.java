@@ -147,6 +147,30 @@ public final class KeybindCustomizationStore
         return get(mapping).activationContext;
     }
 
+    //#if MC >= 26.3
+    public synchronized boolean participatesInWheel(KeyMapping mapping)
+    {
+        return participatesInWheel(mapping.getName());
+    }
+
+    public synchronized boolean participatesInWheel(String bindingId)
+    {
+        Entry entry = get(bindingId);
+        return entry.wheelEnabled != null ? entry.wheelEnabled : !entry.disableWheel;
+    }
+
+    public synchronized boolean participatesInWheel(String bindingId, List<Integer> keys)
+    {
+        return get(bindingId).participatesInWheel(keys);
+    }
+
+    public synchronized void put(String bindingId, Entry entry)
+    {
+        ensureLoaded();
+        this.entries.put(bindingId, sanitize(entry.copy()));
+    }
+    //#endif
+
     public synchronized void reset(KeyMapping mapping)
     {
         ensureLoaded();
@@ -207,13 +231,60 @@ public final class KeybindCustomizationStore
         public ActivationContext activationContext = ActivationContext.AUTO;
         public List<Integer> comboKeys = new ArrayList<>();
         public boolean requireKeyOrder;
+        //#if MC >= 26.3
+        public boolean disableWheel;
+        /** Null keeps the key-dependent default; explicit choices override it. */
+        public Boolean wheelEnabled;
+
+        public boolean participatesInWheel(List<Integer> keys)
+        {
+            if (this.wheelEnabled != null) return this.wheelEnabled;
+            if (this.disableWheel) return false;
+            if (keys.size() != 1) return true;
+            // SDL scancodes for left/right Ctrl, Shift and Alt, plus primary mouse buttons.
+            // Hardware Fn normally produces no key event and cannot open a wheel.
+            return switch (keys.getFirst())
+            {
+                case -1, -2, -3, 0, 224, 225, 226, 228, 229, 230 -> false;
+                default -> true;
+            };
+        }
+
+        public Entry copy()
+        {
+            Entry copy = new Entry();
+            copy.displayName = this.displayName;
+            copy.hideCategory = this.hideCategory;
+            copy.sectorColor = this.sectorColor;
+            copy.activationContext = this.activationContext;
+            copy.comboKeys = new ArrayList<>(this.comboKeys);
+            copy.requireKeyOrder = this.requireKeyOrder;
+            copy.disableWheel = this.disableWheel;
+            copy.wheelEnabled = this.wheelEnabled;
+            return copy;
+        }
+
+        public boolean sameAs(Entry other)
+        {
+            return java.util.Objects.equals(this.displayName, other.displayName) &&
+                    this.hideCategory == other.hideCategory &&
+                    java.util.Objects.equals(this.sectorColor, other.sectorColor) &&
+                    this.activationContext == other.activationContext && this.comboKeys.equals(other.comboKeys) &&
+                    this.requireKeyOrder == other.requireKeyOrder && this.disableWheel == other.disableWheel &&
+                    java.util.Objects.equals(this.wheelEnabled, other.wheelEnabled);
+        }
+        //#endif
 
         private boolean isDefault()
         {
             return (this.displayName == null || this.displayName.isBlank()) &&
                     !this.hideCategory && this.sectorColor == null &&
                     this.activationContext == ActivationContext.AUTO &&
-                    this.comboKeys.isEmpty() && !this.requireKeyOrder;
+                    this.comboKeys.isEmpty() && !this.requireKeyOrder
+                    //#if MC >= 26.3
+                    && !this.disableWheel && this.wheelEnabled == null
+                    //#endif
+                    ;
         }
     }
 

@@ -134,6 +134,18 @@ public final class InputCompat
             case 299 -> 67;
             case 300 -> 68;
             case 301 -> 69;
+            case 302 -> 104;
+            case 303 -> 105;
+            case 304 -> 106;
+            case 305 -> 107;
+            case 306 -> 108;
+            case 307 -> 109;
+            case 308 -> 110;
+            case 309 -> 111;
+            case 310 -> 112;
+            case 311 -> 113;
+            case 312 -> 114;
+            case 313 -> 115;
             case 96 -> 53;
             case 48 -> 39;
             case 49 -> 30;

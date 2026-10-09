@@ -2,6 +2,12 @@ package io.github.halfmasa.xaerobinding.feature;
 
 import java.util.ArrayList;
 import java.util.List;
+//#if MC >= 26.3
+import java.util.Map;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.item.component.BlockItemStateProperties;
+import net.minecraft.world.item.component.TypedEntityData;
+//#endif
 
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -72,7 +78,24 @@ public final class TrialCreativeItems
             items.add(vault(true));
             cachedItems = List.copyOf(items);
         }
-        return cachedItems;
+        //#if MC >= 26.3
+        // Templates are cached, but absolute cooldown timestamps belong to the current world.
+        Minecraft client = Minecraft.getInstance();
+        long gameTime = client != null && client.level != null ? client.level.getGameTime() : 0;
+        List<ItemStack> items = new ArrayList<>(cachedItems);
+        for (int i = 2; i < ENTRIES.size() * 3; i += 3)
+        {
+            ItemStack copy = cachedItems.get(i).copy();
+            TypedEntityData<BlockEntityType<?>> data = copy.get(DataComponents.BLOCK_ENTITY_DATA);
+            CompoundTag tag = data.copyTagWithoutId();
+            tag.putLong(TAG_COOLDOWN_ENDS_AT, gameTime + COOLDOWN_OFFSET_TICKS);
+            writeBlockEntityData(copy, halfmasa$trialSpawnerType(), tag);
+            items.set(i, copy);
+        }
+        return List.copyOf(items);
+        //#else
+        //$$ return cachedItems;
+        //#endif
     }
 
     /** Drops the cached list so the next call rebuilds it. */
@@ -95,12 +118,20 @@ public final class TrialCreativeItems
             // A far-future timestamp puts the placed spawner straight into the cooldown state.
             tag.putLong(TAG_COOLDOWN_ENDS_AT, COOLDOWN_OFFSET_TICKS);
         }
-        else
-        {
-            CompoundTag spawnData = new CompoundTag();
-            spawnData.putString(TAG_ID, entityId(entry.entityId));
-            tag.put(TAG_SPAWN_DATA, spawnData);
-        }
+        //#if MC >= 26.3
+        // The registered config supplies valid SpawnData, including baby zombie NBT,
+        // bogged instead of the nonexistent poison_skeleton type, and slime sizes.
+        stack.set(DataComponents.BLOCK_STATE, new BlockItemStateProperties(Map.of(
+                "ominous", Boolean.toString(ominous),
+                "trial_spawner_state", cooldown ? "cooldown" : "waiting_for_players")));
+        //#else
+        //$$ else
+        //$$ {
+        //$$     CompoundTag spawnData = new CompoundTag();
+        //$$     spawnData.putString(TAG_ID, entityId(entry.entityId));
+        //$$     tag.put(TAG_SPAWN_DATA, spawnData);
+        //$$ }
+        //#endif
 
         writeBlockEntityData(stack, halfmasa$trialSpawnerType(), tag);
         stack.set(DataComponents.CUSTOM_NAME, Component.translatable(nameKey(ominous, cooldown),
@@ -111,7 +142,22 @@ public final class TrialCreativeItems
     private static ItemStack vault(boolean ominous)
     {
         ItemStack stack = new ItemStack(Items.VAULT);
-        writeBlockEntityData(stack, halfmasa$vaultType(), new CompoundTag());
+        CompoundTag tag = new CompoundTag();
+        //#if MC >= 26.3
+        stack.set(DataComponents.BLOCK_STATE, new BlockItemStateProperties(Map.of(
+                "ominous", Boolean.toString(ominous))));
+        if (ominous)
+        {
+            CompoundTag config = new CompoundTag();
+            config.putString("loot_table", "minecraft:chests/trial_chambers/reward_ominous");
+            CompoundTag key = new CompoundTag();
+            key.putString("id", "minecraft:ominous_trial_key");
+            key.putInt("count", 1);
+            config.put("key_item", key);
+            tag.put("config", config);
+        }
+        //#endif
+        writeBlockEntityData(stack, halfmasa$vaultType(), tag);
         stack.set(DataComponents.CUSTOM_NAME, Component.translatable(ominous
                 ? "halfmasa.feature.trial_creative.vault.ominous"
                 : "halfmasa.feature.trial_creative.vault.normal"));
@@ -138,8 +184,11 @@ public final class TrialCreativeItems
      */
     private static void writeConfig(CompoundTag tag, String key, Entry entry)
     {
-        //#if MC >= 1.21.3
-        tag.putString(key, "minecraft:" + entry.configId);
+        //#if MC >= 26.3
+        tag.putString(key, "minecraft:" + entry.configId +
+                (TAG_OMINOUS_CONFIG.equals(key) ? "/ominous" : "/normal"));
+        //#elseif MC >= 1.21.3
+        //$$ tag.putString(key, "minecraft:" + entry.configId);
         //#else
         //$$ tag.put(key, fallbackConfig(entry.entityId));
         //#endif

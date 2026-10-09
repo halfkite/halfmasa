@@ -21,6 +21,11 @@ import io.github.halfmasa.xaerobinding.feature.KeybindCustomizationStore;
 
 public final class KeybindCustomizationScreen extends GuiBase
 {
+    //#if MC >= 26.3
+    private static final String TRANSLATION_PREFIX = "halfmasa.gui.conflict_selection_editor.";
+    //#else
+    //$$ private static final String TRANSLATION_PREFIX = "halfmasa.gui.keybind_editor.";
+    //#endif
     private final KeybindCustomizationStore store = KeybindCustomizationStore.getInstance();
     private final List<Row> rows = new ArrayList<>();
     private int page;
@@ -28,7 +33,7 @@ public final class KeybindCustomizationScreen extends GuiBase
 
     public KeybindCustomizationScreen()
     {
-        this.setTitle(StringUtils.translate("halfmasa.gui.keybind_editor.title"));
+        this.setTitle(StringUtils.translate(TRANSLATION_PREFIX + "title"));
     }
 
     @Override
@@ -71,8 +76,8 @@ public final class KeybindCustomizationScreen extends GuiBase
             ButtonGeneric hide = new ButtonGeneric(
                     hideX, y, 92, 20,
                     StringUtils.translate(data.hideCategory
-                            ? "halfmasa.gui.keybind_editor.category_hidden"
-                            : "halfmasa.gui.keybind_editor.category_shown"));
+                            ? TRANSLATION_PREFIX + "category_hidden"
+                            : TRANSLATION_PREFIX + "category_shown"));
             this.addButton(hide, (button, mouseButton) -> {
                 data.hideCategory = !data.hideCategory;
                 this.store.save();
@@ -112,7 +117,7 @@ public final class KeybindCustomizationScreen extends GuiBase
 
             int resetX = colorX + 76;
             this.addButton(new ButtonGeneric(resetX, y, 52, 20,
-                    StringUtils.translate("halfmasa.gui.keybind_editor.reset")),
+                    StringUtils.translate(TRANSLATION_PREFIX + "reset")),
                     (button, mouseButton) -> {
                         this.store.reset(mapping);
                         this.initGui();
@@ -122,7 +127,7 @@ public final class KeybindCustomizationScreen extends GuiBase
 
         int bottom = this.getScreenHeight() - 28;
         this.addButton(new ButtonGeneric(10, bottom, 74, 20,
-                StringUtils.translate("halfmasa.gui.keybind_editor.previous")),
+                StringUtils.translate(TRANSLATION_PREFIX + "previous")),
                 (button, mouseButton) -> {
                     if (this.page > 0)
                     {
@@ -131,7 +136,7 @@ public final class KeybindCustomizationScreen extends GuiBase
                     }
                 });
         this.addButton(new ButtonGeneric(88, bottom, 74, 20,
-                StringUtils.translate("halfmasa.gui.keybind_editor.next")),
+                StringUtils.translate(TRANSLATION_PREFIX + "next")),
                 (button, mouseButton) -> {
                     if (this.page + 1 < pageCount)
                     {
@@ -140,13 +145,13 @@ public final class KeybindCustomizationScreen extends GuiBase
                     }
                 });
         this.addButton(new ButtonGeneric(168, bottom, 86, 20,
-                StringUtils.translate("halfmasa.gui.keybind_editor.reload")),
+                StringUtils.translate(TRANSLATION_PREFIX + "reload")),
                 (button, mouseButton) -> {
                     this.store.reload();
                     this.initGui();
                 });
         this.addButton(new ButtonGeneric(262, bottom, 86, 20,
-                StringUtils.translate("halfmasa.gui.keybind_editor.browse")),
+                StringUtils.translate(TRANSLATION_PREFIX + "browse")),
                 (button, mouseButton) -> GuiBase.openGui(new KeymapBrowserScreen()));
     }
 
@@ -166,7 +171,7 @@ public final class KeybindCustomizationScreen extends GuiBase
         }
         this.drawString(
                 graphics,
-                StringUtils.translate("halfmasa.gui.keybind_editor.page", this.page + 1),
+                StringUtils.translate(TRANSLATION_PREFIX + "page", this.page + 1),
                 this.getScreenWidth() - 90,
                 this.getScreenHeight() - 22,
                 0xFFFFFFFF);

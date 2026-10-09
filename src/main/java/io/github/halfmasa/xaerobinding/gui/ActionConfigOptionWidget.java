@@ -19,6 +19,11 @@ import io.github.halfmasa.xaerobinding.config.ActionConfig;
 import io.github.halfmasa.xaerobinding.config.Configs;
 import io.github.halfmasa.xaerobinding.config.ConfigGroupHeader;
 import io.github.halfmasa.xaerobinding.feature.CustomConfigGroupStore;
+//#if MC >= 26.3
+import fi.dy.masa.malilib.gui.GuiBase;
+import fi.dy.masa.malilib.render.GuiContext;
+import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
+//#endif
 
 public final class ActionConfigOptionWidget extends WidgetConfigOption
 {
@@ -136,6 +141,16 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         x += EXPAND_BUTTON_WIDTH;
         labelWidth = Math.max(20, labelWidth - EXPAND_BUTTON_WIDTH);
 
+        //#if MC >= 26.3
+        if (config == Configs.KEYBIND_IGNORED_KEYS)
+        {
+            this.addIgnoredKeysOption(x, y, labelWidth, configWidth, config);
+            this.addExpandButton(expandButtonX, y, config, expansion);
+            this.addCustomGroupControls(config, y + 1);
+            return;
+        }
+        //#endif
+
         if (config instanceof ConfigGroupHeader)
         {
             this.addLabel(x, y + 7, labelWidth, 8, 0xFFFFFFFF, config.getConfigGuiDisplayName());
@@ -202,6 +217,44 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         this.addHotkeyConfigElements(hotkeyX, y, hotkeyWidth, config.getName(), actionHotkey);
         this.addCustomGroupControls(config, y);
     }
+
+    //#if MC >= 26.3
+    private void addIgnoredKeysOption(int x, int y, int labelWidth, int configWidth, IConfigBase config)
+    {
+        this.addLabel(x, y + 7, labelWidth, 8, 0xFFFFFFFF, config.getConfigGuiDisplayName());
+        this.addConfigComment(x, y + 5, labelWidth, 12, config.getComment());
+        int controlsX = x + labelWidth + 10;
+        int keyboardWidth = Math.min(86, Math.max(50, configWidth / 3));
+        int valueWidth = Math.max(10, configWidth - keyboardWidth - 4);
+        Runnable open = () -> GuiBase.openGui(new IgnoredKeysScreen(MinecraftClientCompat.getScreen(this.mc)));
+        this.addButton(new IgnoredKeysValueButton(controlsX, y + 1, valueWidth), (button, mouseButton) -> open.run());
+        this.addButton(new ButtonGeneric(controlsX + valueWidth + 4, y + 1, keyboardWidth, 20,
+                StringUtils.translate("halfmasa.gui.ignored_keys.open")), (button, mouseButton) -> open.run());
+        this.addButton(this.createResetButton(controlsX + configWidth + RESET_BUTTON_GAP, y + 1, Configs.KEYBIND_IGNORED_KEYS),
+                (button, mouseButton) -> {
+                    Configs.KEYBIND_IGNORED_KEYS.resetToDefault();
+                    new Configs().save();
+                    if (MinecraftClientCompat.getScreen(this.mc) instanceof GuiBase gui) gui.initGui();
+                });
+    }
+
+    private static final class IgnoredKeysValueButton extends ButtonGeneric
+    {
+        private IgnoredKeysValueButton(int x, int y, int width)
+        {
+            super(x, y, width, 20, "");
+        }
+
+        @Override
+        public void render(GuiContext graphics, int mouseX, int mouseY, boolean selected)
+        {
+            String names = KeymapInputNames.names(Configs.KEYBIND_IGNORED_KEYS.getStringValue());
+            this.setDisplayString(Minecraft.getInstance().font.plainSubstrByWidth(names, Math.max(1, this.width - 8)));
+            this.setHoverStrings(names, StringUtils.translate("halfmasa.gui.ignored_keys.open"));
+            super.render(graphics, mouseX, mouseY, selected);
+        }
+    }
+    //#endif
 
     private void addInlineCompanion(
             int x, int y, int labelWidth, int configWidth, IConfigBase config, IHotkey companion)

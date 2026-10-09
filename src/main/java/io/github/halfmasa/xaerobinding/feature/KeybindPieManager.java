@@ -8,6 +8,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+//#if MC >= 26.3
+import fi.dy.masa.malilib.event.InputEventHandler;
+import fi.dy.masa.malilib.hotkeys.IHotkey;
+import fi.dy.masa.malilib.hotkeys.IKeybind;
+import fi.dy.masa.malilib.hotkeys.KeyAction;
+import fi.dy.masa.malilib.hotkeys.KeybindCategory;
+import fi.dy.masa.malilib.hotkeys.KeybindMulti;
+import fi.dy.masa.malilib.hotkeys.KeybindSettings;
+import io.github.halfmasa.xaerobinding.gui.KeymapBrowserScreen;
+import io.github.halfmasa.xaerobinding.gui.IgnoredKeysScreen;
+//#endif
+
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -32,12 +44,37 @@ public final class KeybindPieManager implements IClientTickHandler
     private final Map<KeyMapping, Integer> oneShotReleases = new HashMap<>();
     private final Map<InputConstants.Key, SelectionCooldown> selectionCooldowns = new HashMap<>();
     private final Set<Integer> pressedInputKeys = new HashSet<>();
+    //#if MC >= 26.3
+    private final List<Integer> pressedInputOrder = new ArrayList<>();
+    private Object inputLevel;
+    private KeyMapping[] synchronizedMappings;
+    //#endif
     private final Map<KeyMapping, Integer> orderedComboProgress = new HashMap<>();
     private final Set<KeyMapping> activeCustomCombos = new HashSet<>();
     private boolean customMappingsSynchronized;
     private InputConstants.Key activeKey;
     private KeybindPieScreen activeScreen;
     private Screen parentScreen;
+
+    //#if MC >= 26.3
+    public record PieAction(KeyMapping mapping, IHotkey hotkey)
+    {
+        public String displayName()
+        {
+            if (this.mapping != null)
+            {
+                return KeybindCustomizationStore.getInstance().displayName(this.mapping);
+            }
+            String translated = this.hotkey.getTranslatedName();
+            if (translated != null && !translated.isBlank() && !translated.equals(this.hotkey.getName()))
+            {
+                return translated;
+            }
+            String pretty = this.hotkey.getPrettyName();
+            return pretty == null || pretty.isBlank() ? this.hotkey.getName() : pretty;
+        }
+    }
+    //#endif
 
     private KeybindPieManager() {}
 
@@ -81,6 +118,20 @@ public final class KeybindPieManager implements IClientTickHandler
             return true;
         }
 
+        //#if MC >= 26.3
+        if (this.activeScreen != null)
+        {
+            if (pressed && !key.equals(this.activeKey))
+            {
+                if (!this.transitionSelection(key))
+                {
+                    this.dismissSelectionForNewInput(key);
+                    return false;
+                }
+            }
+            return true;
+        }
+        //#endif
         if (this.activeKey != null && this.activeKey.equals(key))
         {
             return true;
@@ -97,10 +148,14 @@ public final class KeybindPieManager implements IClientTickHandler
             return false;
         }
 
-        List<KeyMapping> conflicts = mappingsFor(key, screen);
-        if (hasJeiBinding(conflicts)
-                || hasJadeDetailsBinding(conflicts)
-                )
+        //#if MC >= 26.3
+        List<PieAction> conflicts = wheelCandidates(key, screen);
+        if (hasJeiBinding(conflicts.stream().map(PieAction::mapping).filter(java.util.Objects::nonNull).toList()) ||
+            hasJadeDetailsBinding(conflicts.stream().map(PieAction::mapping).filter(java.util.Objects::nonNull).toList()))
+        //#else
+        //$$ List<KeyMapping> conflicts = mappingsFor(key, screen);
+        //$$ if (hasJeiBinding(conflicts) || hasJadeDetailsBinding(conflicts))
+        //#endif
         {
             return false;
         }
@@ -109,10 +164,24 @@ public final class KeybindPieManager implements IClientTickHandler
             return false;
         }
 
-        for (KeyMapping mapping : conflicts)
+        //#if MC >= 26.3
+        for (PieAction action : conflicts)
         {
-            setDown(mapping, false);
+            if (action.mapping() != null)
+            {
+                setDown(action.mapping(), false);
+                if (KeybindCustomizationStore.getInstance().hasCustomCombination(action.mapping()))
+                {
+                    this.activeCustomCombos.add(action.mapping());
+                }
+            }
         }
+        //#else
+        //$$ for (KeyMapping mapping : conflicts)
+        //$$ {
+        //$$     setDown(mapping, false);
+        //$$ }
+        //#endif
         this.activeKey = key;
         this.activeScreen = new KeybindPieScreen(key, conflicts);
         this.parentScreen = screen;
@@ -122,8 +191,66 @@ public final class KeybindPieManager implements IClientTickHandler
         return true;
     }
 
+    //#if MC >= 26.3
+    private boolean transitionSelection(InputConstants.Key key)
+    {
+        if (isIgnored(key)) return false;
+        List<PieAction> conflicts = this.wheelCandidates(key, this.parentScreen);
+        List<KeyMapping> vanilla = conflicts.stream().map(PieAction::mapping)
+                .filter(java.util.Objects::nonNull).toList();
+        if (conflicts.size() < 2 || hasJeiBinding(vanilla) || hasJadeDetailsBinding(vanilla))
+        {
+            return false;
+        }
+        for (PieAction action : conflicts)
+        {
+            if (action.mapping() != null)
+            {
+                setDown(action.mapping(), false);
+                if (KeybindCustomizationStore.getInstance().hasCustomCombination(action.mapping()))
+                {
+                    this.activeCustomCombos.add(action.mapping());
+                }
+            }
+        }
+        this.activeKey = key;
+        this.activeScreen.updateSelection(key, conflicts);
+        return true;
+    }
+
+    private void dismissSelectionForNewInput(InputConstants.Key key)
+    {
+        Minecraft client = Minecraft.getInstance();
+        Screen screen = this.parentScreen;
+        int inputCode = keyCode(key);
+        KeybindCustomizationStore store = KeybindCustomizationStore.getInstance();
+        if (client.options != null)
+        {
+            for (KeyMapping mapping : client.options.keyMappings)
+            {
+                List<Integer> combo = store.comboKeys(mapping);
+                if (combo.size() >= 2 && store.requiresKeyOrder(mapping) &&
+                        combo.get(combo.size() - 1) == inputCode &&
+                        this.samePressedChord(combo) && this.matchesPressedOrder(combo))
+                {
+                    this.orderedComboProgress.put(mapping, combo.size() - 1);
+                }
+            }
+        }
+        this.activeKey = null;
+        this.activeScreen = null;
+        this.parentScreen = null;
+        MinecraftClientCompat.setScreen(client, screen);
+        if (screen == null) this.restorePhysicalMovementKeys(client);
+        this.updateCustomCombos(inputCode, true);
+    }
+    //#endif
+
     public boolean handleClick(InputConstants.Key key)
     {
+        //#if MC >= 26.3
+        if (this.activeScreen != null) return true;
+        //#endif
         if (!Configs.KEYBIND_PIE_MENU.getBooleanValue() || isIgnored(key))
         {
             return false;
@@ -138,10 +265,15 @@ public final class KeybindPieManager implements IClientTickHandler
         {
             return false;
         }
-        List<KeyMapping> conflicts = mappingsFor(key, screen);
-        if (hasJeiBinding(conflicts)
-                || hasJadeDetailsBinding(conflicts)
-                )
+        //#if MC >= 26.3
+        List<PieAction> conflicts = wheelCandidates(key, screen);
+        List<KeyMapping> vanilla = conflicts.stream().map(PieAction::mapping)
+                .filter(java.util.Objects::nonNull).toList();
+        if (hasJeiBinding(vanilla) || hasJadeDetailsBinding(vanilla))
+        //#else
+        //$$ List<KeyMapping> conflicts = mappingsFor(key, screen);
+        //$$ if (hasJeiBinding(conflicts) || hasJadeDetailsBinding(conflicts))
+        //#endif
         {
             return false;
         }
@@ -156,6 +288,9 @@ public final class KeybindPieManager implements IClientTickHandler
      */
     public static boolean wouldTriggerNow(Minecraft client, Screen screen)
     {
+        //#if MC >= 26.3
+        if (KeymapBrowserScreen.isEditingBindings(screen) || IgnoredKeysScreen.isEditingKeys(screen)) return false;
+        //#endif
         if (screen != null)
         {
             return !isTypingContext(screen);
@@ -192,6 +327,9 @@ public final class KeybindPieManager implements IClientTickHandler
     public void handleKeyboardEvent(InputConstants.Key key, boolean pressed)
     {
         this.trackInput(key, pressed);
+        //#if MC >= 26.3
+        if (pressed) this.handleSet(key, true);
+        //#endif
         this.restoreMovementKeys(Minecraft.getInstance());
     }
 
@@ -231,6 +369,9 @@ public final class KeybindPieManager implements IClientTickHandler
 
     public void refreshCustomCombos()
     {
+        //#if MC >= 26.3
+        if (this.activeScreen != null) return;
+        //#endif
         Minecraft client = Minecraft.getInstance();
         if (client.options == null)
         {
@@ -271,12 +412,65 @@ public final class KeybindPieManager implements IClientTickHandler
     private void trackInput(InputConstants.Key key, boolean pressed)
     {
         int inputCode = keyCode(key);
-        if (pressed) this.pressedInputKeys.add(inputCode);
-        else this.pressedInputKeys.remove(inputCode);
-        this.updateCustomCombos(inputCode, pressed);
+        //#if MC >= 26.3
+        Minecraft client = Minecraft.getInstance();
+        this.refreshInputSession(client);
+        // A GUI can consume releases. Never let an old menu click/Enter become
+        // an extra member of every chord after entering the world.
+        this.pruneReleasedInputs(client, inputCode);
+        //#endif
+        boolean changed = pressed ? this.pressedInputKeys.add(inputCode) : this.pressedInputKeys.remove(inputCode);
+        //#if MC >= 26.3
+        if (changed)
+        {
+            if (pressed) this.pressedInputOrder.add(inputCode);
+            else this.pressedInputOrder.remove(Integer.valueOf(inputCode));
+        }
+        if (changed && !this.shouldDeferCustomCombo(key, pressed))
+        {
+            this.updateCustomCombos(inputCode, pressed);
+        }
+        //#else
+        //$$ this.updateCustomCombos(inputCode, pressed);
+        //#endif
     }
 
-    public void completeSelection(KeyMapping mapping, boolean clickHold)
+    //#if MC >= 26.3
+    private boolean shouldDeferCustomCombo(InputConstants.Key key, boolean pressed)
+    {
+        if (!pressed || !Configs.KEYBIND_PIE_MENU.getBooleanValue() || isIgnored(key) ||
+                this.activeScreen != null || this.selectionCooldowns.containsKey(key))
+        {
+            return this.activeScreen != null;
+        }
+        Minecraft client = Minecraft.getInstance();
+        Screen screen = MinecraftClientCompat.getScreen(client);
+        if (!wouldTriggerNow(client, screen)) return false;
+        List<PieAction> actions = this.wheelCandidates(key, screen);
+        List<KeyMapping> vanilla = actions.stream().map(PieAction::mapping)
+                .filter(java.util.Objects::nonNull).toList();
+        return actions.size() > 1 && !hasJeiBinding(vanilla) && !hasJadeDetailsBinding(vanilla);
+    }
+
+    public void handleMasaMouseInput(InputConstants.Key key, boolean pressed)
+    {
+        this.trackInput(key, pressed);
+        if (pressed) this.handleSet(key, true);
+    }
+
+    public boolean blockMasaDispatch(int inputCode)
+    {
+        if (this.activeScreen != null) return true;
+        int normalizedCode = normalizeMasaCode(inputCode);
+        return this.selectionCooldowns.keySet().stream().anyMatch(key -> keyCode(key) == normalizedCode);
+    }
+    //#endif
+
+    //#if MC >= 26.3
+    public void completeSelection(PieAction action, boolean clickHold)
+    //#else
+    //$$ public void completeSelection(KeyMapping mapping, boolean clickHold)
+    //#endif
     {
         InputConstants.Key key = this.activeKey;
         Screen screen = this.parentScreen;
@@ -290,7 +484,11 @@ public final class KeybindPieManager implements IClientTickHandler
             this.restorePhysicalMovementKeys(client);
         }
 
-        if (mapping == null || key == null)
+        //#if MC >= 26.3
+        if (action == null || key == null)
+        //#else
+        //$$ if (mapping == null || key == null)
+        //#endif
         {
             return;
         }
@@ -301,6 +499,20 @@ public final class KeybindPieManager implements IClientTickHandler
             this.selectionCooldowns.put(key, new SelectionCooldown(cooldownTicks, !clickHold));
         }
 
+        //#if MC >= 26.3
+        if (action.hotkey() != null)
+        {
+            IKeybind binding = action.hotkey().getKeybind();
+            if (binding instanceof KeybindMulti multi && multi.getCallback() != null)
+            {
+                KeyAction activateOn = binding.getSettings().getActivateOn();
+                multi.getCallback().onKeyAction(
+                        activateOn == KeyAction.RELEASE ? KeyAction.RELEASE : KeyAction.PRESS, binding);
+            }
+            return;
+        }
+        KeyMapping mapping = action.mapping();
+        //#endif
         setDown(mapping, true);
         setClicks(mapping, 1);
         if (clickHold)
@@ -335,6 +547,10 @@ public final class KeybindPieManager implements IClientTickHandler
     @Override
     public void onClientTick(Minecraft client)
     {
+        //#if MC >= 26.3
+        this.refreshInputSession(client);
+        this.pruneReleasedInputs(client, null);
+        //#endif
         this.synchronizeCustomMappings(client);
         if (this.activeScreen != null && MinecraftClientCompat.getScreen(client) != this.activeScreen)
         {
@@ -422,6 +638,97 @@ public final class KeybindPieManager implements IClientTickHandler
                 .sorted(Comparator.comparing(KeyMapping::getName))
                 .toList();
     }
+
+    //#if MC >= 26.3
+    private List<PieAction> wheelCandidates(InputConstants.Key key, Screen screen)
+    {
+        List<PieAction> actions = new ArrayList<>();
+        int inputCode = keyCode(key);
+        if (this.pressedInputKeys.size() == 1 && this.pressedInputKeys.contains(inputCode))
+        {
+            for (KeyMapping mapping : mappingsFor(key, screen))
+            {
+                if (KeybindCustomizationStore.getInstance().participatesInWheel(mapping.getName(), List.of(inputCode)))
+                {
+                    actions.add(new PieAction(mapping, null));
+                }
+            }
+        }
+
+        Minecraft client = Minecraft.getInstance();
+        KeybindCustomizationStore store = KeybindCustomizationStore.getInstance();
+        if (client.options != null)
+        {
+            for (KeyMapping mapping : client.options.keyMappings)
+            {
+                List<Integer> combo = store.comboKeys(mapping);
+                if (store.participatesInWheel(mapping.getName(), combo) && combo.size() >= 2 && combo.contains(inputCode) &&
+                    this.samePressedChord(combo) &&
+                    (!store.requiresKeyOrder(mapping) || this.matchesPressedOrder(combo)) &&
+                    isCustomComboActive(store, mapping, screen))
+                {
+                    actions.add(new PieAction(mapping, null));
+                }
+            }
+        }
+
+        for (KeybindCategory category : InputEventHandler.getKeybindManager().getKeybindCategories())
+        {
+            for (IHotkey hotkey : category.getHotkeys())
+            {
+                IKeybind binding = hotkey.getKeybind();
+                if (!(binding instanceof KeybindMulti multi) || multi.getCallback() == null)
+                {
+                    continue;
+                }
+                List<Integer> codes = binding.getKeys().stream()
+                        .map(KeybindPieManager::normalizeMasaCode).toList();
+                if (!store.participatesInWheel(hotkey.getName(), codes)) continue;
+                KeybindSettings settings = binding.getSettings();
+                if (codes.isEmpty() || !codes.contains(inputCode) ||
+                    !this.samePressedChord(codes) ||
+                    (settings.isOrderSensitive() && !this.matchesPressedOrder(codes)) ||
+                    !isMasaContextActive(settings, screen))
+                {
+                    continue;
+                }
+                actions.add(new PieAction(null, hotkey));
+            }
+        }
+        return actions;
+    }
+
+    private boolean samePressedChord(List<Integer> codes)
+    {
+        return codes.size() == this.pressedInputKeys.size() &&
+                this.pressedInputKeys.containsAll(codes);
+    }
+
+    private boolean matchesPressedOrder(List<Integer> codes)
+    {
+        int next = 0;
+        for (int pressed : this.pressedInputOrder)
+        {
+            if (next < codes.size() && pressed == codes.get(next)) next++;
+        }
+        return next == codes.size();
+    }
+
+    private static int normalizeMasaCode(int code)
+    {
+        // MaLiLib subtracts 100 from MouseButtonEvent.input(), which is the
+        // SDL mouse button number on 26.3. The wheel stores compact negatives.
+        return code < -80 && code > -100
+                ? InputCompat.mouseButtonToLayoutCode(code + 100) : code;
+    }
+
+    private static boolean isMasaContextActive(KeybindSettings settings, Screen screen)
+    {
+        return settings.getContext() == KeybindSettings.Context.ANY ||
+                (screen == null && settings.getContext() == KeybindSettings.Context.INGAME) ||
+                (screen != null && settings.getContext() == KeybindSettings.Context.GUI);
+    }
+    //#endif
 
     private static boolean hasJeiBinding(List<KeyMapping> mappings)
     {
@@ -579,10 +886,16 @@ public final class KeybindPieManager implements IClientTickHandler
 
     private void synchronizeCustomMappings(Minecraft client)
     {
-        if (this.customMappingsSynchronized || client.options == null)
+        if (client.options == null)
         {
             return;
         }
+        //#if MC >= 26.3
+        if (this.customMappingsSynchronized && this.synchronizedMappings == client.options.keyMappings) return;
+        this.synchronizedMappings = client.options.keyMappings;
+        //#else
+        //$$ if (this.customMappingsSynchronized) return;
+        //#endif
         KeybindCustomizationStore store = KeybindCustomizationStore.getInstance();
         boolean changed = false;
         for (KeyMapping mapping : client.options.keyMappings)
@@ -606,6 +919,34 @@ public final class KeybindPieManager implements IClientTickHandler
     {
         this.customMappingsSynchronized = false;
     }
+
+    //#if MC >= 26.3
+    private void refreshInputSession(Minecraft client)
+    {
+        if (this.inputLevel != client.level)
+        {
+            List<Integer> stillHeld = this.pressedInputOrder.stream()
+                    .filter(code -> isInputCodeDown(client, code)).toList();
+            this.clearTransientState();
+            this.pressedInputKeys.addAll(stillHeld);
+            this.pressedInputOrder.addAll(stillHeld);
+            this.customMappingsSynchronized = false;
+            this.inputLevel = client.level;
+        }
+    }
+
+    private void pruneReleasedInputs(Minecraft client, Integer currentEvent)
+    {
+        List<Integer> released = this.pressedInputKeys.stream()
+                .filter(code -> !code.equals(currentEvent) && !isInputCodeDown(client, code)).toList();
+        for (int code : released)
+        {
+            this.pressedInputKeys.remove(code);
+            this.pressedInputOrder.remove(Integer.valueOf(code));
+            this.updateCustomCombos(code, false);
+        }
+    }
+    //#endif
 
     private static int keyCode(InputConstants.Key key)
     {
@@ -657,19 +998,25 @@ public final class KeybindPieManager implements IClientTickHandler
 
     private static boolean isIgnored(InputConstants.Key key)
     {
-        Set<Integer> ignored = new HashSet<>();
-        for (String value : Configs.KEYBIND_IGNORED_KEYS.getStringValue().split("[,;\\s]+"))
-        {
-            try
-            {
-                ignored.add(Integer.parseInt(value));
-            }
-            catch (NumberFormatException ignoredException)
-            {
-            }
-        }
-        boolean listed = InputCompat.isKeyboardKey(key) && ignored.contains(key.getValue());
-        return Configs.KEYBIND_INVERT_IGNORED_KEYS.getBooleanValue() ? !listed : listed;
+        //#if MC >= 26.3
+        return IgnoredKeySelection.isIgnored(keyCode(key),
+                IgnoredKeySelection.parse(Configs.KEYBIND_IGNORED_KEYS.getStringValue()),
+                Configs.KEYBIND_INVERT_IGNORED_KEYS.getBooleanValue());
+        //#else
+        //$$ Set<Integer> ignored = new HashSet<>();
+        //$$ for (String value : Configs.KEYBIND_IGNORED_KEYS.getStringValue().split("[,;\\s]+"))
+        //$$ {
+        //$$     try
+        //$$     {
+        //$$         ignored.add(Integer.parseInt(value));
+        //$$     }
+        //$$     catch (NumberFormatException ignoredException)
+        //$$     {
+        //$$     }
+        //$$ }
+        //$$ boolean listed = InputCompat.isKeyboardKey(key) && ignored.contains(key.getValue());
+        //$$ return Configs.KEYBIND_INVERT_IGNORED_KEYS.getBooleanValue() ? !listed : listed;
+        //#endif
     }
 
     private static boolean isPhysicallyDown(Minecraft client, InputConstants.Key key)
@@ -706,6 +1053,9 @@ public final class KeybindPieManager implements IClientTickHandler
         this.activeCustomCombos.clear();
         this.orderedComboProgress.clear();
         this.pressedInputKeys.clear();
+        //#if MC >= 26.3
+        this.pressedInputOrder.clear();
+        //#endif
         this.activeKey = null;
         this.activeScreen = null;
         this.parentScreen = null;

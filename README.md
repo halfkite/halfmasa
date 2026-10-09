@@ -71,6 +71,7 @@ halfmasa 本体是客户端模组，普通客户端功能不要求服务器安�
 - [版本兼容记录](docs/version_compatibility.md)
 - [English Modrinth description](docs/modrinth_en.md)
 - [构建与发布流程](docs/releasing.md)
+- [网页版 GPT 项目指令与审查流程](docs/web-gpt-project-instructions.md)
 
 默认按 `X + H` 打开 halfmasa 配置界面，也可从 Mod Menu 进入。完整功能和快捷键设置见功能文档。
 

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 //#if MC >= 26.3
 import java.lang.reflect.Field;
+import java.util.IdentityHashMap;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,6 +19,12 @@ import net.fabricmc.loader.api.FabricLoader;
 import fi.dy.masa.malilib.config.options.ConfigBooleanHotkeyed;
 
 import io.github.halfmasa.xaerobinding.XaeroWorldBinding;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.state.level.LevelRenderState;
+import net.minecraft.world.entity.Pose;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 //#endif
 
 import fi.dy.masa.malilib.interfaces.IClientTickHandler;
@@ -58,6 +65,11 @@ public final class EntityRenderAggregation implements IClientTickHandler
     private Map<Integer, GroupMeta> pendingMetadata;
     private long generation;
     private long pendingGeneration;
+    private final Map<EntityRenderState, Integer> frameLabels = new IdentityHashMap<>();
+    // Vanilla SubmitNodeCollection uses this scale and adds 0.5 to the attachment's Y.
+    private static final float NAME_TAG_SCALE = 0.025F;
+    private static final double NAME_TAG_Y_OFFSET = 0.5D;
+    private static final double LABEL_GAP_PIXELS = 3.0D;
 //#endif
 
     private EntityRenderAggregation() {}
@@ -130,6 +142,9 @@ public final class EntityRenderAggregation implements IClientTickHandler
 
     public void beginRenderFrame()
     {
+//#if MC >= 26.3
+        this.frameLabels.clear();
+//#endif
         for (Group group : new HashSet<>(this.groupsByEntityId.values()))
         {
             group.representativeId = -1;
@@ -192,6 +207,7 @@ public final class EntityRenderAggregation implements IClientTickHandler
     {
 //#if MC >= 26.3
         cancelPending();
+        this.frameLabels.clear();
 //#endif
         this.groupsByEntityId.clear();
         this.trackedLevel = null;
@@ -199,6 +215,61 @@ public final class EntityRenderAggregation implements IClientTickHandler
     }
 
 //#if MC >= 26.3
+    public void trackLabel(Entity entity, EntityRenderState state)
+    {
+        this.frameLabels.put(state, entity.getId());
+    }
+
+    /** All visible representatives must be extracted before resolving screen-space collisions. */
+    public void layoutLabels(LevelRenderState levelState)
+    {
+        if (this.frameLabels.size() < 2) return;
+        var camera = levelState.cameraRenderState;
+        Minecraft client = Minecraft.getInstance();
+        int width = client.getWindow().getWidth(), height = client.getWindow().getHeight();
+        if (camera == null || camera.pos == null || camera.projectionMatrix == null ||
+                camera.viewRotationMatrix == null || camera.orientation == null || width <= 0 || height <= 0) return;
+        float focalX = camera.projectionMatrix.m00(), focalY = camera.projectionMatrix.m11();
+        if (focalX == 0 || focalY == 0) return;
+        Matrix4f projection = new Matrix4f(camera.projectionMatrix).mul(camera.viewRotationMatrix);
+        Matrix4f inverseView = new Matrix4f(camera.viewRotationMatrix).invert();
+        var labels = new ArrayList<AggregationLabelLayout.Label>();
+        var projected = new HashMap<Integer, ProjectedLabel>();
+        for (EntityRenderState state : levelState.entityRenderStates)
+        {
+            Integer id = this.frameLabels.get(state);
+            if (id == null || state.nameTag == null || state.nameTagAttachment == null) continue;
+            Vec3 attachment = state.nameTagAttachment;
+            Vector4f clip = projection.transform(new Vector4f(
+                    (float) (state.x + attachment.x - camera.pos.x),
+                    (float) (state.y + attachment.y + NAME_TAG_Y_OFFSET - camera.pos.y),
+                    (float) (state.z + attachment.z - camera.pos.z), 1));
+            if (!Float.isFinite(clip.w) || clip.w <= 0 || Math.abs(clip.x) > clip.w ||
+                    Math.abs(clip.y) > clip.w || Math.abs(clip.z) > clip.w) continue;
+            double scaleX = NAME_TAG_SCALE * Math.abs(focalX) * width / (2.0D * clip.w);
+            double scaleY = NAME_TAG_SCALE * Math.abs(focalY) * height / (2.0D * clip.w);
+            // Include vanilla's nameplate background and shadow around the glyphs.
+            double textWidth = (client.font.width(state.nameTag) + 2) * scaleX;
+            double textHeight = (client.font.lineHeight + 2) * scaleY;
+            labels.add(new AggregationLabelLayout.Label(id,
+                    (clip.x / clip.w + 1) * width / 2.0D,
+                    (1 - clip.y / clip.w) * height / 2.0D - scaleY,
+                    textWidth, textHeight, state.distanceToCameraSq));
+            projected.put(id, new ProjectedLabel(state, clip.w));
+        }
+        for (var placement : AggregationLabelLayout.arrange(labels, LABEL_GAP_PIXELS))
+        {
+            if (placement.offsetY() == 0) continue;
+            ProjectedLabel label = projected.get(placement.id());
+            float viewY = (float) (-2 * placement.offsetY() * label.clipW() / (height * focalY));
+            Vector3f offset = inverseView.transformDirection(new Vector3f(0, viewY, 0));
+            EntityRenderState state = label.state();
+            state.nameTagAttachment = state.nameTagAttachment.add(offset.x, offset.y, offset.z);
+        }
+    }
+
+    private record ProjectedLabel(EntityRenderState state, float clipW) {}
+
     private void cancelPending()
     {
         this.generation++;
@@ -526,7 +597,12 @@ public final class EntityRenderAggregation implements IClientTickHandler
     private static Candidate candidateFor(Entity entity)
     {
         if (entity.isRemoved() || entity instanceof Player || entity instanceof ArmorStand || entity instanceof Display ||
-                entity instanceof EnderDragon || entity instanceof WitherBoss || entity.hasCustomName())
+                entity instanceof EnderDragon || entity instanceof WitherBoss ||
+//#if MC >= 26.3
+                (entity.hasCustomName() && !(entity instanceof ItemEntity)))
+//#else
+                //$$ entity.hasCustomName())
+//#endif
         {
             return null;
         }
@@ -543,12 +619,22 @@ public final class EntityRenderAggregation implements IClientTickHandler
             return new Candidate(entity, new ItemKey(stack.copy()), stack.getHoverName(), true, stack.getCount());
         }
 
-        if (entity instanceof LivingEntity)
+        if (entity instanceof LivingEntity living)
         {
 //#if MC >= 26.3
             if (!Configs.ENTITY_RENDER_AGGREGATION.getBooleanValue()) return null;
 //#endif
             EntityType<?> type = entity.getType();
+//#if MC >= 26.3
+            if (Configs.ENTITY_AGGREGATION_SEPARATE_SIZES.getBooleanValue())
+            {
+                // Standing dimensions distinguish baby/adult mobs, slime sizes and scale
+                // attributes without splitting a group merely because its pose changes.
+                var dimensions = living.getDimensions(Pose.STANDING);
+                Object key = new MobSizeKey(type, living.isBaby(), dimensions.width(), dimensions.height());
+                return new Candidate(entity, key, type.getDescription(), false, 1);
+            }
+//#endif
             return new Candidate(entity, type, type.getDescription(), false, 1);
         }
 
@@ -617,6 +703,10 @@ public final class EntityRenderAggregation implements IClientTickHandler
             return this.entity.position();
         }
     }
+
+//#if MC >= 26.3
+    private record MobSizeKey(EntityType<?> type, boolean baby, float width, float height) {}
+//#endif
 
     private record Cell(int x, int y, int z)
     {

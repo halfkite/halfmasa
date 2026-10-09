@@ -35,6 +35,15 @@ import fi.dy.masa.malilib.gui.GuiTextFieldGeneric;
 import fi.dy.masa.malilib.gui.button.ButtonGeneric;
 import fi.dy.masa.malilib.hotkeys.IHotkey;
 import fi.dy.masa.malilib.hotkeys.KeybindCategory;
+//#if MC >= 26.3
+import fi.dy.masa.malilib.hotkeys.KeybindSettings;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import io.github.halfmasa.xaerobinding.feature.IgnoredKeySelection;
+import net.minecraft.client.gui.screens.ConfirmScreen;
+import fi.dy.masa.malilib.hotkeys.KeybindMulti;
+import io.github.halfmasa.xaerobinding.config.KeymapBindingMode;
+import io.github.halfmasa.xaerobinding.config.KeymapLayout;
+//#endif
 import fi.dy.masa.malilib.util.StringUtils;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
@@ -48,7 +57,7 @@ import io.github.halfmasa.xaerobinding.mixin.KeyMappingAccessor;
  * (vanilla key mappings plus masa-family malilib hotkeys), an on-screen
  * full-size keyboard whose keys filter the list (Ctrl+click to stack several
  * keys) and show which bindings sit on each key, and one-click access to the
- * detail editor for rebinding and wheel customization.
+ * rebinding controls and per-binding wheel customization.
  */
 public final class KeymapBrowserScreen extends GuiBase
 {
@@ -65,6 +74,22 @@ public final class KeymapBrowserScreen extends GuiBase
     //#if MC >= 26.3
     private static int rememberedScrollOffset;
     private static final Set<String> rememberedCollapsedGroups = new HashSet<>();
+    private int categoryButtonX;
+    private int categoryButtonY;
+    private int categoryButtonWidth;
+    private int categoryPanelWidth;
+    private BrowserEntry hoveredEntry;
+    private List<KeymapKeyboardStyle.Binding> keyboardBindings = List.of();
+    private Set<Integer> ignoredKeyboardKeys = Set.of();
+    private final Map<String, List<Integer>> originalKeys = new HashMap<>();
+    // Edits remain local until Save and exit, including MaLiLib bindings and settings.
+    private final Map<String, KeybindCustomizationStore.Entry> draftCustomizations = new HashMap<>();
+    private final Map<String, List<Integer>> draftKeys = new HashMap<>();
+    private final Map<IHotkey, KeybindSettings> draftHotkeySettings = new HashMap<>();
+    private final KeymapRebindDraft rebindDraft = new KeymapRebindDraft();
+    private KeymapBindingMode bindingMode = (KeymapBindingMode) Configs.KEYMAP_BINDING_MODE.getOptionListValue();
+    private int headerBottom = HEADER_HEIGHT;
+    private int searchIconY = 30;
     //#endif
 
     private final List<BrowserEntry> allEntries = new ArrayList<>();
@@ -78,6 +103,9 @@ public final class KeymapBrowserScreen extends GuiBase
     private String search = "";
     private int categoryIndex;
     private boolean showKeyboard = true;
+    //#if MC >= 26.3
+    private boolean layout122;
+    //#endif
     private boolean showConflictsOnly;
     private final Set<String> collapsedGroups = new HashSet<>();
     private boolean categoryPanelOpen;
@@ -99,6 +127,7 @@ public final class KeymapBrowserScreen extends GuiBase
         //#if MC >= 26.3
         this.scrollOffset = rememberedScrollOffset;
         this.collapsedGroups.addAll(rememberedCollapsedGroups);
+        this.layout122 = ((KeymapLayout) Configs.KEYMAP_KEYBOARD_LAYOUT.getOptionListValue()).isExtended();
         //#endif
     }
 
@@ -156,98 +185,462 @@ public final class KeymapBrowserScreen extends GuiBase
     }
 
     private record RowColumns(int modX, int categoryX, int actionX, int keyX,
-            int resetX, int detailX, int right)
+            int resetX, int detailX, int right
+            //#if MC >= 26.3
+            , int wheelX, int confirmX
+            //#endif
+            )
     {
     }
+
+    private int keyboardTop()
+    {
+        //#if MC >= 26.3
+        return this.headerBottom;
+        //#else
+        //$$ return HEADER_HEIGHT;
+        //#endif
+    }
+
+    private int listBottom()
+    {
+        //#if MC >= 26.3
+        return this.getScreenHeight() - 14;
+        //#else
+        //$$ return this.getScreenHeight() - 32;
+        //#endif
+    }
+
+    //#if MC >= 26.3
+    @Override
+    protected void drawScreenBackground(GuiContext graphics, int mouseX, int mouseY)
+    {
+        graphics.fill(0, 0, this.getScreenWidth(), this.getScreenHeight(),
+                KeymapBackground.color(Configs.KEYMAP_BACKGROUND_TRANSPARENCY.getIntegerValue()));
+    }
+
+    private void initHeader()
+    {
+        String[] labels = {
+                "",
+                StringUtils.translate(this.allGroupsCollapsed() ? "halfmasa.gui.keymap_browser.expand_all" : "halfmasa.gui.keymap_browser.fold_all"),
+                this.categoryButtonLabel(),
+                StringUtils.translate(this.showConflictsOnly ? "halfmasa.gui.keymap_browser.show_all" : "halfmasa.gui.keymap_browser.conflicts_only"),
+                StringUtils.translate(this.layout122 ? "halfmasa.gui.keymap_browser.layout_122" : "halfmasa.gui.keymap_browser.layout_104"),
+                StringUtils.translate(this.showKeyboard ? "halfmasa.gui.keymap_browser.keyboard_hide" : "halfmasa.gui.keymap_browser.keyboard_show"),
+                StringUtils.translate("halfmasa.gui.keymap_browser.binding_mode", this.bindingMode.getDisplayName()),
+                StringUtils.translate("halfmasa.gui.keymap_browser.save_exit"),
+                StringUtils.translate("halfmasa.gui.keymap_browser.discard_exit")
+        };
+        int[] widths = Arrays.stream(labels).mapToInt(label -> this.mc.font.width(label) + 8).toArray();
+        widths[0] = 230;
+        widths[2] = Math.max(155, widths[2]);
+        var layout = KeymapHeaderLayout.arrange(this.getScreenWidth(), widths);
+        this.headerBottom = layout.bottom();
+        var cells = layout.cells();
+        var searchCell = cells.get(0);
+        this.searchIconY = searchCell.y() + 6;
+        GuiTextFieldGeneric field = new GuiTextFieldGeneric(searchCell.x() + 18, searchCell.y() + 2,
+                Math.max(1, searchCell.width() - 18), 16, this.mc.font);
+        field.setTextWrapper(this.search);
+        field.setMaxLengthWrapper(64);
+        this.addTextField(field, changed -> {
+            String value = changed.getTextWrapper();
+            if (!value.equals(this.search)) { this.search = value; this.refilter(); }
+            return true;
+        });
+        this.headerButton(cells.get(1), labels[1], () -> {
+            if (this.allGroupsCollapsed()) this.collapsedGroups.clear();
+            else for (var entry : this.visibleEntries) this.collapsedGroups.add(this.groupKey(entry));
+            this.initGui();
+        });
+        var category = cells.get(2);
+        this.categoryButtonX = category.x(); this.categoryButtonY = category.y(); this.categoryButtonWidth = category.width();
+        this.updateCategoryPanelBounds();
+        this.headerButton(category, labels[2], () -> {
+            this.categoryPanelOpen = !this.categoryPanelOpen; this.categoryPanelScroll = 0;
+        });
+        this.headerButton(cells.get(3), labels[3], () -> {
+            this.showConflictsOnly = !this.showConflictsOnly; this.refilter(); this.initGui();
+        });
+        this.headerButton(cells.get(4), labels[4], () -> {
+            this.layout122 = !this.layout122; this.initGui();
+        });
+        this.headerButton(cells.get(5), labels[5], () -> {
+            this.showKeyboard = !this.showKeyboard; this.initGui();
+        });
+        this.headerButton(cells.get(6), labels[6], () -> {
+            this.bindingMode = this.bindingMode.cycle(true);
+            if (this.bindingMode == KeymapBindingMode.VIRTUAL) this.showKeyboard = true;
+            this.heldRebindKeys.clear(); this.initGui();
+        });
+        this.headerButton(cells.get(7), labels[7], this::saveAndExit);
+        this.headerButton(cells.get(8), labels[8], this::onClose);
+
+    }
+
+    private void headerButton(KeymapHeaderLayout.Cell cell, String label, Runnable action)
+    {
+        this.addButton(this.browserButton(cell.x(), cell.y(), cell.width(), 20, label), (button, mouseButton) -> action.run());
+    }
+
+    private String keyNames(List<Integer> keys)
+    {
+        return keys.isEmpty() ? StringUtils.translate("halfmasa.gui.keymap_browser.unbound")
+                : keys.stream().map(KeymapInputNames::name).collect(java.util.stream.Collectors.joining(" → "));
+    }
+
+
+    private void confirmRebind()
+    {
+        if (this.rebindingEntry != null && this.rebindDraft.touched()) this.applyRebind(this.rebindDraft.keys());
+    }
+    //#endif
 
     @Override
     public void initGui()
     {
         super.initGui();
         this.clearElements();
+        //#if MC >= 26.3
+        String editingId = this.rebindingEntry == null ? null : entryId(this.rebindingEntry);
+        //#endif
         this.rebuildEntries();
+        //#if MC >= 26.3
+        if (editingId != null) this.rebindingEntry = this.allEntries.stream()
+                .filter(entry -> editingId.equals(entryId(entry))).findFirst().orElse(null);
+        //#endif
         this.refilter(false);
+        //#if MC >= 26.3
+        this.initHeader();
+        //#endif
         this.keyCells.clear();
-        this.keyCells.addAll(KeymapKeyboardLayout.keys(10, HEADER_HEIGHT, this.getScreenWidth() - 20));
+        //#if MC >= 26.3
+        this.keyboardBindings = this.allEntries.stream()
+                .map(entry -> new KeymapKeyboardStyle.Binding(this.orderedEntryKeys(entry), entry.isVanilla(),
+                        entry.conflicted())).toList();
+        this.ignoredKeyboardKeys = IgnoredKeySelection.parse(Configs.KEYBIND_IGNORED_KEYS.getStringValue());
+        //#endif
+        //#if MC >= 26.3
+        this.keyCells.addAll(this.layout122
+                ? KeymapKeyboardLayout.keys122(10, this.keyboardTop(), this.getScreenWidth() - 20)
+                : KeymapKeyboardLayout.keys(10, this.keyboardTop(), this.getScreenWidth() - 20));
+        //#else
+        //$$ this.keyCells.addAll(KeymapKeyboardLayout.keys(10, this.keyboardTop(), this.getScreenWidth() - 20));
+        //#endif
 
-        int controlsY = 26;
-        int rightMargin = 10;
-        int keyboardButtonWidth = 86;
-        int conflictButtonWidth = 112;
-        int categoryButtonWidth = 190;
-        int keyboardX = this.getScreenWidth() - keyboardButtonWidth - rightMargin;
-        int conflictX = keyboardX - conflictButtonWidth - 6;
-        int categoryX = conflictX - categoryButtonWidth - 6;
-        int foldAllX = categoryX - 88;
-        int searchX = 28;
-        int searchWidth = Math.min(300, Math.max(120, foldAllX - searchX - 12));
-
-        GuiTextFieldGeneric searchField = new GuiTextFieldGeneric(searchX, controlsY, searchWidth, 16, this.mc.font);
-        searchField.setTextWrapper(this.search);
-        searchField.setMaxLengthWrapper(64);
-        this.addTextField(searchField, field -> {
-            String value = field.getTextWrapper();
-            if (!value.equals(this.search))
-            {
-                this.search = value;
-                this.refilter();
-            }
-            return true;
-        });
-
-        this.addButton(new ButtonGeneric(categoryX, controlsY - 2, categoryButtonWidth, 20,
-                this.categoryButtonLabel()), (button, mouseButton) -> {
-                    this.categoryPanelOpen = !this.categoryPanelOpen;
-                    this.categoryPanelScroll = 0;
-                });
-        this.addButton(new ButtonGeneric(keyboardX, controlsY - 2, keyboardButtonWidth, 20,
-                StringUtils.translate(this.showKeyboard
-                        ? "halfmasa.gui.keymap_browser.keyboard_hide"
-                        : "halfmasa.gui.keymap_browser.keyboard_show")),
-                (button, mouseButton) -> {
-                    this.showKeyboard = !this.showKeyboard;
-                    this.initGui();
-                });
-        this.addButton(new ButtonGeneric(conflictX, controlsY - 2, conflictButtonWidth, 20,
-                StringUtils.translate(this.showConflictsOnly
-                        ? "halfmasa.gui.keymap_browser.show_all"
-                        : "halfmasa.gui.keymap_browser.conflicts_only")),
-                (button, mouseButton) -> {
-                    this.showConflictsOnly = !this.showConflictsOnly;
-                    this.refilter();
-                    this.initGui();
-                });
-        this.addButton(new ButtonGeneric(foldAllX, controlsY - 2, 82, 20,
-                StringUtils.translate(this.allGroupsCollapsed()
-                        ? "halfmasa.gui.keymap_browser.expand_all"
-                        : "halfmasa.gui.keymap_browser.fold_all")),
-                (button, mouseButton) -> {
-                    if (this.allGroupsCollapsed())
-                    {
-                        this.collapsedGroups.clear();
-                    }
-                    else
-                    {
-                        this.collapsedGroups.clear();
-                        for (BrowserEntry entry : this.visibleEntries)
-                        {
-                            this.collapsedGroups.add(this.groupKey(entry));
-                        }
-                    }
+        //#if MC < 26.3
+        //$$         int controlsY = 26;
+        //$$         int rightMargin = 10;
+        //$$         int keyboardButtonWidth = 86;
+        //#if MC >= 26.3
+        //$$         int layoutButtonWidth = 94;
+        //#endif
+        //$$         int conflictButtonWidth = 112;
+        //$$         int categoryButtonWidth = 190;
+        //$$         int keyboardX = this.getScreenWidth() - keyboardButtonWidth - rightMargin;
+        //#if MC >= 26.3
+        //$$         int layoutX = keyboardX - layoutButtonWidth - 6;
+        //$$         int conflictX = layoutX - conflictButtonWidth - 6;
+        //#else
+        //$$ int conflictX = keyboardX - conflictButtonWidth - 6;
+        //#endif
+        //$$         int categoryX = conflictX - categoryButtonWidth - 6;
+        //$$         int foldAllX = categoryX - 88;
+        //$$         int searchX = 28;
+        //$$         int searchWidth = Math.min(300, Math.max(120, foldAllX - searchX - 12));
+        //$$
+        //$$         GuiTextFieldGeneric searchField = new GuiTextFieldGeneric(searchX, controlsY, searchWidth, 16, this.mc.font);
+        //$$         searchField.setTextWrapper(this.search);
+        //$$         searchField.setMaxLengthWrapper(64);
+        //$$         this.addTextField(searchField, field -> {
+        //$$             String value = field.getTextWrapper();
+        //$$             if (!value.equals(this.search))
+        //$$             {
+        //$$                 this.search = value;
+        //$$                 this.refilter();
+        //$$             }
+        //$$             return true;
+        //$$         });
+        //$$
+        //#if MC >= 26.3
+        //$$         this.categoryButtonX = categoryX;
+        //$$         this.categoryButtonY = controlsY - 2;
+        //$$         this.categoryButtonWidth = categoryButtonWidth;
+        //$$         this.updateCategoryPanelBounds();
+        //#endif
+        //$$         this.addButton(this.browserButton(categoryX, controlsY - 2, categoryButtonWidth, 20,
+        //$$                 this.categoryButtonLabel()), (button, mouseButton) -> {
+        //$$                     this.categoryPanelOpen = !this.categoryPanelOpen;
+        //$$                     this.categoryPanelScroll = 0;
+        //$$                 });
+        //$$         this.addButton(this.browserButton(keyboardX, controlsY - 2, keyboardButtonWidth, 20,
+        //$$                 StringUtils.translate(this.showKeyboard
+        //$$                         ? "halfmasa.gui.keymap_browser.keyboard_hide"
+        //$$                         : "halfmasa.gui.keymap_browser.keyboard_show")),
+        //$$                 (button, mouseButton) -> {
+        //$$                     this.showKeyboard = !this.showKeyboard;
+        //$$                     this.initGui();
+        //$$                 });
+        //#if MC >= 26.3
+        //$$         this.addButton(this.browserButton(layoutX, controlsY - 2, layoutButtonWidth, 20,
+        //$$                 StringUtils.translate(this.layout122
+        //$$                         ? "halfmasa.gui.keymap_browser.layout_122"
+        //$$                         : "halfmasa.gui.keymap_browser.layout_104")),
+        //$$                 (button, mouseButton) -> {
+        //$$                     this.layout122 = !this.layout122;
+        //$$                     this.initGui();
+        //$$                 });
+        //#endif
+        //$$         this.addButton(this.browserButton(conflictX, controlsY - 2, conflictButtonWidth, 20,
+        //$$                 StringUtils.translate(this.showConflictsOnly
+        //$$                         ? "halfmasa.gui.keymap_browser.show_all"
+        //$$                         : "halfmasa.gui.keymap_browser.conflicts_only")),
+        //$$                 (button, mouseButton) -> {
+        //$$                     this.showConflictsOnly = !this.showConflictsOnly;
+        //$$                     this.refilter();
+        //$$                     this.initGui();
+        //$$                 });
+        //$$         this.addButton(this.browserButton(foldAllX, controlsY - 2, 82, 20,
+        //$$                 StringUtils.translate(this.allGroupsCollapsed()
+        //$$                         ? "halfmasa.gui.keymap_browser.expand_all"
+        //$$                         : "halfmasa.gui.keymap_browser.fold_all")),
+        //$$                 (button, mouseButton) -> {
+        //$$                     if (this.allGroupsCollapsed())
+        //$$                     {
+        //$$                         this.collapsedGroups.clear();
+        //$$                     }
+        //$$                     else
+        //$$                     {
+        //$$                         this.collapsedGroups.clear();
+        //$$                         for (BrowserEntry entry : this.visibleEntries)
+        //$$                         {
+        //$$                             this.collapsedGroups.add(this.groupKey(entry));
+        //$$                         }
+        //$$                     }
                     //#if MC < 26.3
                     //$$ this.scrollOffset = 0;
                     //#endif
-                    this.initGui();
-                });
+        //$$                     this.initGui();
+        //$$                 });
+        //$$
+        //#endif
 
-        int bottom = this.getScreenHeight() - 28;
-        this.addButton(new ButtonGeneric(10, bottom, 110, 20,
-                StringUtils.translate("halfmasa.gui.keymap_browser.open_editor")),
-                (button, mouseButton) -> GuiBase.openGui(new KeybindCustomizationScreen()));
-        this.addButton(new ButtonGeneric(126, bottom, 74, 20,
-                StringUtils.translate("halfmasa.gui.keymap_browser.done")),
-                (button, mouseButton) -> this.onClose());
+        //#if MC < 26.3
+        //$$ int bottom = this.getScreenHeight() - 28;
+        //$$ this.addButton(this.browserButton(10, bottom, 110, 20,
+        //$$         StringUtils.translate("halfmasa.gui.keymap_browser.open_editor")),
+        //$$         (button, mouseButton) -> GuiBase.openGui(new KeybindCustomizationScreen()));
+        //$$ this.addButton(this.browserButton(126, bottom, 74, 20,
+        //$$         StringUtils.translate("halfmasa.gui.keymap_browser.done")),
+        //$$         (button, mouseButton) -> this.onClose());
+        //#endif
     }
+
+    private ButtonGeneric browserButton(int x, int y, int width, int height, String label)
+    {
+        //#if MC >= 26.3
+        return new BrowserButton(x, y, width, height, label);
+        //#else
+        //$$ return new ButtonGeneric(x, y, width, height, label);
+        //#endif
+    }
+
+    //#if MC >= 26.3
+    static final class BrowserButton extends ButtonGeneric
+    {
+        BrowserButton(int x, int y, int width, int height, String label)
+        {
+            super(x, y, width, height, label);
+        }
+
+        @Override
+        public void render(GuiContext graphics, int mouseX, int mouseY, boolean selected)
+        {
+            if (!this.visible) return;
+            this.hovered = this.isMouseOver(mouseX, mouseY);
+            int background = this.hovered && this.enabled ? 0xB0404A5C : 0x80202632;
+            int border = this.hovered && this.enabled ? 0xB0D0BA80 : 0x606E788C;
+            graphics.fill(this.x, this.y, this.x + this.width, this.y + this.height, background);
+            graphics.fill(this.x, this.y, this.x + this.width, this.y + 1, border);
+            graphics.fill(this.x, this.y + this.height - 1, this.x + this.width, this.y + this.height, border);
+            graphics.fill(this.x, this.y, this.x + 1, this.y + this.height, border);
+            graphics.fill(this.x + this.width - 1, this.y, this.x + this.width, this.y + this.height, border);
+            net.minecraft.client.gui.Font font = Minecraft.getInstance().font;
+            String label = font.plainSubstrByWidth(this.displayString, Math.max(1, this.width - 8));
+            graphics.drawCenteredString(font, label, this.x + this.width / 2,
+                    this.y + (this.height - 8) / 2, this.enabled ? 0xFFE8E8F0 : 0xFF808088);
+        }
+    }
+
+    @Override
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick)
+    {
+        this.hoveredEntry = null;
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        GuiContext context = GuiContext.fromGuiGraphics(graphics);
+        // Draw overlays after the whole screen, in a new stratum above text fields and buttons.
+        if (this.categoryPanelOpen)
+        {
+            context.nextStratum();
+            this.drawCategoryPanel(context, mouseX, mouseY);
+        }
+        else if (this.hoveredEntry != null)
+        {
+            context.nextStratum();
+            this.drawEntryTooltip(context, this.hoveredEntry, mouseX, mouseY);
+        }
+    }
+
+    private void updateCategoryPanelBounds()
+    {
+        this.categoryPanelWidth = Math.max(1, Math.min(this.categoryButtonWidth, this.getScreenWidth() - 20));
+        this.categoryPanelX = Math.max(10, Math.min(this.categoryButtonX,
+                this.getScreenWidth() - this.categoryPanelWidth - 10));
+        this.categoryPanelY = this.categoryButtonY + 23;
+        int availableRows = Math.max(1, (this.getScreenHeight() - this.categoryPanelY - 38) / PANEL_ROW_HEIGHT);
+        this.categoryPanelRows = Math.min(availableRows, this.categories.size() + 1);
+    }
+
+    private KeybindCustomizationStore.Entry customization(String id)
+    {
+        return this.draftCustomizations.computeIfAbsent(id,
+                key -> KeybindCustomizationStore.getInstance().get(key).copy());
+    }
+
+    private KeybindCustomizationStore.Entry customization(BrowserEntry entry)
+    {
+        return this.customization(entryId(entry));
+    }
+
+    private KeybindSettings hotkeySettings(IHotkey hotkey)
+    {
+        return this.draftHotkeySettings.getOrDefault(hotkey, hotkey.getKeybind().getSettings());
+    }
+
+    private boolean requiresKeyOrder(BrowserEntry entry)
+    {
+        return entry.isVanilla() ? this.customization(entry).requireKeyOrder
+                : this.hotkeySettings(entry.hotkey()).isOrderSensitive();
+    }
+
+    private void toggleKeyOrder(BrowserEntry entry)
+    {
+        boolean ordered = !this.requiresKeyOrder(entry);
+        if (entry.isVanilla()) this.customization(entry).requireKeyOrder = ordered;
+        else
+        {
+            KeybindSettings current = this.hotkeySettings(entry.hotkey());
+            this.draftHotkeySettings.put(entry.hotkey(), KeybindSettings.create(
+                    current.getContext(), current.getActivateOn(), current.getAllowEmpty(),
+                    current.getAllowExtraKeys(), ordered, current.isExclusive(), current.shouldCancel()));
+        }
+    }
+
+    private void toggleWheelParticipation(BrowserEntry entry)
+    {
+        KeybindCustomizationStore.Entry data = this.customization(entry);
+        boolean enabled = !data.participatesInWheel(this.orderedEntryKeys(entry));
+        var original = KeybindCustomizationStore.getInstance().get(entryId(entry));
+        data.wheelEnabled = enabled == original.participatesInWheel(this.orderedEntryKeys(entry))
+                ? original.wheelEnabled : Boolean.valueOf(enabled);
+    }
+
+    private void saveAndExit()
+    {
+        this.confirmRebind();
+        this.cancelRebind();
+        KeybindCustomizationStore store = KeybindCustomizationStore.getInstance();
+        for (BrowserEntry entry : this.allEntries)
+        {
+            List<Integer> keys = this.draftKeys.get(entryId(entry));
+            if (keys != null)
+            {
+                if (entry.isVanilla())
+                {
+                    int code = keys.isEmpty() ? 0 : keys.getFirst();
+                    entry.mapping().setKey(keys.size() != 1 ? InputConstants.UNKNOWN
+                            : code < 0 ? InputConstants.Type.MOUSE.getOrCreate(
+                                    InputCompat.layoutCodeToMouseButton(code)) : InputCompat.keyboardKey(code));
+                }
+                else
+                {
+                    entry.hotkey().getKeybind().clearKeys();
+                    for (int code : keys)
+                    {
+                        entry.hotkey().getKeybind().addKey(code < 0
+                                ? InputCompat.layoutCodeToMouseButton(code) - 100 : code);
+                    }
+                }
+            }
+            if (!entry.isVanilla() && this.draftHotkeySettings.containsKey(entry.hotkey()))
+            {
+                entry.hotkey().getKeybind().setSettings(this.draftHotkeySettings.get(entry.hotkey()));
+            }
+        }
+        this.draftCustomizations.forEach(store::put);
+        KeyMapping.resetMapping();
+        InputEventHandler.getKeybindManager().updateUsedKeys();
+        this.mc.options.save();
+        ((ConfigManager) ConfigManager.getInstance()).saveAllConfigs();
+        store.save();
+        Configs.KEYMAP_BINDING_MODE.setOptionListValue(this.bindingMode);
+        Configs.KEYMAP_KEYBOARD_LAYOUT.setOptionListValue(KeymapLayout.of(this.layout122));
+        new Configs().save();
+        KeybindPieManager.getInstance().invalidateCustomMappingSync();
+        this.closeGui(true);
+    }
+
+    @Override
+    public void onClose()
+    {
+        if (this.hasUnsavedChanges()) GuiBase.openGui(new DiscardConfirmationScreen(this));
+        else this.closeGui(true);
+    }
+
+    private boolean hasUnsavedChanges()
+    {
+        if (this.bindingMode != Configs.KEYMAP_BINDING_MODE.getOptionListValue()) return true;
+        if (KeymapLayout.of(this.layout122) != Configs.KEYMAP_KEYBOARD_LAYOUT.getOptionListValue()) return true;
+        if (this.rebindingEntry != null && this.rebindDraft.touched()
+                && !this.rebindDraft.keys().equals(this.orderedEntryKeys(this.rebindingEntry))) return true;
+        var store = KeybindCustomizationStore.getInstance();
+        if (this.draftCustomizations.entrySet().stream()
+                .anyMatch(entry -> !entry.getValue().sameAs(store.get(entry.getKey())))) return true;
+        if (this.draftKeys.entrySet().stream()
+                .anyMatch(entry -> !entry.getValue().equals(this.originalKeys.get(entry.getKey())))) return true;
+        return this.draftHotkeySettings.entrySet().stream()
+                .anyMatch(entry -> !entry.getValue().equals(entry.getKey().getKeybind().getSettings()));
+    }
+
+    private static final class DiscardConfirmationScreen extends ConfirmScreen
+    {
+        private final KeymapBrowserScreen owner;
+
+        private DiscardConfirmationScreen(KeymapBrowserScreen owner)
+        {
+            super(confirmed -> {
+                if (confirmed) owner.closeGui(true);
+                else GuiBase.openGui(owner);
+            }, Component.translatable("halfmasa.gui.keymap_browser.discard_title"),
+                    Component.translatable("halfmasa.gui.keymap_browser.discard_message"),
+                    Component.translatable("halfmasa.gui.keymap_browser.discard_confirm"),
+                    Component.translatable("gui.cancel"));
+            this.owner = owner;
+        }
+
+        @Override
+        public void onClose()
+        {
+            GuiBase.openGui(this.owner);
+        }
+    }
+
+    public static boolean isEditingBindings(net.minecraft.client.gui.screens.Screen screen)
+    {
+        return screen instanceof KeymapBrowserScreen || screen instanceof DiscardConfirmationScreen;
+    }
+    //#endif
 
     private void rebuildEntries()
     {
@@ -259,11 +652,19 @@ public final class KeymapBrowserScreen extends GuiBase
         List<BrowserEntry> entries = new ArrayList<>();
         for (KeyMapping mapping : mappings)
         {
-            KeybindCustomizationStore.Entry custom =
-                    KeybindCustomizationStore.getInstance().get(mapping);
+            //#if MC >= 26.3
+            KeybindCustomizationStore.Entry custom = this.customization(mapping.getName());
+            //#else
+            //$$ KeybindCustomizationStore.Entry custom = KeybindCustomizationStore.getInstance().get(mapping);
+            //#endif
             boolean customCombo = custom.comboKeys != null && !custom.comboKeys.isEmpty();
             boolean unbound = mapping.isUnbound() && !customCombo;
-            String keyText = customCombo ? this.keyListText(custom.comboKeys) : (unbound ? "" : keyText(mapping));
+            //#if MC >= 26.3
+            BrowserEntry preview = new BrowserEntry(mapping, null, "", "", "", null, "", ConflictType.NONE);
+            String keyText = this.keyListText(this.orderedEntryKeys(preview));
+            //#else
+            //$$ String keyText = customCombo ? this.keyListText(custom.comboKeys) : (unbound ? "" : keyText(mapping));
+            //#endif
             String category = specialCategory(categoryLabel(mapping));
             String action = Component.translatable(mapping.getName()).getString();
             String displayName = custom != null && custom.displayName != null && !custom.displayName.isBlank()
@@ -275,7 +676,12 @@ public final class KeymapBrowserScreen extends GuiBase
         {
             for (IHotkey hotkey : category.getHotkeys())
             {
-                String display = hotkey.getKeybind().getKeysDisplayString();
+                //#if MC >= 26.3
+                BrowserEntry preview = new BrowserEntry(null, hotkey, "", "", "", null, "", ConflictType.NONE);
+                String display = this.keyListText(this.orderedEntryKeys(preview));
+                //#else
+                //$$ String display = hotkey.getKeybind().getKeysDisplayString();
+                //#endif
                 String name = translatedHotkeyName(hotkey);
                 entries.add(new BrowserEntry(null, hotkey, category.getModName(), category.getCategory(),
                         name, null, display == null ? "" : display, ConflictType.NONE));
@@ -429,9 +835,34 @@ public final class KeymapBrowserScreen extends GuiBase
         {
             groupCounts.merge(this.groupKey(entry), 1, Integer::sum);
         }
+        //#if MC >= 26.3
+        Set<BrowserEntry> bestMatches = new HashSet<>();
+        if (!this.selectedCombo.isEmpty() && !this.visibleEntries.isEmpty())
+        {
+            int bestSize = this.visibleEntries.stream().mapToInt(entry -> this.entryKeySet(entry).size()).min().orElse(0);
+            for (BrowserEntry entry : this.visibleEntries)
+            {
+                if (this.entryKeySet(entry).size() == bestSize) bestMatches.add(entry);
+            }
+            String group = StringUtils.translate("halfmasa.gui.keymap_browser.best_matches");
+            result.add(new DisplayRow(group, null, bestMatches.size()));
+            for (BrowserEntry entry : this.visibleEntries)
+            {
+                if (bestMatches.contains(entry)) result.add(new DisplayRow(group, entry, 0));
+            }
+            groupCounts.clear();
+            for (BrowserEntry entry : this.visibleEntries)
+            {
+                if (!bestMatches.contains(entry)) groupCounts.merge(this.groupKey(entry), 1, Integer::sum);
+            }
+        }
+        //#endif
         Set<String> addedGroups = new HashSet<>();
         for (BrowserEntry entry : this.visibleEntries)
         {
+            //#if MC >= 26.3
+            if (bestMatches.contains(entry)) continue;
+            //#endif
             String group = this.groupKey(entry);
             if (addedGroups.add(group))
             {
@@ -449,6 +880,14 @@ public final class KeymapBrowserScreen extends GuiBase
     {
         return entry.modName();
     }
+
+    //#if MC >= 26.3
+    private boolean isBestMatchGroup(String group)
+    {
+        return !this.selectedCombo.isEmpty() &&
+                group.equals(StringUtils.translate("halfmasa.gui.keymap_browser.best_matches"));
+    }
+    //#endif
 
     private boolean allGroupsCollapsed()
     {
@@ -556,44 +995,81 @@ public final class KeymapBrowserScreen extends GuiBase
         return this.mc.font.plainSubstrByWidth(action, maxWidth);
     }
 
+    //#if MC >= 26.3
     private String[] keyboardLegendLabels()
     {
         return new String[] {
-                StringUtils.translate("halfmasa.gui.keymap_browser.legend.vanilla"),
-                StringUtils.translate("halfmasa.gui.keymap_browser.legend.both"),
-                StringUtils.translate("halfmasa.gui.keymap_browser.legend.malilib"),
-                StringUtils.translate("halfmasa.gui.keymap_browser.legend.unbound"),
-                StringUtils.translate("halfmasa.gui.keymap_browser.legend.selected"),
-                StringUtils.translate("halfmasa.gui.keymap_browser.legend.single"),
-                StringUtils.translate("halfmasa.gui.keymap_browser.legend.combination")
+                StringUtils.translate("halfmasa.gui.keyboard.legend.bound"),
+                StringUtils.translate("halfmasa.gui.keyboard.legend.vanilla_dot"),
+                StringUtils.translate("halfmasa.gui.keyboard.legend.malilib_dot"),
+                StringUtils.translate("halfmasa.gui.keyboard.legend.combination"),
+                StringUtils.translate("halfmasa.gui.keyboard.legend.single_conflict"),
+                StringUtils.translate("halfmasa.gui.keyboard.legend.combination_conflict"),
+                StringUtils.translate("halfmasa.gui.keyboard.legend.ignored"),
+                StringUtils.translate("halfmasa.gui.keyboard.legend.unbound"),
+                StringUtils.translate("halfmasa.gui.keyboard.legend.selected")
         };
     }
+    //#else
+    //$$ private String[] keyboardLegendLabels()
+    //$$ {
+    //$$     return new String[] {
+    //$$             StringUtils.translate("halfmasa.gui.keymap_browser.legend.vanilla"),
+    //$$             StringUtils.translate("halfmasa.gui.keymap_browser.legend.both"),
+    //$$             StringUtils.translate("halfmasa.gui.keymap_browser.legend.malilib"),
+    //$$             StringUtils.translate("halfmasa.gui.keymap_browser.legend.unbound"),
+    //$$             StringUtils.translate("halfmasa.gui.keymap_browser.legend.selected"),
+    //$$             StringUtils.translate("halfmasa.gui.keymap_browser.legend.single"),
+    //$$             StringUtils.translate("halfmasa.gui.keymap_browser.legend.combination")
+    //$$     };
+    //$$ }
+    //#endif
 
+    //#if MC >= 26.3
     private int[] keyboardLegendColors()
     {
-        return new int[] {
-                0x66203850,
-                0x66205038,
-                0x66285028,
-                0x66202028,
-                0x90605820,
-                SINGLE_CONFLICT_FILL,
-                COMBINATION_CONFLICT_FILL
-        };
+        return new int[] {KeymapKeyboardStyle.BOUND, KeymapKeyboardStyle.VANILLA_DOT,
+                KeymapKeyboardStyle.MALILIB_DOT, KeymapKeyboardStyle.COMBINATION_DOT,
+                KeymapKeyboardStyle.SINGLE_CONFLICT, KeymapKeyboardStyle.COMBINATION_CONFLICT,
+                KeymapKeyboardStyle.IGNORED_DOT, KeymapKeyboardStyle.UNBOUND, KeymapKeyboardStyle.UNBOUND};
     }
+    //#else
+    //$$ private int[] keyboardLegendColors()
+    //$$ {
+    //$$     return new int[] {
+    //$$             0x66203850,
+    //$$             0x66205038,
+    //$$             0x66285028,
+    //$$             0x66202028,
+    //$$             0x90605820,
+    //$$             SINGLE_CONFLICT_FILL,
+    //$$             COMBINATION_CONFLICT_FILL
+    //$$     };
+    //$$ }
+    //#endif
 
+    //#if MC >= 26.3
     private int[] keyboardLegendBorders()
     {
-        return new int[] {
-                0xFF6090C0,
-                0xFF70B880,
-                0xFFB88050,
-                0xFF707078,
-                0xFFF0D080,
-                SINGLE_CONFLICT_BORDER,
-                COMBINATION_CONFLICT_BORDER
-        };
+        return new int[] {0xFF59616E, KeymapKeyboardStyle.VANILLA_DOT,
+                KeymapKeyboardStyle.MALILIB_DOT, KeymapKeyboardStyle.COMBINATION_DOT,
+                KeymapKeyboardStyle.SINGLE_CONFLICT, KeymapKeyboardStyle.COMBINATION_CONFLICT,
+                KeymapKeyboardStyle.IGNORED_DOT, 0xFF59616E, KeymapKeyboardStyle.SELECTED_BORDER};
     }
+    //#else
+    //$$ private int[] keyboardLegendBorders()
+    //$$ {
+    //$$     return new int[] {
+    //$$             0xFF6090C0,
+    //$$             0xFF70B880,
+    //$$             0xFFB88050,
+    //$$             0xFF707078,
+    //$$             0xFFF0D080,
+    //$$             SINGLE_CONFLICT_BORDER,
+    //$$             COMBINATION_CONFLICT_BORDER
+    //$$     };
+    //$$ }
+    //#endif
 
     private int keyboardLegendHeight()
     {
@@ -640,9 +1116,20 @@ public final class KeymapBrowserScreen extends GuiBase
             }
             int itemX = x + cursor + gap;
             int itemY = y + row * 12;
+            //#if MC >= 26.3
+            if (index >= 1 && index <= 6)
+            {
+                KeymapKeyboardRenderer.drawMarker(graphics, itemX + 2, itemY + 2, colors[index]);
+            }
+            else
+            {
+            //#endif
             this.drawRect(graphics, itemX, itemY, itemX + swatchSize, itemY + swatchSize, borders[index]);
             this.drawRect(graphics, itemX + 1, itemY + 1, itemX + swatchSize - 1,
                     itemY + swatchSize - 1, colors[index]);
+            //#if MC >= 26.3
+            }
+            //#endif
             int textWidth = Math.max(1, Math.min(this.mc.font.width(labels[index]), width - cursor - swatchSize - 4));
             String label = this.mc.font.plainSubstrByWidth(labels[index], textWidth);
             this.drawString(graphics, label, itemX + swatchSize + 4, itemY + 1, 0xFFD8D8D8);
@@ -669,7 +1156,7 @@ public final class KeymapBrowserScreen extends GuiBase
 
     private int listTop()
     {
-        int listTop = HEADER_HEIGHT + (this.showKeyboard ? KEYBOARD_HEIGHT : 0);
+        int listTop = this.keyboardTop() + (this.showKeyboard ? this.keyboardHeight() : 0);
         if (this.showKeyboard)
         {
             listTop += this.keyboardLegendHeight() + 3;
@@ -681,15 +1168,36 @@ public final class KeymapBrowserScreen extends GuiBase
         return listTop + LIST_HEADER_HEIGHT;
     }
 
+    private int keyboardHeight()
+    {
+        //#if MC >= 26.3
+        return this.layout122 ? KeymapKeyboardLayout.HEIGHT_122 : KEYBOARD_HEIGHT;
+        //#else
+        //$$ return KEYBOARD_HEIGHT;
+        //#endif
+    }
+
     private RowColumns rowColumns(int x, int width)
     {
         int right = x + width;
-        int detailX = right - 78;
-        int resetX = detailX - 52;
-        int keyX = resetX - Math.max(105, width / 5);
-        int categoryX = x + Math.max(95, width / 6);
-        int actionX = categoryX + Math.max(95, width / 5);
-        return new RowColumns(x, categoryX, actionX, keyX, resetX, detailX, right);
+        //#if MC >= 26.3
+        int wheelX = right - Math.min(112, Math.max(62, width / 5));
+        int detailX = wheelX - Math.min(93, Math.max(62, width / 6));
+        int resetX = detailX - Math.min(46, Math.max(28, width / 12));
+        int keyX = resetX - Math.max(60, width / 6);
+        int categoryX = x + Math.max(1, (keyX - x) / 4);
+        int actionX = categoryX + Math.max(1, (keyX - x) / 4);
+        int confirmX = keyX;
+        keyX += Math.min(38, Math.max(26, width / 24));
+        return new RowColumns(x, categoryX, actionX, keyX, resetX, detailX, right, wheelX, confirmX);
+        //#else
+        //$$ int detailX = right - 78;
+        //$$ int resetX = detailX - 52;
+        //$$ int keyX = resetX - Math.max(105, width / 5);
+        //$$ int categoryX = x + Math.max(95, width / 6);
+        //$$ int actionX = categoryX + Math.max(95, width / 5);
+        //$$ return new RowColumns(x, categoryX, actionX, keyX, resetX, detailX, right);
+        //#endif
     }
 
     private String keyFilterLabel()
@@ -714,44 +1222,51 @@ public final class KeymapBrowserScreen extends GuiBase
      * The full set of keys a binding sits on, in one combined code space;
      * mouse keys are stored as negative codes so both kinds share one set.
      */
+    //#if MC >= 26.3
     private java.util.Set<Integer> entryKeySet(BrowserEntry entry)
     {
-        java.util.Set<Integer> keys = new HashSet<>();
-        if (entry.isVanilla())
-        {
-            List<Integer> customCombo = KeybindCustomizationStore.getInstance().comboKeys(entry.mapping());
-            if (!customCombo.isEmpty())
-            {
-                keys.addAll(customCombo);
-            }
-            else if (!entry.mapping().isUnbound())
-            {
-                InputConstants.Key key = ((KeyMappingAccessor) entry.mapping()).halfmasa$getBoundKey();
-                keys.add(key.getType() == InputConstants.Type.MOUSE
-                        ? InputCompat.mouseButtonToLayoutCode(key.getValue()) : key.getValue());
-                //#if MC >= 26.2
-                if (isDebugOnlyMapping(entry.mapping()) && this.mc.options != null &&
-                    this.mc.options.keyDebugModifier != null)
-                {
-                    InputConstants.Key debugModifier =
-                            ((KeyMappingAccessor) this.mc.options.keyDebugModifier).halfmasa$getBoundKey();
-                    if (InputCompat.isKeyboardKey(debugModifier))
-                    {
-                        keys.add(debugModifier.getValue());
-                    }
-                }
-                //#endif
-            }
-        }
-        else
-        {
-            for (int code : entry.hotkey().getKeybind().getKeys())
-            {
-                keys.add(code);
-            }
-        }
-        return keys;
+        return new HashSet<>(this.orderedEntryKeys(entry));
     }
+    //#else
+    //$$ private java.util.Set<Integer> entryKeySet(BrowserEntry entry)
+    //$$ {
+    //$$     java.util.Set<Integer> keys = new HashSet<>();
+    //$$     if (entry.isVanilla())
+    //$$     {
+    //$$         List<Integer> customCombo = KeybindCustomizationStore.getInstance().comboKeys(entry.mapping());
+    //$$         if (!customCombo.isEmpty())
+    //$$         {
+    //$$             keys.addAll(customCombo);
+    //$$         }
+    //$$         else if (!entry.mapping().isUnbound())
+    //$$         {
+    //$$             InputConstants.Key key = ((KeyMappingAccessor) entry.mapping()).halfmasa$getBoundKey();
+    //$$             keys.add(key.getType() == InputConstants.Type.MOUSE
+    //$$                     ? InputCompat.mouseButtonToLayoutCode(key.getValue()) : key.getValue());
+    //$$             //#if MC >= 26.2
+    //$$             if (isDebugOnlyMapping(entry.mapping()) && this.mc.options != null &&
+    //$$                 this.mc.options.keyDebugModifier != null)
+    //$$             {
+    //$$                 InputConstants.Key debugModifier =
+    //$$                         ((KeyMappingAccessor) this.mc.options.keyDebugModifier).halfmasa$getBoundKey();
+    //$$                 if (InputCompat.isKeyboardKey(debugModifier))
+    //$$                 {
+    //$$                     keys.add(debugModifier.getValue());
+    //$$                 }
+    //$$             }
+    //$$             //#endif
+    //$$         }
+    //$$     }
+    //$$     else
+    //$$     {
+    //$$         for (int code : entry.hotkey().getKeybind().getKeys())
+    //$$         {
+    //$$             keys.add(code);
+    //$$         }
+    //$$     }
+    //$$     return keys;
+    //$$ }
+    //#endif
 
     //#if MC >= 1.21.11
     @Override
@@ -762,7 +1277,7 @@ public final class KeymapBrowserScreen extends GuiBase
     //#endif
     {
         int listTop = this.listTop();
-        int listBottom = this.getScreenHeight() - 32;
+        int listBottom = this.listBottom();
         List<DisplayRow> rows = this.displayedRows();
         int visibleCount = Math.max(1, (listBottom - listTop) / ROW_HEIGHT);
         int maxOffset = Math.max(0, rows.size() - visibleCount);
@@ -777,12 +1292,16 @@ public final class KeymapBrowserScreen extends GuiBase
                 StringUtils.translate("halfmasa.gui.keymap_browser.count",
                         this.visibleEntries.size(), this.allEntries.size()),
                 x + width - 120, 12, 0xFFC0C0C0);
-        this.drawMagnifier(graphics, 12, 30);
+        //#if MC >= 26.3
+        this.drawMagnifier(graphics, 12, this.searchIconY);
+        //#else
+        //$$ this.drawMagnifier(graphics, 12, 30);
+        //#endif
 
         if (this.showKeyboard)
         {
-            this.drawKeyboard(graphics, x, HEADER_HEIGHT, width, mouseX, mouseY);
-            this.drawKeyboardLegend(graphics, x, HEADER_HEIGHT + KEYBOARD_HEIGHT + 3, width);
+            this.drawKeyboard(graphics, x, this.keyboardTop(), width, mouseX, mouseY);
+            this.drawKeyboardLegend(graphics, x, this.keyboardTop() + this.keyboardHeight() + 3, width);
         }
         if (!this.selectedCombo.isEmpty())
         {
@@ -800,6 +1319,14 @@ public final class KeymapBrowserScreen extends GuiBase
         this.drawString(graphics, StringUtils.translate("halfmasa.gui.keymap_browser.column_key"),
                 columns.keyX() + 4, headerY + 4, 0xFFB0B0B0);
 
+        //#if MC >= 26.3
+        this.drawCenteredFittedKeyLabel(graphics, StringUtils.translate("halfmasa.gui.keymap_browser.reset"),
+                columns.resetX(), columns.detailX(), headerY, LIST_HEADER_HEIGHT, 0xFFB0B0B0);
+        this.drawCenteredFittedKeyLabel(graphics, StringUtils.translate("halfmasa.gui.keymap_browser.column_order"),
+                columns.detailX(), columns.wheelX(), headerY, LIST_HEADER_HEIGHT, 0xFFB0B0B0);
+        this.drawCenteredFittedKeyLabel(graphics, StringUtils.translate("halfmasa.gui.keymap_browser.column_trigger"),
+                columns.wheelX(), columns.right(), headerY, LIST_HEADER_HEIGHT, 0xFFB0B0B0);
+        //#endif
         for (int index = 0; index < visibleCount; index++)
         {
             int entryIndex = this.scrollOffset + index;
@@ -819,6 +1346,9 @@ public final class KeymapBrowserScreen extends GuiBase
             {
                 this.drawRect(graphics, x, y, x + contentWidth, y + ROW_HEIGHT, 0xB0202630);
                 String marker = this.collapsedGroups.contains(row.group()) ? "[+] " : "[-] ";
+                //#if MC >= 26.3
+                if (this.isBestMatchGroup(row.group())) marker = "";
+                //#endif
                 this.drawString(graphics, marker + row.group() + " (" + row.groupCount() + ")",
                         x + 6, y + 5, 0xFFFFC860);
                 continue;
@@ -841,28 +1371,65 @@ public final class KeymapBrowserScreen extends GuiBase
                     : keyHovered ? 0x70404050 : 0x30202028;
             this.drawRect(graphics, columns.keyX(), y + 1, columns.resetX() - 3, y + ROW_HEIGHT - 1, keyColor);
             String keyLabel = this.rebindingEntry == entry
-                    ? StringUtils.translate("halfmasa.gui.keymap_browser.press_key")
+                    //#if MC >= 26.3
+                    ? this.rebindDraft.touched() ? this.keyNames(this.rebindDraft.keys())
+                            : StringUtils.translate("halfmasa.gui.keymap_browser.choose_keys")
+                    //#else
+                    //$$ ? StringUtils.translate("halfmasa.gui.keymap_browser.press_key")
+                    //#endif
                     : entry.keyText().isEmpty()
                     ? StringUtils.translate("halfmasa.gui.keymap_browser.unbound") : entry.keyText();
             String fittedKey = this.mc.font.plainSubstrByWidth(keyLabel,
                     Math.max(1, columns.resetX() - columns.keyX() - 10));
             this.drawString(graphics, fittedKey, columns.keyX() + 4, y + 5,
                     entry.conflicted() ? 0xFFFF6060 : 0xFFFFD080);
+            //#if MC >= 26.3
+            if (this.rebindingEntry == entry)
+            {
+                this.drawRect(graphics, columns.confirmX(), y + 1, columns.keyX() - 3, y + ROW_HEIGHT - 1,
+                        this.rebindDraft.touched() ? 0xB02D6942 : 0x70202632);
+                this.drawCenteredFittedKeyLabel(graphics, StringUtils.translate("halfmasa.gui.keymap_browser.confirm"),
+                        columns.confirmX(), columns.keyX() - 3, y, ROW_HEIGHT,
+                        this.rebindDraft.touched() ? 0xFFE0E0E0 : 0xFF888888);
+            }
+            //#endif
 
             this.drawRect(graphics, columns.resetX(), y + 1, columns.detailX() - 3,
                     y + ROW_HEIGHT - 1, 0x80505050);
             this.drawCenteredFittedKeyLabel(graphics,
                     StringUtils.translate("halfmasa.gui.keymap_browser.reset"),
                     columns.resetX(), columns.detailX() - 3, y, ROW_HEIGHT, 0xFFE0E0E0);
-            this.drawRect(graphics, columns.detailX(), y + 1, columns.right(),
-                    y + ROW_HEIGHT - 1, 0x80505050);
+            //#if MC >= 26.3
+            boolean orderHovered = hovered && mouseX >= columns.detailX() && mouseX < columns.wheelX();
+            this.drawRect(graphics, columns.detailX(), y + 1, columns.wheelX() - 3,
+                    y + ROW_HEIGHT - 1, orderHovered ? 0xA0404A5C : 0x80202632);
             this.drawCenteredFittedKeyLabel(graphics,
-                    StringUtils.translate("halfmasa.gui.keymap_browser.details"),
-                    columns.detailX(), columns.right(), y, ROW_HEIGHT, 0xFFE0E0E0);
+                    StringUtils.translate(this.requiresKeyOrder(entry)
+                            ? "halfmasa.gui.keymap_browser.yes" : "halfmasa.gui.keymap_browser.no"),
+                    columns.detailX(), columns.wheelX() - 3, y, ROW_HEIGHT, 0xFFE0E0E0);
+            boolean wheelHovered = hovered && mouseX >= columns.wheelX();
+            boolean wheelEnabled = this.customization(entry).participatesInWheel(this.orderedEntryKeys(entry));
+            this.drawRect(graphics, columns.wheelX(), y + 1, columns.right(),
+                    y + ROW_HEIGHT - 1, wheelHovered ? 0xA0404A5C : 0x80202632);
+            this.drawCenteredFittedKeyLabel(graphics,
+                    StringUtils.translate(wheelEnabled
+                            ? "halfmasa.gui.keymap_browser.yes" : "halfmasa.gui.keymap_browser.no"),
+                    columns.wheelX(), columns.right(), y, ROW_HEIGHT, wheelEnabled ? 0xFFFFD080 : 0xFFB0B0B0);
+            //#else
+            //$$ this.drawRect(graphics, columns.detailX(), y + 1, columns.right(),
+            //$$         y + ROW_HEIGHT - 1, 0x80505050);
+            //$$ this.drawCenteredFittedKeyLabel(graphics,
+            //$$         StringUtils.translate("halfmasa.gui.keymap_browser.details"),
+            //$$         columns.detailX(), columns.right(), y, ROW_HEIGHT, 0xFFE0E0E0);
+            //#endif
 
             if (hovered && (entry.conflicted() || !action.equals(actionName) || !fittedKey.equals(keyLabel)))
             {
-                this.drawEntryTooltip(graphics, entry, mouseX, mouseY);
+                //#if MC >= 26.3
+                this.hoveredEntry = entry;
+                //#else
+                //$$ this.drawEntryTooltip(graphics, entry, mouseX, mouseY);
+                //#endif
             }
         }
 
@@ -890,14 +1457,23 @@ public final class KeymapBrowserScreen extends GuiBase
                     grab * this.scrollbarMaxOffset / Math.max(1, trackHeight - thumbHeight)));
         }
 
-        if (this.categoryPanelOpen)
-        {
-            this.drawCategoryPanel(graphics, mouseX, mouseY);
-        }
+        //#if MC < 26.3
+        //$$ if (this.categoryPanelOpen)
+        //$$ {
+        //$$     this.drawCategoryPanel(graphics, mouseX, mouseY);
+        //$$ }
+        //#endif
         if (this.rebindingEntry != null)
         {
-            this.drawString(graphics, StringUtils.translate("halfmasa.gui.keymap_browser.capture_hint"),
-                    210, this.getScreenHeight() - 22, 0xFFFFC860);
+            //#if MC >= 26.3
+            String hint = StringUtils.translate(this.bindingMode == KeymapBindingMode.VIRTUAL
+                    ? "halfmasa.gui.keymap_browser.capture_virtual_hint" : "halfmasa.gui.keymap_browser.capture_physical_hint");
+            this.drawString(graphics, this.mc.font.plainSubstrByWidth(hint, Math.max(1, this.getScreenWidth() - 20)),
+                    10, this.getScreenHeight() - 12, 0xFFFFC860);
+            //#else
+            //$$ this.drawString(graphics, StringUtils.translate("halfmasa.gui.keymap_browser.capture_hint"),
+            //$$         210, this.getScreenHeight() - 22, 0xFFFFC860);
+            //#endif
         }
     }
 
@@ -907,19 +1483,25 @@ public final class KeymapBrowserScreen extends GuiBase
     //$$ private void drawCategoryPanel(GuiGraphics graphics, int mouseX, int mouseY)
     //#endif
     {
-        this.categoryPanelX = this.getScreenWidth() - PANEL_WIDTH - 106;
-        this.categoryPanelY = 46;
-        int visibleRows = (this.getScreenHeight() - this.categoryPanelY - 40) / PANEL_ROW_HEIGHT;
+        //#if MC >= 26.3
+        this.updateCategoryPanelBounds();
+        int panelWidth = this.categoryPanelWidth;
+        //#else
+        //$$ int panelWidth = PANEL_WIDTH;
+        //$$ this.categoryPanelX = this.getScreenWidth() - PANEL_WIDTH - 106;
+        //$$ this.categoryPanelY = 46;
+        //$$ int visibleRows = (this.getScreenHeight() - this.categoryPanelY - 40) / PANEL_ROW_HEIGHT;
+        //$$ this.categoryPanelRows = Math.max(3, Math.min(visibleRows, this.categories.size() + 1));
+        //#endif
         int totalRows = this.categories.size() + 1;
-        this.categoryPanelRows = Math.max(3, Math.min(visibleRows, totalRows));
         int maxScroll = Math.max(0, totalRows - this.categoryPanelRows);
         this.categoryPanelScroll = Math.max(0, Math.min(this.categoryPanelScroll, maxScroll));
 
         int height = this.categoryPanelRows * PANEL_ROW_HEIGHT + 6;
         this.drawRect(graphics, this.categoryPanelX - 1, this.categoryPanelY - 1,
-                this.categoryPanelX + PANEL_WIDTH + 1, this.categoryPanelY + height + 1, 0xFF606068);
+                this.categoryPanelX + panelWidth + 1, this.categoryPanelY + height + 1, 0xB0606878);
         this.drawRect(graphics, this.categoryPanelX, this.categoryPanelY,
-                this.categoryPanelX + PANEL_WIDTH, this.categoryPanelY + height, 0xF0181820);
+                this.categoryPanelX + panelWidth, this.categoryPanelY + height, 0xE018202C);
 
         for (int index = 0; index < this.categoryPanelRows; index++)
         {
@@ -941,14 +1523,14 @@ public final class KeymapBrowserScreen extends GuiBase
                 break;
             }
             int y = this.categoryPanelY + 3 + index * PANEL_ROW_HEIGHT;
-            boolean hovered = mouseX >= this.categoryPanelX && mouseX < this.categoryPanelX + PANEL_WIDTH &&
+            boolean hovered = mouseX >= this.categoryPanelX && mouseX < this.categoryPanelX + panelWidth &&
                     mouseY >= y && mouseY < y + PANEL_ROW_HEIGHT;
             if (hovered)
             {
                 this.drawRect(graphics, this.categoryPanelX, y - 1,
-                        this.categoryPanelX + PANEL_WIDTH, y + PANEL_ROW_HEIGHT - 1, 0x40FFFFFF);
+                        this.categoryPanelX + panelWidth, y + PANEL_ROW_HEIGHT - 1, 0x40FFFFFF);
             }
-            label = this.mc.font.plainSubstrByWidth(label, PANEL_WIDTH - 16);
+            label = this.mc.font.plainSubstrByWidth(label, panelWidth - 16);
             this.drawString(graphics, label, this.categoryPanelX + 6, y,
                     active ? 0xFFFFC860 : 0xFFE0E0E0);
         }
@@ -972,46 +1554,60 @@ public final class KeymapBrowserScreen extends GuiBase
     //$$ private void drawKeyCell(GuiGraphics graphics, KeymapKeyboardLayout.Key key, int mouseX, int mouseY)
     //#endif
     {
-        int cellCode = key.code();
-        boolean mouseKey = key.mouse();
-        int displayCode = mouseKey ? -cellCode - 1 : cellCode;
-        int left = key.x();
-        int right = left + key.width();
-        int y = key.y();
-        int cellWidth = key.width();
-        int cellHeight = key.height();
-        {
-            boolean hasVanilla;
-            boolean hasMalilib = false;
-            if (mouseKey)
-            {
-                hasVanilla = this.countVanillaMouse(displayCode) > 0;
-            }
-            else
-            {
-                hasVanilla = this.countVanillaKeyboard(cellCode) > 0;
-                hasMalilib = this.countMalilib(cellCode) > 0;
-            }
-            boolean selected = this.selectedCombo.contains(cellCode);
-            ConflictKinds conflictKinds = this.keyConflictKinds(cellCode);
-
-            int sourceFill = 0x66202028;
-            if (hasVanilla && hasMalilib)
-            {
-                sourceFill = 0x66205038;
-            }
-            else if (hasVanilla)
-            {
-                sourceFill = 0x66203850;
-            }
-            else if (hasMalilib)
-            {
-                sourceFill = 0x66285028;
-            }
-
+        //#if MC >= 26.3
+        boolean ignored = IgnoredKeySelection.isIgnored(key.code(), this.ignoredKeyboardKeys,
+                Configs.KEYBIND_INVERT_IGNORED_KEYS.getBooleanValue());
+        var indicators = KeymapKeyboardStyle.indicators(this.keyboardBindings, key.codes(), ignored);
+        KeymapKeyboardRenderer.drawKey(graphics, this.mc.font, key, indicators,
+                (this.rebindingEntry != null && this.bindingMode == KeymapBindingMode.VIRTUAL
+                        ? this.rebindDraft.keys() : this.selectedCombo).containsAll(key.codes()), key.contains(mouseX, mouseY));
+        //#else
+    //$$
+    //$$     int cellCode = key.code();
+    //$$     boolean mouseKey = key.mouse();
+    //$$     int displayCode = mouseKey ? -cellCode - 1 : cellCode;
+    //$$     int left = key.x();
+    //$$     int right = left + key.width();
+    //$$     int y = key.y();
+    //$$     int cellWidth = key.width();
+    //$$     int cellHeight = key.height();
+    //$$     {
+    //$$         boolean hasVanilla;
+    //$$         boolean hasMalilib = false;
+    //$$         if (key.codes().size() > 1)
+    //$$         {
+    //$$             hasVanilla = this.countCompositeKey(key.codes(), true) > 0;
+    //$$             hasMalilib = this.countCompositeKey(key.codes(), false) > 0;
+    //$$         }
+    //$$         else if (mouseKey)
+    //$$         {
+    //$$             hasVanilla = this.countVanillaMouse(displayCode) > 0;
+    //$$         }
+    //$$         else
+    //$$         {
+    //$$             hasVanilla = this.countVanillaKeyboard(cellCode) > 0;
+    //$$             hasMalilib = this.countMalilib(cellCode) > 0;
+    //$$         }
+    //$$         boolean selected = this.selectedCombo.containsAll(key.codes());
+    //$$         ConflictKinds conflictKinds = this.keyConflictKinds(key.codes());
+    //$$
+    //$$         int sourceFill = 0x66202028;
+    //$$         if (hasVanilla && hasMalilib)
+    //$$         {
+    //$$             sourceFill = 0x66205038;
+    //$$         }
+    //$$         else if (hasVanilla)
+    //$$         {
+    //$$             sourceFill = 0x66203850;
+    //$$         }
+    //$$         else if (hasMalilib)
+    //$$         {
+    //$$             sourceFill = 0x66285028;
+    //$$         }
+    //$$
             //#if MC >= 26.3
-            this.drawRect(graphics, left, y, right, y + cellHeight,
-                    selected ? 0x90605820 : sourceFill);
+    //$$         this.drawRect(graphics, left, y, right, y + cellHeight,
+    //$$                 selected ? 0x90605820 : sourceFill);
             //#else
             //$$ int split = left + cellWidth / 2;
             //$$ if (selected)
@@ -1039,28 +1635,28 @@ public final class KeymapBrowserScreen extends GuiBase
             //$$     this.drawRect(graphics, left, y, right, y + cellHeight, sourceFill);
             //$$ }
             //#endif
-
-            int sourceBorder = selected ? 0xFFF0D080 : (hasVanilla || hasMalilib) ? 0xFF787888 : 0xFF3C3C46;
-            this.drawRect(graphics, left, y, right, y + 1, sourceBorder);
-            this.drawRect(graphics, left, y + cellHeight - 1, right, y + cellHeight, sourceBorder);
-            this.drawRect(graphics, left, y, left + 1, y + cellHeight, sourceBorder);
-            this.drawRect(graphics, right - 1, y, right, y + cellHeight, sourceBorder);
-            if (!selected && conflictKinds.any())
-            {
+    //$$
+    //$$         int sourceBorder = selected ? 0xFFF0D080 : (hasVanilla || hasMalilib) ? 0xFF787888 : 0xFF3C3C46;
+    //$$         this.drawRect(graphics, left, y, right, y + 1, sourceBorder);
+    //$$         this.drawRect(graphics, left, y + cellHeight - 1, right, y + cellHeight, sourceBorder);
+    //$$         this.drawRect(graphics, left, y, left + 1, y + cellHeight, sourceBorder);
+    //$$         this.drawRect(graphics, right - 1, y, right, y + cellHeight, sourceBorder);
+    //$$         if (!selected && conflictKinds.any())
+    //$$         {
                 //#if MC >= 26.3
-                int markerLeft = Math.max(left + 1, right - 4);
-                int markerRight = right - 1;
-                int markerMiddle = y + cellHeight / 2;
-                if (conflictKinds.single())
-                {
-                    this.drawRect(graphics, markerLeft, y + 2, markerRight,
-                            markerMiddle - 1, SINGLE_CONFLICT_BORDER);
-                }
-                if (conflictKinds.combination())
-                {
-                    this.drawRect(graphics, markerLeft, markerMiddle + 1, markerRight,
-                            y + cellHeight - 2, COMBINATION_CONFLICT_BORDER);
-                }
+    //$$             int markerLeft = Math.max(left + 1, right - 4);
+    //$$             int markerRight = right - 1;
+    //$$             int markerMiddle = y + cellHeight / 2;
+    //$$             if (conflictKinds.single())
+    //$$             {
+    //$$                 this.drawRect(graphics, markerLeft, y + 2, markerRight,
+    //$$                         markerMiddle - 1, SINGLE_CONFLICT_BORDER);
+    //$$             }
+    //$$             if (conflictKinds.combination())
+    //$$             {
+    //$$                 this.drawRect(graphics, markerLeft, markerMiddle + 1, markerRight,
+    //$$                         y + cellHeight - 2, COMBINATION_CONFLICT_BORDER);
+    //$$             }
                 //#else
                 //$$ if (conflictKinds.both())
                 //$$ {
@@ -1082,14 +1678,16 @@ public final class KeymapBrowserScreen extends GuiBase
                 //$$         ? COMBINATION_CONFLICT_BORDER : SINGLE_CONFLICT_BORDER;
                 //$$ this.drawRect(graphics, right - 1, y, right, y + cellHeight, rightBorder);
                 //#endif
-            }
-
-            String label = mouseKey
-                    ? StringUtils.translate("halfmasa.gui.keymap_browser.mouse." + displayCode)
-                    : key.label();
-            this.drawCenteredFittedKeyLabel(graphics, label, left, right, y, cellHeight, 0xFFE0E0E0);
-
-        }
+    //$$         }
+    //$$
+    //$$         String label = mouseKey
+    //$$                 ? StringUtils.translate("halfmasa.gui.keymap_browser.mouse." + displayCode)
+    //$$                 : key.label();
+    //$$         this.drawCenteredFittedKeyLabel(graphics, label, left, right, y, cellHeight, 0xFFE0E0E0);
+    //$$
+    //$$     }
+    //$$
+        //#endif
     }
 
     //#if MC >= 1.21.11
@@ -1120,42 +1718,78 @@ public final class KeymapBrowserScreen extends GuiBase
         //#endif
     }
 
+    //#if MC >= 26.3
     private int countVanillaKeyboard(int code)
     {
-        int count = 0;
-        for (BrowserEntry entry : this.allEntries)
-        {
-            if (entry.isVanilla() && !entry.mapping().isUnbound() &&
-                InputCompat.isKeyboardKey(((KeyMappingAccessor) entry.mapping()).halfmasa$getBoundKey()) &&
-                vanillaKeyCode(entry.mapping()) == code)
-            {
-                count++;
-            }
-        }
-        return count;
+        return (int) this.allEntries.stream().filter(BrowserEntry::isVanilla)
+                .filter(entry -> this.entryKeySet(entry).contains(code)).count();
     }
+    //#else
+    //$$ private int countVanillaKeyboard(int code)
+    //$$ {
+    //$$     int count = 0;
+    //$$     for (BrowserEntry entry : this.allEntries)
+    //$$     {
+    //$$         if (entry.isVanilla() && !entry.mapping().isUnbound() &&
+    //$$             InputCompat.isKeyboardKey(((KeyMappingAccessor) entry.mapping()).halfmasa$getBoundKey()) &&
+    //$$             vanillaKeyCode(entry.mapping()) == code)
+    //$$         {
+    //$$             count++;
+    //$$         }
+    //$$     }
+    //$$     return count;
+    //$$ }
+    //#endif
 
+    //#if MC >= 26.3
     private int countVanillaMouse(int code)
     {
-        int count = 0;
-        for (BrowserEntry entry : this.allEntries)
-        {
-            if (entry.isVanilla() && !entry.mapping().isUnbound() &&
-                ((KeyMappingAccessor) entry.mapping()).halfmasa$getBoundKey().getType() == InputConstants.Type.MOUSE &&
-                vanillaMouseCode(entry.mapping()) == code)
-            {
-                count++;
-            }
-        }
-        return count;
+        return this.countVanillaKeyboard(-code - 1);
     }
+    //#else
+    //$$ private int countVanillaMouse(int code)
+    //$$ {
+    //$$     int count = 0;
+    //$$     for (BrowserEntry entry : this.allEntries)
+    //$$     {
+    //$$         if (entry.isVanilla() && !entry.mapping().isUnbound() &&
+    //$$             ((KeyMappingAccessor) entry.mapping()).halfmasa$getBoundKey().getType() == InputConstants.Type.MOUSE &&
+    //$$             vanillaMouseCode(entry.mapping()) == code)
+    //$$         {
+    //$$             count++;
+    //$$         }
+    //$$     }
+    //$$     return count;
+    //$$ }
+    //#endif
 
+    //#if MC >= 26.3
     private int countMalilib(int code)
+    {
+        return (int) this.allEntries.stream().filter(entry -> !entry.isVanilla())
+                .filter(entry -> this.entryKeySet(entry).contains(code)).count();
+    }
+    //#else
+    //$$ private int countMalilib(int code)
+    //$$ {
+    //$$     int count = 0;
+    //$$     for (BrowserEntry entry : this.allEntries)
+    //$$     {
+    //$$         if (!entry.isVanilla() && entry.hotkey().getKeybind().getKeys().contains(code))
+    //$$         {
+    //$$             count++;
+    //$$         }
+    //$$     }
+    //$$     return count;
+    //$$ }
+    //#endif
+
+    private int countCompositeKey(List<Integer> codes, boolean vanilla)
     {
         int count = 0;
         for (BrowserEntry entry : this.allEntries)
         {
-            if (!entry.isVanilla() && entry.hotkey().getKeybind().getKeys().contains(code))
+            if (entry.isVanilla() == vanilla && this.entryKeySet(entry).containsAll(codes))
             {
                 count++;
             }
@@ -1163,13 +1797,13 @@ public final class KeymapBrowserScreen extends GuiBase
         return count;
     }
 
-    private ConflictKinds keyConflictKinds(int code)
+    private ConflictKinds keyConflictKinds(List<Integer> codes)
     {
         boolean singleConflict = false;
         boolean combinationConflict = false;
         for (BrowserEntry entry : this.allEntries)
         {
-            if (!this.entryKeySet(entry).contains(code))
+            if (!this.entryKeySet(entry).containsAll(codes))
             {
                 continue;
             }
@@ -1270,13 +1904,26 @@ public final class KeymapBrowserScreen extends GuiBase
     //#endif
     {
         List<String> lines = new ArrayList<>();
+        //#if MC >= 26.3
+        lines.add(entry.displayName() != null ? entry.displayName() : entry.action());
+        if (entry == this.rebindingEntry && this.rebindDraft.touched())
+            lines.add(StringUtils.translate("halfmasa.gui.keymap_browser.pending_keys", this.keyNames(this.rebindDraft.keys())));
+        //#endif
         if (entry.conflictType() == ConflictType.COMBINATION)
         {
-            lines.add(StringUtils.translate("halfmasa.gui.keymap_browser.legend.combination"));
+            //#if MC >= 26.3
+            lines.add(StringUtils.translate("halfmasa.gui.keymap_browser.conflict_type.combination"));
+            //#else
+            //$$ lines.add(StringUtils.translate("halfmasa.gui.keymap_browser.legend.combination"));
+            //#endif
         }
         else if (entry.conflictType() == ConflictType.SINGLE)
         {
-            lines.add(StringUtils.translate("halfmasa.gui.keymap_browser.legend.single"));
+            //#if MC >= 26.3
+            lines.add(StringUtils.translate("halfmasa.gui.keymap_browser.conflict_type.single"));
+            //#else
+            //$$ lines.add(StringUtils.translate("halfmasa.gui.keymap_browser.legend.single"));
+            //#endif
         }
         if (!entry.keyText().isEmpty())
         {
@@ -1291,13 +1938,36 @@ public final class KeymapBrowserScreen extends GuiBase
         {
             return;
         }
+        //#if MC >= 26.3
+        List<String> wrapped = new ArrayList<>();
+        int maxWidth = Math.max(1, this.getScreenWidth() - 24);
+        for (String line : lines)
+        {
+            String remaining = line;
+            do
+            {
+                String part = this.mc.font.plainSubstrByWidth(remaining, maxWidth);
+                if (part.isEmpty() && !remaining.isEmpty()) part = remaining.substring(0, 1);
+                wrapped.add(part);
+                remaining = remaining.substring(part.length());
+            }
+            while (!remaining.isEmpty());
+        }
+        int maxLines = Math.max(1, (this.getScreenHeight() - 20) / 11);
+        if (wrapped.size() > maxLines)
+        {
+            wrapped = new ArrayList<>(wrapped.subList(0, maxLines));
+            wrapped.set(maxLines - 1, "...");
+        }
+        lines = wrapped;
+        //#endif
         int width = 0;
         for (String line : lines)
         {
             width = Math.max(width, this.mc.font.width(line));
         }
-        int x = Math.min(mouseX + 8, this.getScreenWidth() - width - 12);
-        int y = Math.min(mouseY + 4, this.getScreenHeight() - lines.size() * 11 - 8);
+        int x = Math.max(6, Math.min(mouseX + 8, this.getScreenWidth() - width - 12));
+        int y = Math.max(6, Math.min(mouseY + 4, this.getScreenHeight() - lines.size() * 11 - 8));
         this.drawRect(graphics, x - 3, y - 2, x + width + 5, y + lines.size() * 11 + 2, 0xF0100018);
         for (int index = 0; index < lines.size(); index++)
         {
@@ -1306,39 +1976,75 @@ public final class KeymapBrowserScreen extends GuiBase
         }
     }
 
+    //#if MC >= 26.3
     private List<Integer> orderedEntryKeys(BrowserEntry entry)
     {
+        List<Integer> draft = this.draftKeys.get(entryId(entry));
+        if (draft != null) return draft;
         if (!entry.isVanilla())
         {
-            return new ArrayList<>(entry.hotkey().getKeybind().getKeys());
+            return entry.hotkey().getKeybind().getKeys().stream().map(KeymapBrowserScreen::normalizeMasaCode).toList();
         }
-        List<Integer> customCombo = KeybindCustomizationStore.getInstance().comboKeys(entry.mapping());
-        if (!customCombo.isEmpty())
-        {
-            return customCombo;
-        }
-        if (entry.mapping().isUnbound())
-        {
-            return List.of();
-        }
+        List<Integer> customCombo = this.customization(entry).comboKeys;
+        if (!customCombo.isEmpty()) return customCombo;
         InputConstants.Key key = ((KeyMappingAccessor) entry.mapping()).halfmasa$getBoundKey();
+        if (InputConstants.UNKNOWN.equals(key)) return List.of();
         List<Integer> keys = new ArrayList<>();
-        keys.add(key.getType() == InputConstants.Type.MOUSE
-                ? InputCompat.mouseButtonToLayoutCode(key.getValue()) : key.getValue());
-        //#if MC >= 26.2
-        if (this.isDebugOnlyMapping(entry.mapping()) && this.mc.options != null &&
-                this.mc.options.keyDebugModifier != null)
+        if (this.isDebugOnlyMapping(entry.mapping()) && this.mc.options != null && this.mc.options.keyDebugModifier != null)
         {
-            InputConstants.Key modifier =
-                    ((KeyMappingAccessor) this.mc.options.keyDebugModifier).halfmasa$getBoundKey();
-            if (InputCompat.isKeyboardKey(modifier))
+            KeyMapping modifier = this.mc.options.keyDebugModifier;
+            List<Integer> modifierKeys = this.draftKeys.get(modifier.getName());
+            if (modifierKeys != null) keys.addAll(modifierKeys);
+            else
             {
-                keys.add(modifier.getValue());
+                InputConstants.Key modifierKey = ((KeyMappingAccessor) modifier).halfmasa$getBoundKey();
+                if (InputCompat.isKeyboardKey(modifierKey)) keys.add(modifierKey.getValue());
             }
         }
-        //#endif
+        keys.add(key.getType() == InputConstants.Type.MOUSE
+                ? InputCompat.mouseButtonToLayoutCode(key.getValue()) : key.getValue());
         return keys;
     }
+
+    private static int normalizeMasaCode(int code)
+    {
+        return code < -80 && code > -100 ? InputCompat.mouseButtonToLayoutCode(code + 100) : code;
+    }
+    //#else
+    //$$ private List<Integer> orderedEntryKeys(BrowserEntry entry)
+    //$$ {
+    //$$     if (!entry.isVanilla())
+    //$$     {
+    //$$         return new ArrayList<>(entry.hotkey().getKeybind().getKeys());
+    //$$     }
+    //$$     List<Integer> customCombo = KeybindCustomizationStore.getInstance().comboKeys(entry.mapping());
+    //$$     if (!customCombo.isEmpty())
+    //$$     {
+    //$$         return customCombo;
+    //$$     }
+    //$$     if (entry.mapping().isUnbound())
+    //$$     {
+    //$$         return List.of();
+    //$$     }
+    //$$     InputConstants.Key key = ((KeyMappingAccessor) entry.mapping()).halfmasa$getBoundKey();
+    //$$     List<Integer> keys = new ArrayList<>();
+    //$$     keys.add(key.getType() == InputConstants.Type.MOUSE
+    //$$             ? InputCompat.mouseButtonToLayoutCode(key.getValue()) : key.getValue());
+    //$$     //#if MC >= 26.2
+    //$$     if (this.isDebugOnlyMapping(entry.mapping()) && this.mc.options != null &&
+    //$$             this.mc.options.keyDebugModifier != null)
+    //$$     {
+    //$$         InputConstants.Key modifier =
+    //$$                 ((KeyMappingAccessor) this.mc.options.keyDebugModifier).halfmasa$getBoundKey();
+    //$$         if (InputCompat.isKeyboardKey(modifier))
+    //$$         {
+    //$$             keys.add(modifier.getValue());
+    //$$         }
+    //$$     }
+    //$$     //#endif
+    //$$     return keys;
+    //$$ }
+    //#endif
 
     private List<BrowserEntry> orderedConflictEntries(BrowserEntry entry)
     {
@@ -1399,25 +2105,21 @@ public final class KeymapBrowserScreen extends GuiBase
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
     {
-        if (this.rebindingEntry != null)
-        {
-            // The click that starts capture has already returned. A later mouse click
-            // binds a vanilla mouse button; masa hotkeys remain keyboard-only.
-            if (this.rebindingEntry.isVanilla())
-            {
-                this.applyRebind(List.of(InputCompat.mouseButtonToLayoutCode(event.button())));
-            }
-            else
-            {
-                this.cancelRebind();
-            }
-            return true;
-        }
+        if (this.categoryPanelOpen && this.handleClick(event.x(), event.y(), event.button(), event.hasControlDown())) return true;
+        // Buttons and the search field must be handled before physical mouse capture.
+        // GuiBase.mouseClicked returns false even when its buttons handled the event.
+        if (super.onMouseClicked(event, doubleClick)) return true;
         if (this.handleClick(event.x(), event.y(), event.button(), event.hasControlDown()))
         {
             return true;
         }
-        return super.mouseClicked(event, doubleClick);
+        if (this.rebindingEntry != null && this.bindingMode == KeymapBindingMode.PHYSICAL)
+        {
+            int code = InputCompat.mouseButtonToLayoutCode(event.button());
+            this.rebindDraft.press(code);
+            return true;
+        }
+        return false;
     }
     //#elseif MC >= 1.21.10
     //$$ @Override
@@ -1450,13 +2152,19 @@ public final class KeymapBrowserScreen extends GuiBase
 
         if (this.categoryPanelOpen)
         {
+            //#if MC >= 26.3
+            this.updateCategoryPanelBounds();
+            int panelWidth = this.categoryPanelWidth;
+            //#else
+            //$$ int panelWidth = PANEL_WIDTH;
+            //#endif
             int panelHeight = this.categoryPanelRows * PANEL_ROW_HEIGHT + 6;
-            if (mouseX >= this.categoryPanelX && mouseX <= this.categoryPanelX + PANEL_WIDTH &&
+            if (mouseX >= this.categoryPanelX && mouseX <= this.categoryPanelX + panelWidth &&
                 mouseY >= this.categoryPanelY && mouseY <= this.categoryPanelY + panelHeight)
             {
-                int index = this.categoryPanelScroll +
-                        (int) ((mouseY - this.categoryPanelY - 3) / PANEL_ROW_HEIGHT);
-                if (index >= 0 && index <= this.categories.size())
+                int panelRow = (int) Math.floor((mouseY - this.categoryPanelY - 3) / PANEL_ROW_HEIGHT);
+                int index = this.categoryPanelScroll + panelRow;
+                if (panelRow >= 0 && panelRow < this.categoryPanelRows && index <= this.categories.size())
                 {
                     this.categoryIndex = index;
                     this.categoryPanelOpen = false;
@@ -1472,35 +2180,43 @@ public final class KeymapBrowserScreen extends GuiBase
         }
 
         int listTop = this.listTop();
-        int listBottom = this.getScreenHeight() - 32;
+        int listBottom = this.listBottom();
 
-        if (this.showKeyboard && mouseY >= HEADER_HEIGHT && mouseY < listTop)
+        if (this.showKeyboard && mouseY >= this.keyboardTop() && mouseY < listTop)
         {
             for (KeymapKeyboardLayout.Key cell : this.keyCells)
             {
                 if (mouseX >= cell.x() && mouseX < cell.x() + cell.width() &&
                     mouseY >= cell.y() && mouseY < cell.y() + cell.height())
                 {
-                    int comboCode = cell.code();
+                    List<Integer> comboCodes = cell.codes();
+                    //#if MC >= 26.3
+                    if (this.rebindingEntry != null)
+                    {
+                        if (this.bindingMode == KeymapBindingMode.PHYSICAL) return false;
+                        this.rebindDraft.toggle(comboCodes);
+                        return true;
+                    }
+                    //#endif
                     if (ctrlDown)
                     {
-                        if (this.selectedCombo.contains(comboCode))
+                        if (this.selectedCombo.containsAll(comboCodes))
                         {
-                            this.selectedCombo.remove(comboCode);
+                            this.selectedCombo.removeAll(comboCodes);
                         }
                         else
                         {
-                            this.selectedCombo.add(comboCode);
+                            this.selectedCombo.addAll(comboCodes);
                         }
                     }
-                    else if (this.selectedCombo.size() == 1 && this.selectedCombo.contains(comboCode))
+                    else if (this.selectedCombo.equals(Set.copyOf(comboCodes)))
                     {
                         this.selectedCombo.clear();
                     }
                     else
                     {
                         this.selectedCombo.clear();
-                        this.selectedCombo.add(comboCode);
+                        this.selectedCombo.addAll(comboCodes);
                     }
                     this.refilter();
                     return true;
@@ -1526,14 +2242,34 @@ public final class KeymapBrowserScreen extends GuiBase
                 DisplayRow row = rows.get(index);
                 if (row.isGroup())
                 {
+                    //#if MC >= 26.3
+                    if (this.isBestMatchGroup(row.group())) return true;
+                    //#endif
                     this.toggleGroup(row.group());
                     return true;
                 }
                 BrowserEntry entry = row.entry();
                 RowColumns columns = this.rowColumns(10, this.getScreenWidth() - 34);
+                //#if MC >= 26.3
+                if (this.rebindingEntry != null && this.rebindDraft.touched())
+                {
+                    if (entry == this.rebindingEntry && mouseX >= columns.confirmX() && mouseX < columns.keyX())
+                        this.confirmRebind();
+                    return true;
+                }
+                if (mouseX >= columns.wheelX())
+                {
+                    this.toggleWheelParticipation(entry);
+                    return true;
+                }
+                //#endif
                 if (mouseX >= columns.detailX())
                 {
-                    this.openDetail(entry);
+                    //#if MC >= 26.3
+                    this.toggleKeyOrder(entry);
+                    //#else
+                    //$$ this.openDetail(entry);
+                    //#endif
                     return true;
                 }
                 if (mouseX >= columns.resetX())
@@ -1546,33 +2282,45 @@ public final class KeymapBrowserScreen extends GuiBase
                     this.beginRebind(entry);
                     return true;
                 }
-                // Keep the existing wheel-context shortcut, without stealing the
-                // explicit key and detail controls from the row.
-                if (ctrlDown && entry.isVanilla())
-                {
-                    KeybindCustomizationStore.Entry data =
-                            KeybindCustomizationStore.getInstance().get(entry.mapping());
-                    data.activationContext = data.activationContext.next();
-                    KeybindCustomizationStore.getInstance().save();
-                    return true;
-                }
-                this.openDetail(entry);
+                //#if MC < 26.3
+                //$$ // Keep the existing wheel-context shortcut, without stealing the
+                //$$ // explicit key and detail controls from the row.
+                //$$ if (ctrlDown && entry.isVanilla())
+                //$$ {
+                //$$     KeybindCustomizationStore.Entry data =
+                //$$             KeybindCustomizationStore.getInstance().get(entry.mapping());
+                //$$     data.activationContext = data.activationContext.next();
+                //$$     KeybindCustomizationStore.getInstance().save();
+                //$$     return true;
+                //$$ }
+                //$$ this.openDetail(entry);
+                //#endif
                 return true;
             }
         }
         return false;
     }
 
-    private void openDetail(BrowserEntry entry)
-    {
-        KeybindDetailScreen detail = new KeybindDetailScreen(entry);
-        detail.setParent(this);
-        GuiBase.openGui(detail);
-    }
+    //#if MC < 26.3
+    //$$ private void openDetail(BrowserEntry entry)
+    //$$ {
+    //$$     KeybindDetailScreen detail = new KeybindDetailScreen(entry);
+    //$$     detail.setParent(this);
+    //$$     GuiBase.openGui(detail);
+    //$$ }
+    //#endif
 
     private void beginRebind(BrowserEntry entry)
     {
         this.rebindingEntry = entry;
+        //#if MC >= 26.3
+        this.rebindDraft.reset();
+        if (this.bindingMode == KeymapBindingMode.VIRTUAL && !this.showKeyboard)
+        {
+            this.showKeyboard = true;
+            this.initGui();
+        }
+        //#endif
         this.pendingRebindKeys.clear();
         this.heldRebindKeys.clear();
     }
@@ -1580,53 +2328,76 @@ public final class KeymapBrowserScreen extends GuiBase
     private void cancelRebind()
     {
         this.rebindingEntry = null;
+        //#if MC >= 26.3
+        this.rebindDraft.reset();
+        //#endif
         this.pendingRebindKeys.clear();
         this.heldRebindKeys.clear();
     }
 
+    //#if MC >= 26.3
     private void applyRebind(List<Integer> keys)
     {
         BrowserEntry entry = this.rebindingEntry;
         if (entry == null) return;
+        this.originalKeys.computeIfAbsent(entryId(entry), id -> List.copyOf(this.orderedEntryKeys(entry)));
+        this.draftKeys.put(entryId(entry), List.copyOf(keys));
         if (entry.isVanilla())
         {
-            KeyMapping mapping = entry.mapping();
-            KeybindCustomizationStore.Entry customization =
-                    KeybindCustomizationStore.getInstance().get(mapping);
-            customization.comboKeys.clear();
-            if (keys.size() <= 1) customization.requireKeyOrder = false;
-            if (keys.size() > 1)
-            {
-                mapping.setKey(InputConstants.UNKNOWN);
-                customization.comboKeys.addAll(keys);
-            }
-            else
-            {
-                int code = keys.isEmpty() ? 0 : keys.get(0);
-                mapping.setKey(keys.isEmpty() ? InputConstants.UNKNOWN
-                        : code < 0 ? InputConstants.Type.MOUSE.getOrCreate(
-                                InputCompat.layoutCodeToMouseButton(code))
-                        : InputCompat.keyboardKey(code));
-            }
-            KeyMapping.resetMapping();
-            this.mc.options.save();
-            KeybindCustomizationStore.getInstance().save();
+            KeybindCustomizationStore.Entry data = this.customization(entry);
+            data.comboKeys.clear();
+            if (keys.size() > 1) data.comboKeys.addAll(keys);
+            else data.requireKeyOrder = false;
         }
-        else
-        {
-            entry.hotkey().getKeybind().clearKeys();
-            for (int code : keys)
-            {
-                if (code >= 0) entry.hotkey().getKeybind().addKey(code);
-            }
-            InputEventHandler.getKeybindManager().updateUsedKeys();
-            ((ConfigManager) ConfigManager.getInstance()).saveAllConfigs();
-        }
-        KeybindPieManager.getInstance().invalidateCustomMappingSync();
         this.cancelRebind();
         this.initGui();
     }
+    //#else
+    //$$ private void applyRebind(List<Integer> keys)
+    //$$ {
+    //$$     BrowserEntry entry = this.rebindingEntry;
+    //$$     if (entry == null) return;
+    //$$     if (entry.isVanilla())
+    //$$     {
+    //$$         KeyMapping mapping = entry.mapping();
+    //$$         KeybindCustomizationStore.Entry customization =
+    //$$                 KeybindCustomizationStore.getInstance().get(mapping);
+    //$$         customization.comboKeys.clear();
+    //$$         if (keys.size() <= 1) customization.requireKeyOrder = false;
+    //$$         if (keys.size() > 1)
+    //$$         {
+    //$$             mapping.setKey(InputConstants.UNKNOWN);
+    //$$             customization.comboKeys.addAll(keys);
+    //$$         }
+    //$$         else
+    //$$         {
+    //$$             int code = keys.isEmpty() ? 0 : keys.get(0);
+    //$$             mapping.setKey(keys.isEmpty() ? InputConstants.UNKNOWN
+    //$$                     : code < 0 ? InputConstants.Type.MOUSE.getOrCreate(
+    //$$                             InputCompat.layoutCodeToMouseButton(code))
+    //$$                     : InputCompat.keyboardKey(code));
+    //$$         }
+    //$$         KeyMapping.resetMapping();
+    //$$         this.mc.options.save();
+    //$$         KeybindCustomizationStore.getInstance().save();
+    //$$     }
+    //$$     else
+    //$$     {
+    //$$         entry.hotkey().getKeybind().clearKeys();
+    //$$         for (int code : keys)
+    //$$         {
+    //$$             if (code >= 0) entry.hotkey().getKeybind().addKey(code);
+    //$$         }
+    //$$         InputEventHandler.getKeybindManager().updateUsedKeys();
+    //$$         ((ConfigManager) ConfigManager.getInstance()).saveAllConfigs();
+    //$$     }
+    //$$     KeybindPieManager.getInstance().invalidateCustomMappingSync();
+    //$$     this.cancelRebind();
+    //$$     this.initGui();
+    //$$ }
+    //#endif
 
+    //#if MC >= 26.3
     private void resetKey(BrowserEntry entry)
     {
         this.beginRebind(entry);
@@ -1639,18 +2410,37 @@ public final class KeymapBrowserScreen extends GuiBase
         }
         else
         {
-            entry.hotkey().resetToDefault();
-            KeybindCustomizationStore.Entry customization =
-                    KeybindCustomizationStore.getInstance().get(entry.hotkey().getName());
-            customization.requireKeyOrder = false;
-            KeybindCustomizationStore.getInstance().save();
-            InputEventHandler.getKeybindManager().updateUsedKeys();
-            ((ConfigManager) ConfigManager.getInstance()).saveAllConfigs();
-            KeybindPieManager.getInstance().invalidateCustomMappingSync();
-            this.cancelRebind();
-            this.initGui();
+            var binding = entry.hotkey().getKeybind();
+            KeybindMulti defaults = KeybindMulti.fromStorageString(binding.getDefaultStringValue(), this.hotkeySettings(entry.hotkey()));
+            this.applyRebind(defaults.getKeys().stream().map(KeymapBrowserScreen::normalizeMasaCode).toList());
         }
     }
+    //#else
+    //$$ private void resetKey(BrowserEntry entry)
+    //$$ {
+    //$$     this.beginRebind(entry);
+    //$$     if (entry.isVanilla())
+    //$$     {
+    //$$         InputConstants.Key key = entry.mapping().getDefaultKey();
+    //$$         this.applyRebind(key == null || key.equals(InputConstants.UNKNOWN) ? List.of()
+    //$$                 : List.of(key.getType() == InputConstants.Type.MOUSE
+    //$$                 ? InputCompat.mouseButtonToLayoutCode(key.getValue()) : key.getValue()));
+    //$$     }
+    //$$     else
+    //$$     {
+    //$$         entry.hotkey().resetToDefault();
+    //$$         KeybindCustomizationStore.Entry customization =
+    //$$                 KeybindCustomizationStore.getInstance().get(entry.hotkey().getName());
+    //$$         customization.requireKeyOrder = false;
+    //$$         KeybindCustomizationStore.getInstance().save();
+    //$$         InputEventHandler.getKeybindManager().updateUsedKeys();
+    //$$         ((ConfigManager) ConfigManager.getInstance()).saveAllConfigs();
+    //$$         KeybindPieManager.getInstance().invalidateCustomMappingSync();
+    //$$         this.cancelRebind();
+    //$$         this.initGui();
+    //$$     }
+    //$$ }
+    //#endif
 
     //#if MC >= 26.3
     @Override
@@ -1661,16 +2451,13 @@ public final class KeymapBrowserScreen extends GuiBase
             int code = event.key();
             if (code == InputCompat.escapeKeyCode())
             {
-                this.cancelRebind();
-            }
-            else if (code == InputCompat.backspaceKeyCode())
-            {
-                this.applyRebind(List.of());
+                this.rebindDraft.clear();
+                this.heldRebindKeys.clear();
             }
             else if (code > 0)
             {
-                if (!this.pendingRebindKeys.contains(code)) this.pendingRebindKeys.add(code);
                 this.heldRebindKeys.add(code);
+                if (this.bindingMode == KeymapBindingMode.PHYSICAL) this.rebindDraft.press(code);
             }
             return true;
         }
@@ -1678,6 +2465,11 @@ public final class KeymapBrowserScreen extends GuiBase
         {
             this.selectedCombo.clear();
             this.refilter();
+            return true;
+        }
+        if (event.key() == InputCompat.escapeKeyCode())
+        {
+            this.onClose();
             return true;
         }
         return super.keyPressed(event);
@@ -1689,10 +2481,6 @@ public final class KeymapBrowserScreen extends GuiBase
         if (this.rebindingEntry != null)
         {
             this.heldRebindKeys.remove(event.key());
-            if (this.heldRebindKeys.isEmpty() && !this.pendingRebindKeys.isEmpty())
-            {
-                this.applyRebind(List.copyOf(this.pendingRebindKeys));
-            }
             return true;
         }
         return super.keyReleased(event);
@@ -1758,10 +2546,15 @@ public final class KeymapBrowserScreen extends GuiBase
     public boolean onMouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY)
     //#endif
     {
+        //#if MC >= 26.3
+        int panelWidth = this.categoryPanelWidth;
+        //#else
+        //$$ int panelWidth = PANEL_WIDTH;
+        //#endif
         if (this.categoryPanelOpen &&
-            mouseX >= this.categoryPanelX && mouseX <= this.categoryPanelX + PANEL_WIDTH &&
+            mouseX >= this.categoryPanelX && mouseX <= this.categoryPanelX + panelWidth &&
             mouseY >= this.categoryPanelY && mouseY < this.categoryPanelY +
-                    this.categoryPanelRows * PANEL_ROW_HEIGHT)
+                    this.categoryPanelRows * PANEL_ROW_HEIGHT + 6)
         {
             this.categoryPanelScroll -= (int) Math.signum(deltaY) * 2;
             return true;

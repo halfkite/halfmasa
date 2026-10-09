@@ -42,7 +42,11 @@ public final class Configs implements IConfigHandler
 {
     private static final String CONFIG_DIRECTORY_NAME = "halfmasa";
     private static final String CONFIG_FILE_NAME = "halfmasa.json";
-    private static final int CONFIG_VERSION = 39;
+    //#if MC >= 26.3
+    private static final int CONFIG_VERSION = 46;
+    //#else
+    //$$ private static final int CONFIG_VERSION = 39;
+    //#endif
     private static final String GENERIC_KEY = "halfmasa.config.generic";
     private static volatile boolean configLoaded;
 
@@ -369,8 +373,17 @@ public final class Configs implements IConfigHandler
             "bridgingAdjacency", BridgingAdjacencyMode.CORNERS).apply(PORTED_KEY);
     public static final ConfigBoolean BRIDGING_EXPANDED = new ConfigBoolean(
             "bridgingExpanded", false).apply(PORTED_KEY);
+    //#if MC >= 26.3
+    private static final String KEYBIND_SELECTION_KEY = "halfmasa.config.conflict_selection";
+    //#else
+    //$$ private static final String KEYBIND_SELECTION_KEY = PORTED_KEY;
+    //#endif
     public static final ConfigBooleanHotkeyed KEYBIND_PIE_MENU = new ConfigBooleanHotkeyed(
-            "keybindPieMenu", false, "").apply(PORTED_KEY);
+            "keybindPieMenu", false, "").apply(KEYBIND_SELECTION_KEY);
+    //#if MC >= 26.3
+    public static final ConfigOptionList KEYBIND_SELECTION_LAYOUT = new ConfigOptionList(
+            "keybindSelectionLayout", KeybindSelectionLayout.WHEEL).apply(KEYBIND_SELECTION_KEY);
+    //#endif
     public static final ConfigBoolean TWEAKEROO_COLLAPSIBLE_CONFIG = new ConfigBoolean(
             "tweakerooCollapsibleConfig", false).apply(PORTED_KEY);
     public static final ConfigBoolean CUSTOM_CONFIG_GROUPS = new ConfigBoolean(
@@ -382,66 +395,93 @@ public final class Configs implements IConfigHandler
     public static final ConfigGroupHeader CONFIG_GROUPING_GROUP = new ConfigGroupHeader(
             "configGroupingGroup", PORTED_KEY, CONFIG_GROUPING_EXPANDED);
     public static final ConfigBoolean KEYBIND_WHEEL_EXPANDED = new ConfigBoolean(
-            "keybindWheelExpanded", false).apply(PORTED_KEY);
+            "keybindWheelExpanded", false).apply(KEYBIND_SELECTION_KEY);
     // Better Key Settings is available across the supported version matrix.
     public static final ConfigBoolean KEYMAP_DIRECT_REBIND = new ConfigBoolean(
             "keymapDirectRebind", false).apply(PORTED_KEY);
     public static final ConfigBoolean KEYMAP_RELEASE_CONFIRM = new ConfigBoolean(
             "keymapReleaseConfirm", false).apply(PORTED_KEY);
-    public static final ConfigHotkey KEYMAP_CONFIRM_SETTING = new ConfigHotkey(
-            "keymapConfirmSetting", "ENTER").apply(PORTED_KEY);
+    //#if MC < 26.3
+    //$$ public static final ConfigHotkey KEYMAP_CONFIRM_SETTING = new ConfigHotkey(
+    //$$         "keymapConfirmSetting", "ENTER").apply(PORTED_KEY);
+    //#endif
     public static final ConfigBoolean KEYMAP_SETTINGS_EXPANDED = new ConfigBoolean(
             "keymapSettingsExpanded", false).apply(PORTED_KEY);
-    public static final ConfigGroupHeader KEYMAP_SETTINGS_GROUP = new ConfigGroupHeader(
-            "keymapSettingsGroup", PORTED_KEY, KEYMAP_SETTINGS_EXPANDED);
+    //#if MC >= 26.3
+    public static final ConfigBoolean CLASSIC_PAUSE_MENU = new ConfigBoolean(
+            "classicPauseMenu", false).apply(PORTED_KEY);
+    public static final ConfigBooleanHotkeyed KEYMAP_SETTINGS_GROUP = new ConfigBooleanHotkeyed(
+            "keymapSettingsGroup", true, "").apply(PORTED_KEY);
+    public static final ConfigOptionList KEYMAP_BINDING_MODE = new ConfigOptionList(
+            "keymapBindingMode", KeymapBindingMode.VIRTUAL).apply(PORTED_KEY);
+    public static final ConfigOptionList KEYMAP_KEYBOARD_LAYOUT = new ConfigOptionList(
+            "keymapKeyboardLayout", KeymapLayout.STANDARD).apply(PORTED_KEY);
+    public static final ConfigInteger KEYMAP_BACKGROUND_TRANSPARENCY = new ConfigInteger(
+            "keymapBackgroundTransparency", 31, 0, 100, true).apply(PORTED_KEY);
+    //#else
+    //$$ public static final ConfigGroupHeader KEYMAP_SETTINGS_GROUP = new ConfigGroupHeader(
+    //$$         "keymapSettingsGroup", PORTED_KEY, KEYMAP_SETTINGS_EXPANDED);
+    //#endif
     public static final ConfigInteger KEYBIND_REPEAT_COOLDOWN = new ConfigInteger(
-            "keybindPieRepeatCooldown", 20, 0, 200, true).apply(PORTED_KEY);
+            "keybindPieRepeatCooldown", 20, 0, 200, true).apply(KEYBIND_SELECTION_KEY);
     public static final ConfigInteger KEYBIND_SELECTION_COOLDOWN = new ConfigInteger(
-            "keybindPieSelectionCooldown", 10, 0, 100, true).apply(PORTED_KEY);
+            "keybindPieSelectionCooldown", 10, 0, 100, true).apply(KEYBIND_SELECTION_KEY);
     public static final ConfigBoolean KEYBIND_ATTACK_WORKAROUND = new ConfigBoolean(
-            "keybindPieAttackWorkaround", true).apply(PORTED_KEY);
+            "keybindPieAttackWorkaround", true).apply(KEYBIND_SELECTION_KEY);
     public static final ConfigString KEYBIND_IGNORED_KEYS = new ConfigString(
-            "keybindPieIgnoredKeys", "87,65,83,68,340").apply(PORTED_KEY);
+            "keybindPieIgnoredKeys",
+            //#if MC >= 26.3
+            io.github.halfmasa.xaerobinding.feature.IgnoredKeySelection.DEFAULT_KEYS
+            //#else
+            //$$ "87,65,83,68,340"
+            //#endif
+            ).apply(KEYBIND_SELECTION_KEY);
     public static final ConfigBoolean KEYBIND_INVERT_IGNORED_KEYS = new ConfigBoolean(
-            "keybindPieInvertIgnoredKeys", false).apply(PORTED_KEY);
+            "keybindPieInvertIgnoredKeys", false).apply(KEYBIND_SELECTION_KEY);
     public static final ConfigInteger KEYBIND_CIRCLE_VERTICES = new ConfigInteger(
-            "keybindPieCircleVertices", 60, 12, 360, true).apply(PORTED_KEY);
-    public static final ConfigBoolean KEYBIND_BLEND = new ConfigBoolean(
-            "keybindPieBlend", true).apply(PORTED_KEY);
+            "keybindPieCircleVertices", 60, 12, 360, true).apply(KEYBIND_SELECTION_KEY);
+    //#if MC < 26.3
+    //$$ public static final ConfigBoolean KEYBIND_BLEND = new ConfigBoolean(
+    //$$         "keybindPieBlend", true).apply(KEYBIND_SELECTION_KEY);
+    //#endif
     public static final ConfigBoolean KEYBIND_DARKEN_BACKGROUND = new ConfigBoolean(
-            "keybindPieDarkenBackground", true).apply(PORTED_KEY);
-    public static final ConfigBoolean KEYBIND_BLUR_BACKGROUND = new ConfigBoolean(
-            "keybindPieBlurBackground", true).apply(PORTED_KEY);
-    public static final ConfigBoolean KEYBIND_LABEL_SHADOW = new ConfigBoolean(
-            "keybindPieLabelShadow", false).apply(PORTED_KEY);
+            "keybindPieDarkenBackground", true).apply(KEYBIND_SELECTION_KEY);
+    //#if MC < 26.3
+    //$$ public static final ConfigBoolean KEYBIND_BLUR_BACKGROUND = new ConfigBoolean(
+    //$$         "keybindPieBlurBackground", true).apply(KEYBIND_SELECTION_KEY);
+    //$$ public static final ConfigBoolean KEYBIND_LABEL_SHADOW = new ConfigBoolean(
+    //$$         "keybindPieLabelShadow", false).apply(KEYBIND_SELECTION_KEY);
+    //#endif
     public static final ConfigDouble KEYBIND_EXPANSION = new ConfigDouble(
-            "keybindPieExpansion", 1.15D, 1.0D, 2.0D, true).apply(PORTED_KEY);
-    public static final ConfigInteger KEYBIND_MARGIN = new ConfigInteger(
-            "keybindPieMargin", 0, 0, 200, true).apply(PORTED_KEY);
-    public static final ConfigInteger KEYBIND_LABEL_INSET = new ConfigInteger(
-            "keybindPieLabelInset", 6, 0, 50, true).apply(PORTED_KEY);
+            "keybindPieExpansion", 1.15D, 1.0D, 2.0D, true).apply(KEYBIND_SELECTION_KEY);
+    //#if MC < 26.3
+    //$$ public static final ConfigInteger KEYBIND_MARGIN = new ConfigInteger(
+    //$$         "keybindPieMargin", 0, 0, 200, true).apply(KEYBIND_SELECTION_KEY);
+    //$$ public static final ConfigInteger KEYBIND_LABEL_INSET = new ConfigInteger(
+    //$$         "keybindPieLabelInset", 6, 0, 50, true).apply(KEYBIND_SELECTION_KEY);
+    //#endif
     public static final ConfigDouble KEYBIND_SCALE = new ConfigDouble(
-            "keybindPieScale", 0.6D, 0.2D, 1.0D, true).apply(PORTED_KEY);
+            "keybindPieScale", 0.6D, 0.2D, 1.0D, true).apply(KEYBIND_SELECTION_KEY);
     public static final ConfigDouble KEYBIND_CANCEL_ZONE = new ConfigDouble(
-            "keybindPieCancelZone", 0.25D, 0.0D, 0.9D, true).apply(PORTED_KEY);
+            "keybindPieCancelZone", 0.25D, 0.0D, 0.9D, true).apply(KEYBIND_SELECTION_KEY);
     public static final ConfigColor KEYBIND_MENU_COLOR = new ConfigColor(
-            "keybindPieMenuColor", "#404040").apply(PORTED_KEY);
+            "keybindPieMenuColor", "#404040").apply(KEYBIND_SELECTION_KEY);
     public static final ConfigColor KEYBIND_SELECTED_COLOR = new ConfigColor(
-            "keybindPieSelectedColor", "#FFFFFF").apply(PORTED_KEY);
+            "keybindPieSelectedColor", "#FFFFFF").apply(KEYBIND_SELECTION_KEY);
     public static final ConfigColor KEYBIND_HIGHLIGHT_COLOR = new ConfigColor(
-            "keybindPieHighlightColor", "#EED202").apply(PORTED_KEY);
+            "keybindPieHighlightColor", "#EED202").apply(KEYBIND_SELECTION_KEY);
     public static final ConfigInteger KEYBIND_ALTERNATE_LIGHTEN = new ConfigInteger(
-            "keybindPieAlternateLighten", 25, 0, 127, true).apply(PORTED_KEY);
+            "keybindPieAlternateLighten", 25, 0, 127, true).apply(KEYBIND_SELECTION_KEY);
     public static final ConfigInteger KEYBIND_ALPHA = new ConfigInteger(
-            "keybindPieAlpha", 144, 0, 255, true).apply(PORTED_KEY);
+            "keybindPieAlpha", 144, 0, 255, true).apply(KEYBIND_SELECTION_KEY);
     public static final ConfigBoolean KEYBIND_GRADATION = new ConfigBoolean(
-            "keybindPieGradation", true).apply(PORTED_KEY);
+            "keybindPieGradation", true).apply(KEYBIND_SELECTION_KEY);
     public static final ConfigBoolean KEYBIND_ANIMATE = new ConfigBoolean(
-            "keybindPieAnimate", true).apply(PORTED_KEY);
+            "keybindPieAnimate", true).apply(KEYBIND_SELECTION_KEY);
     public static final ActionHotkey OPEN_KEYBIND_EDITOR = new ActionHotkey(
-            "openKeybindPieEditor", "").applyTranslationKey(PORTED_KEY);
+            "openKeybindPieEditor", "").applyTranslationKey(KEYBIND_SELECTION_KEY);
     public static final ActionHotkey RELOAD_KEYBIND_DATA = new ActionHotkey(
-            "reloadKeybindPieData", "").applyTranslationKey(PORTED_KEY);
+            "reloadKeybindPieData", "").applyTranslationKey(KEYBIND_SELECTION_KEY);
     public static final ActionHotkey OPEN_KEYMAP_BROWSER = new ActionHotkey(
             "openKeymapBrowser", "").applyTranslationKey(PORTED_KEY);
     //#if MC >= 26.3
@@ -557,19 +597,28 @@ public final class Configs implements IConfigHandler
             ITEM_MANAGER_RECIPE_HISTORY_EXPANDED);
 
     private static final List<IConfigBase> KEYBIND_PIE_SETTINGS = List.of(
+            //#if MC >= 26.3
+            KEYBIND_SELECTION_LAYOUT,
+            //#endif
             KEYBIND_REPEAT_COOLDOWN,
             KEYBIND_SELECTION_COOLDOWN,
             KEYBIND_ATTACK_WORKAROUND,
             KEYBIND_IGNORED_KEYS,
             KEYBIND_INVERT_IGNORED_KEYS,
             KEYBIND_CIRCLE_VERTICES,
-            KEYBIND_BLEND,
+            //#if MC < 26.3
+            //$$ KEYBIND_BLEND,
+            //#endif
             KEYBIND_DARKEN_BACKGROUND,
-            KEYBIND_BLUR_BACKGROUND,
-            KEYBIND_LABEL_SHADOW,
+            //#if MC < 26.3
+            //$$ KEYBIND_BLUR_BACKGROUND,
+            //$$ KEYBIND_LABEL_SHADOW,
+            //#endif
             KEYBIND_EXPANSION,
-            KEYBIND_MARGIN,
-            KEYBIND_LABEL_INSET,
+            //#if MC < 26.3
+            //$$ KEYBIND_MARGIN,
+            //$$ KEYBIND_LABEL_INSET,
+            //#endif
             KEYBIND_SCALE,
             KEYBIND_CANCEL_ZONE,
             KEYBIND_MENU_COLOR,
@@ -580,12 +629,16 @@ public final class Configs implements IConfigHandler
             KEYBIND_GRADATION,
             KEYBIND_ANIMATE);
     private static final List<IConfigBase> KEYMAP_SETTINGS_CHILDREN = List.of(
-            OPEN_KEYMAP_BROWSER,
-            KEYMAP_DIRECT_REBIND,
-            KEYMAP_RELEASE_CONFIRM,
-            KEYMAP_CONFIRM_SETTING,
-            OPEN_KEYBIND_EDITOR,
-            RELOAD_KEYBIND_DATA);
+            //#if MC >= 26.3
+            OPEN_KEYMAP_BROWSER, KEYMAP_BINDING_MODE, KEYMAP_KEYBOARD_LAYOUT, KEYMAP_BACKGROUND_TRANSPARENCY);
+            //#else
+            //$$ OPEN_KEYMAP_BROWSER,
+            //$$ KEYMAP_DIRECT_REBIND,
+            //$$ KEYMAP_RELEASE_CONFIRM,
+            //$$ KEYMAP_CONFIRM_SETTING,
+            //$$ OPEN_KEYBIND_EDITOR,
+            //$$ RELOAD_KEYBIND_DATA);
+            //#endif
     private static final List<IConfigBase> CONFIG_GROUPING_CHILDREN = List.of(
             TWEAKEROO_COLLAPSIBLE_CONFIG,
             CUSTOM_CONFIG_GROUPS,
@@ -737,7 +790,7 @@ public final class Configs implements IConfigHandler
             FILL_SAFETY,
             GIVE_FULL_INVENTORY_EXPANDED)
     //#if MC >= 26.3
-            , List.of(KEEP_CONFIG_POSITION_EXPANDED), KEEP_CONFIG_POSITION_CHILDREN
+            , List.of(KEEP_CONFIG_POSITION_EXPANDED, CLASSIC_PAUSE_MENU), KEEP_CONFIG_POSITION_CHILDREN
     //#endif
             )
             .flatMap(list -> list.stream().map(config -> (IConfigBase) config))
@@ -801,6 +854,8 @@ public final class Configs implements IConfigHandler
 //#if MC >= 26.3
     public static final ConfigBooleanHotkeyed ITEM_RENDER_AGGREGATION = new ConfigBooleanHotkeyed(
             "itemRenderAggregation", true, "").apply(DISABLED_KEY);
+    public static final ConfigBoolean ENTITY_AGGREGATION_SEPARATE_SIZES = new ConfigBoolean(
+            "entityAggregationSeparateSizes", true).apply(DISABLED_KEY);
 //#endif
     public static final ConfigBooleanHotkeyed ENTITY_AGGREGATION_COUNT_ONLY = new ConfigBooleanHotkeyed(
             "entityAggregationCountOnly", false, "").apply(DISABLED_KEY);
@@ -829,6 +884,7 @@ public final class Configs implements IConfigHandler
             ENTITY_RENDER_AGGREGATION,
 //#if MC >= 26.3
             ITEM_RENDER_AGGREGATION,
+            ENTITY_AGGREGATION_SEPARATE_SIZES,
 //#endif
             ENTITY_AGGREGATION_COUNT_ONLY,
             ENTITY_AGGREGATION_RADIUS,
@@ -962,9 +1018,14 @@ public final class Configs implements IConfigHandler
                     FAST_SCROLLING_PRIMARY_HOTKEY,
                     FAST_SCROLLING_SECONDARY_HOTKEY,
                     KEYBIND_PIE_MENU,
-                    OPEN_KEYBIND_EDITOR,
-                    RELOAD_KEYBIND_DATA,
+                    //#if MC >= 26.3
+                    KEYMAP_SETTINGS_GROUP,
                     OPEN_KEYMAP_BROWSER,
+                    //#else
+                    //$$ OPEN_KEYBIND_EDITOR,
+                    //$$ RELOAD_KEYBIND_DATA,
+                    //$$ OPEN_KEYMAP_BROWSER,
+                    //#endif
 
                     OPEN_CUSTOM_CONFIG_GROUPS,
                     CLICK_AND_SEND,
@@ -1067,6 +1128,19 @@ public final class Configs implements IConfigHandler
 
             if (configVersion < CONFIG_VERSION)
             {
+                //#if MC >= 26.3
+                if (configVersion < 42)
+                {
+                    KEYMAP_SETTINGS_GROUP.setBooleanValue(true);
+                    KEYMAP_RELEASE_CONFIRM.setBooleanValue(false);
+                    KEYMAP_BINDING_MODE.setOptionListValue(KeymapBindingMode.VIRTUAL);
+                    if (ported != null && ported.has(OPEN_KEYMAP_BROWSER.getName()))
+                    {
+                        OPEN_KEYMAP_BROWSER.setValueFromJsonElement(ported.get(OPEN_KEYMAP_BROWSER.getName()));
+                        KEYMAP_SETTINGS_GROUP.getKeybind().setValueFromString(OPEN_KEYMAP_BROWSER.getStringValue());
+                    }
+                }
+                //#endif
                 if (configVersion == 25)
                 {
                     FAST_SCROLLING.setBooleanValue(false);
@@ -1092,6 +1166,15 @@ public final class Configs implements IConfigHandler
                     KEYBIND_IGNORED_KEYS.setValueFromString(migrateIgnoredKeyCodes(
                             KEYBIND_IGNORED_KEYS.getStringValue()));
                 }
+                //#if MC >= 26.3
+                if (configVersion < 41)
+                {
+                    // Expand only the previous defaults; preserve user-edited ignored lists.
+                    KEYBIND_IGNORED_KEYS.setValueFromString(
+                            io.github.halfmasa.xaerobinding.feature.IgnoredKeySelection.migrateDefaults(
+                                    KEYBIND_IGNORED_KEYS.getStringValue()));
+                }
+                //#endif
                 if (configVersion < 21)
                 {
                     KeybindSettings current = CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION.getKeybind().getSettings();
@@ -1510,6 +1593,7 @@ public final class Configs implements IConfigHandler
         return config == ENTITY_AGGREGATION_COUNT_ONLY ||
 //#if MC >= 26.3
                 config == ITEM_RENDER_AGGREGATION ||
+                config == ENTITY_AGGREGATION_SEPARATE_SIZES ||
 //#endif
                 config == ENTITY_AGGREGATION_RADIUS || config == ENTITY_AGGREGATION_THRESHOLD ||
                 config == ENTITY_AGGREGATION_SCAN_INTERVAL ||

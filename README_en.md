@@ -72,6 +72,7 @@ Download the JAR for your Minecraft version and place it in that game instance's
 - [Version compatibility notes](docs/version_compatibility.md)
 - [Modrinth English description](docs/modrinth_en.md)
 - [Build and release process](docs/releasing.md)
+- [Web GPT project instructions and review workflow (Chinese)](docs/web-gpt-project-instructions.md)
 
 Press `X + H` to open the halfmasa configuration screen, or open it through Mod Menu. See the feature guide for all options and hotkeys.
 
