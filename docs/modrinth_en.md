@@ -95,8 +95,8 @@ D:\MinecraftData\saves\<world>\config\halfmasa\xaero-world-binding.json
 
 ## Documentation
 
-- [English features and configuration](https://github.com/halfkite/halfmasa/blob/main/docs/features_en.md)
-- [Chinese features and configuration](https://github.com/halfkite/halfmasa/blob/main/docs/features.md)
+- [English features and configuration](https://github.com/halfkite/halfmasa/blob/ds1/docs/features.en_md)
+- [Chinese features and configuration](https://github.com/halfkite/halfmasa/blob/ds1/docs/features.cn_md)
 - [Third-party notices](https://github.com/halfkite/halfmasa/blob/main/src/main/resources/META-INF/halfmasa/THIRD_PARTY_NOTICES.md)
 
 ## License
