@@ -14,8 +14,8 @@ Supports the Fabric Loader and Minecraft versions `1.21.1`–`26.3`.
 
 ## Documentation
 
-- [Chinese feature and configuration guide](https://github.com/halfkite/halfmasa/blob/main/features_cn.md)
-- [English feature and configuration guide](https://github.com/halfkite/halfmasa/blob/main/features_en.md)
+- [Chinese feature and configuration guide](https://github.com/halfkite/halfmasa/blob/main/docs/features_cn.md)
+- [English feature and configuration guide](https://github.com/halfkite/halfmasa/blob/main/docs/features_en.md)
 
 Press `X + H` to open the halfmasa configuration screen, or open it through Mod Menu. See the feature guide for all features and hotkey settings.
 
@@ -32,7 +32,7 @@ Press `X + H` to open the halfmasa configuration screen, or open it through Mod 
 | [QuickShulker](https://github.com/MoRanpcy/quickshulker) | Feature-specific | Void Trading material preparation can retrieve emeralds from carried QuickShulker boxes; this requires compatible server support. |
 | [Conflux Map](https://github.com/Conflux-Union/conflux-map) | Optional integration | Adds waypoint lists, temporary waypoints, and teleport-related extensions. |
 
-The halfmasa mod itself is client-side; ordinary client features do not require halfmasa on the server. Features that depend on a server inventory API or Void Trading extension require the corresponding server component. See the [compatibility and configuration guide](https://github.com/halfkite/halfmasa/blob/main/features_en.md) for details.
+The halfmasa mod itself is client-side; ordinary client features do not require halfmasa on the server. Features that depend on a server inventory API or Void Trading extension require the corresponding server component. See the [compatibility and configuration guide](https://github.com/halfkite/halfmasa/blob/main/docs/features_en.md) for details.
 
 ## Downloads
 
@@ -53,10 +53,10 @@ Download the JAR for your Minecraft version and place it in that game instance's
 ### Schematic Refills and Void Trading
 
 - Refill materials for Litematica Easy Place and compatible printer integrations. Configure whether to retrieve items from fake-player inventories, the refill amount, and silent withdrawals.
-- Minecraft 26.3 adds [allowlists and blocklists for schematic saving, deletion, and pasting](https://github.com/halfkite/halfmasa/blob/main/docs/litematica-block-filters_en.md). Filter saved content, world blocks allowed for deletion, and pasted content by block ID; configure each in the Other Mod Extensions tab.
+- Minecraft 26.3 adds [allowlists and blocklists for schematic saving, deletion, and pasting](https://github.com/halfkite/halfmasa/blob/main/docs/features_en.md#schematic-features). Filter saved content, world blocks allowed for deletion, and pasted content by block ID; configure each in the Other Mod Extensions tab.
 - Automatically open villager trading screens and buy offers by trade-row number or output-item allowlist. The screen can close or acquired items can be dropped after trading.
 - Void Trading can identify fake players in the same boat or minecart and restore them after the trading screen closes. Material preparation supports uncrafting emerald blocks and retrieving emeralds from QuickShulker.
-- Automatic refills require a server inventory API; Void Trading material preparation requires the corresponding server extension. See the [schematic refill guide](https://github.com/halfkite/halfmasa/blob/main/docs/litematica-auto-refill.md) and [feature configuration guide](https://github.com/halfkite/halfmasa/blob/main/features_en.md) for compatibility details.
+- Automatic refills require a server inventory API; Void Trading material preparation requires the corresponding server extension. See the [schematic refill and feature configuration guide](https://github.com/halfkite/halfmasa/blob/main/docs/features_en.md#schematic-features) for compatibility details.
 
 ### Creative Mode and Interface Improvements
 

@@ -14,8 +14,8 @@ halfmasa是Minecraft Fabric 客户端辅助模组，集中提供路径点管理�
 
 ## 文档
 
-- [中文功能与配置说明](https://github.com/halfkite/halfmasa/blob/main/features_cn.md)
-- [English Feature Introduction](https://github.com/halfkite/halfmasa/blob/main/features_en.md)
+- [中文功能与配置说明](https://github.com/halfkite/halfmasa/blob/main/docs/features_cn.md)
+- [English Feature Introduction](https://github.com/halfkite/halfmasa/blob/main/docs/features_en.md)
 
 默认按 `X + H` 打开 halfmasa 配置界面，也可从 Mod Menu 进入。完整功能和快捷键设置见功能文档。
 
@@ -32,7 +32,7 @@ halfmasa是Minecraft Fabric 客户端辅助模组，集中提供路径点管理�
 | [QuickShulker](https://github.com/MoRanpcy/quickshulker) | 功能可选 | 虚空交易材料准备可从随身 QuickShulker 潜影盒取出绿宝石；此功能需要匹配的服务端支持。 |
 | [Conflux Map](https://github.com/Conflux-Union/conflux-map) | 可选联动 | 提供路径点列表、临时路径点和传送相关扩展功能。 |
 
-halfmasa 本体是客户端模组，普通客户端功能不要求服务器安装 halfmasa。依赖服务端库存 API 或虚空交易扩展的功能，需要服务器安装对应组件；详情见[兼容与设置说明](https://github.com/halfkite/halfmasa/blob/main/features_cn.md)。
+halfmasa 本体是客户端模组，普通客户端功能不要求服务器安装 halfmasa。依赖服务端库存 API 或虚空交易扩展的功能，需要服务器安装对应组件；详情见[兼容与设置说明](https://github.com/halfkite/halfmasa/blob/main/docs/features_cn.md)。
 
 ## 下载
 
@@ -53,10 +53,10 @@ halfmasa 本体是客户端模组，普通客户端功能不要求服务器安�
 ### 投影补货与虚空交易
 
 - 为 Litematica 轻松放置和兼容打印机补充材料；可配置是否从假人库存取货、取货数量和静默取物。
-- Minecraft 26.3 新增[投影保存、删除与粘贴黑白名单](https://github.com/halfkite/halfmasa/blob/main/docs/litematica-block-filters.md)：按方块 ID 筛选保存内容、允许删除的世界方块和粘贴内容，在“其他模组扩展”栏分别配置。
+- Minecraft 26.3 新增[投影保存、删除与粘贴黑白名单](https://github.com/halfkite/halfmasa/blob/main/docs/features_cn.md#投影相关功能)：按方块 ID 筛选保存内容、允许删除的世界方块和粘贴内容，在“其他模组扩展”栏分别配置。
 - 自动打开村民交易界面，并由当前玩家按交易栏序号或产出物品白名单购买；可在交易完成后关闭界面或丢出所得物品。
 - 虚空交易可识别同一船只或矿车上的假人，并在关闭交易界面后按配置恢复；材料准备支持拆分绿宝石块和从 QuickShulker 取货。
-- 自动补货依赖服务端库存接口；虚空交易材料准备依赖对应服务端扩展。具体兼容条件见[投影补货说明](https://github.com/halfkite/halfmasa/blob/main/docs/litematica-auto-refill.md)及[功能配置文档](https://github.com/halfkite/halfmasa/blob/main/features_cn.md)。
+- 自动补货依赖服务端库存接口；虚空交易材料准备依赖对应服务端扩展。具体兼容条件见[投影补货与功能配置说明](https://github.com/halfkite/halfmasa/blob/main/docs/features_cn.md#投影相关功能)。
 
 ### 创造模式与界面效率
 
