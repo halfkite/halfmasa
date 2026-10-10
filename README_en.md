@@ -14,7 +14,7 @@ Supports the Fabric Loader and Minecraft versions `1.21.1`–`26.3`.
 
 ## Documentation
 
-- [Chinese feature and configuration guide](https://github.com/halfkite/halfmasa/blob/main/docs/features_cn.md)
+- [中文功能介绍](https://github.com/halfkite/halfmasa/blob/main/docs/features_cn.md)
 - [English feature and configuration guide](https://github.com/halfkite/halfmasa/blob/main/docs/features_en.md)
 
 Press `X + H` to open the halfmasa configuration screen, or open it through Mod Menu. See the feature guide for all features and hotkey settings.
