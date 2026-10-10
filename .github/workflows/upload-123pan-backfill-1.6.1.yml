@@ -1,0 +1,77 @@
+name: Upload 1.6.1 JARs to 123pan
+
+on:
+  push:
+    branches:
+      - codex/123pan-upload-1.6.1
+    paths:
+      - .github/workflows/upload-123pan-backfill-1.6.1.yml
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    name: Validate and upload stable 1.6.1 assets
+    if: ${{ github.event.head_commit.message == 'chore: backfill 1.6.1 to 123pan' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out publisher helper
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          path: publisher
+
+      - name: Check out 1.6.1 source
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/1.6.1
+          fetch-depth: 1
+          path: release-source
+
+      - name: Validate Release and assemble published JARs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: 1.6.1
+        run: |
+          set -euo pipefail
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json tagName,name,body,isDraft,isPrerelease,targetCommitish > release.json
+          commit="$(git -C release-source rev-parse HEAD)"
+          python publisher/scripts/python/release_metadata.py inspect-release --repo-root release-source --release-json release.json --tag "$RELEASE_TAG" --commit "$commit" --target all --output release-context.json --github-output "$GITHUB_OUTPUT"
+          mkdir -p existing-assets
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern "halfmasa-$RELEASE_TAG-mc*.jar" --dir existing-assets
+          python publisher/scripts/python/release_metadata.py assemble-assets --context release-context.json --assets-root existing-assets --output-dir release-package
+
+      - name: Install rclone
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes rclone
+
+      - name: Upload and verify JARs
+        shell: bash
+        env:
+          RELEASE_TAG: 1.6.1
+          WEBDAV_USER: ${{ secrets.PAN123_WEBDAV_USERNAME }}
+          WEBDAV_PASSWORD: ${{ secrets.PAN123_WEBDAV_PASSWORD }}
+          RCLONE_CONFIG_WEBDAV123_TYPE: webdav
+          RCLONE_CONFIG_WEBDAV123_URL: https://webdav.123pan.cn/webdav
+          RCLONE_CONFIG_WEBDAV123_VENDOR: other
+        run: |
+          set -euo pipefail
+          if [[ -z "$WEBDAV_USER" || -z "$WEBDAV_PASSWORD" ]]; then
+            echo 'Configure PAN123_WEBDAV_USERNAME and PAN123_WEBDAV_PASSWORD repository secrets.' >&2
+            exit 1
+          fi
+          shopt -s nullglob
+          jars=(release-package/dist/*.jar)
+          if [[ ${#jars[@]} -eq 0 ]]; then
+            echo 'The validated Release package contains no JAR files.' >&2
+            exit 1
+          fi
+          export RCLONE_CONFIG_WEBDAV123_USER="$WEBDAV_USER"
+          export RCLONE_CONFIG_WEBDAV123_PASS="$(rclone obscure "$WEBDAV_PASSWORD")"
+          unset WEBDAV_PASSWORD
+          rclone copy release-package/dist "webdav123:$RELEASE_TAG" --include '*.jar' --ignore-times
+          rclone check release-package/dist "webdav123:$RELEASE_TAG" --include '*.jar' --one-way
