@@ -13,7 +13,6 @@ permissions:
 jobs:
   upload:
     name: Validate and upload stable 1.6.1 assets
-    if: ${{ github.event.head_commit.message == 'chore: backfill 1.6.1 to 123pan' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out publisher helper
