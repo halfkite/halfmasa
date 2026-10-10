@@ -19,9 +19,13 @@ import io.github.halfmasa.xaerobinding.config.ActionConfig;
 import io.github.halfmasa.xaerobinding.config.Configs;
 import io.github.halfmasa.xaerobinding.config.ConfigGroupHeader;
 import io.github.halfmasa.xaerobinding.feature.CustomConfigGroupStore;
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import fi.dy.masa.malilib.gui.GuiBase;
+//#if MC >= 1.21.11
 import fi.dy.masa.malilib.render.GuiContext;
+//#else
+//$$ import net.minecraft.client.gui.GuiGraphics;
+//#endif
 import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
 //#endif
 
@@ -141,7 +145,7 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         x += EXPAND_BUTTON_WIDTH;
         labelWidth = Math.max(20, labelWidth - EXPAND_BUTTON_WIDTH);
 
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (config == Configs.KEYBIND_IGNORED_KEYS)
         {
             this.addIgnoredKeysOption(x, y, labelWidth, configWidth, config);
@@ -218,7 +222,7 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         this.addCustomGroupControls(config, y);
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private void addIgnoredKeysOption(int x, int y, int labelWidth, int configWidth, IConfigBase config)
     {
         this.addLabel(x, y + 7, labelWidth, 8, 0xFFFFFFFF, config.getConfigGuiDisplayName());
@@ -246,12 +250,22 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         }
 
         @Override
+        //#if MC >= 1.21.11
         public void render(GuiContext graphics, int mouseX, int mouseY, boolean selected)
+        //#elseif MC >= 1.21.8
+        //$$ public void render(GuiGraphics graphics, int mouseX, int mouseY, boolean selected)
+        //#else
+        //$$ public void render(int mouseX, int mouseY, boolean selected, GuiGraphics graphics)
+        //#endif
         {
             String names = KeymapInputNames.names(Configs.KEYBIND_IGNORED_KEYS.getStringValue());
             this.setDisplayString(Minecraft.getInstance().font.plainSubstrByWidth(names, Math.max(1, this.width - 8)));
             this.setHoverStrings(names, StringUtils.translate("halfmasa.gui.ignored_keys.open"));
+            //#if MC >= 1.21.8
             super.render(graphics, mouseX, mouseY, selected);
+            //#else
+            //$$ super.render(mouseX, mouseY, selected, graphics);
+            //#endif
         }
     }
     //#endif

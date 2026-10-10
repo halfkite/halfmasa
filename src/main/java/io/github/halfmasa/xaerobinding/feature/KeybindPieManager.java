@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import fi.dy.masa.malilib.event.InputEventHandler;
 import fi.dy.masa.malilib.hotkeys.IHotkey;
 import fi.dy.masa.malilib.hotkeys.IKeybind;
@@ -44,7 +44,7 @@ public final class KeybindPieManager implements IClientTickHandler
     private final Map<KeyMapping, Integer> oneShotReleases = new HashMap<>();
     private final Map<InputConstants.Key, SelectionCooldown> selectionCooldowns = new HashMap<>();
     private final Set<Integer> pressedInputKeys = new HashSet<>();
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private final List<Integer> pressedInputOrder = new ArrayList<>();
     private Object inputLevel;
     private KeyMapping[] synchronizedMappings;
@@ -56,7 +56,7 @@ public final class KeybindPieManager implements IClientTickHandler
     private KeybindPieScreen activeScreen;
     private Screen parentScreen;
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     public record PieAction(KeyMapping mapping, IHotkey hotkey)
     {
         public String displayName()
@@ -118,7 +118,7 @@ public final class KeybindPieManager implements IClientTickHandler
             return true;
         }
 
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (this.activeScreen != null)
         {
             if (pressed && !key.equals(this.activeKey))
@@ -148,7 +148,7 @@ public final class KeybindPieManager implements IClientTickHandler
             return false;
         }
 
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         List<PieAction> conflicts = wheelCandidates(key, screen);
         if (hasJeiBinding(conflicts.stream().map(PieAction::mapping).filter(java.util.Objects::nonNull).toList()) ||
             hasJadeDetailsBinding(conflicts.stream().map(PieAction::mapping).filter(java.util.Objects::nonNull).toList()))
@@ -164,7 +164,7 @@ public final class KeybindPieManager implements IClientTickHandler
             return false;
         }
 
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         for (PieAction action : conflicts)
         {
             if (action.mapping() != null)
@@ -191,7 +191,7 @@ public final class KeybindPieManager implements IClientTickHandler
         return true;
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private boolean transitionSelection(InputConstants.Key key)
     {
         if (isIgnored(key)) return false;
@@ -248,7 +248,7 @@ public final class KeybindPieManager implements IClientTickHandler
 
     public boolean handleClick(InputConstants.Key key)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (this.activeScreen != null) return true;
         //#endif
         if (!Configs.KEYBIND_PIE_MENU.getBooleanValue() || isIgnored(key))
@@ -265,7 +265,7 @@ public final class KeybindPieManager implements IClientTickHandler
         {
             return false;
         }
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         List<PieAction> conflicts = wheelCandidates(key, screen);
         List<KeyMapping> vanilla = conflicts.stream().map(PieAction::mapping)
                 .filter(java.util.Objects::nonNull).toList();
@@ -288,7 +288,7 @@ public final class KeybindPieManager implements IClientTickHandler
      */
     public static boolean wouldTriggerNow(Minecraft client, Screen screen)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (KeymapBrowserScreen.isEditingBindings(screen) || IgnoredKeysScreen.isEditingKeys(screen)) return false;
         //#endif
         if (screen != null)
@@ -327,7 +327,7 @@ public final class KeybindPieManager implements IClientTickHandler
     public void handleKeyboardEvent(InputConstants.Key key, boolean pressed)
     {
         this.trackInput(key, pressed);
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (pressed) this.handleSet(key, true);
         //#endif
         this.restoreMovementKeys(Minecraft.getInstance());
@@ -369,7 +369,7 @@ public final class KeybindPieManager implements IClientTickHandler
 
     public void refreshCustomCombos()
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (this.activeScreen != null) return;
         //#endif
         Minecraft client = Minecraft.getInstance();
@@ -412,7 +412,7 @@ public final class KeybindPieManager implements IClientTickHandler
     private void trackInput(InputConstants.Key key, boolean pressed)
     {
         int inputCode = keyCode(key);
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         Minecraft client = Minecraft.getInstance();
         this.refreshInputSession(client);
         // A GUI can consume releases. Never let an old menu click/Enter become
@@ -420,7 +420,7 @@ public final class KeybindPieManager implements IClientTickHandler
         this.pruneReleasedInputs(client, inputCode);
         //#endif
         boolean changed = pressed ? this.pressedInputKeys.add(inputCode) : this.pressedInputKeys.remove(inputCode);
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (changed)
         {
             if (pressed) this.pressedInputOrder.add(inputCode);
@@ -435,7 +435,7 @@ public final class KeybindPieManager implements IClientTickHandler
         //#endif
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private boolean shouldDeferCustomCombo(InputConstants.Key key, boolean pressed)
     {
         if (!pressed || !Configs.KEYBIND_PIE_MENU.getBooleanValue() || isIgnored(key) ||
@@ -466,7 +466,7 @@ public final class KeybindPieManager implements IClientTickHandler
     }
     //#endif
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     public void completeSelection(PieAction action, boolean clickHold)
     //#else
     //$$ public void completeSelection(KeyMapping mapping, boolean clickHold)
@@ -484,7 +484,7 @@ public final class KeybindPieManager implements IClientTickHandler
             this.restorePhysicalMovementKeys(client);
         }
 
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (action == null || key == null)
         //#else
         //$$ if (mapping == null || key == null)
@@ -499,7 +499,7 @@ public final class KeybindPieManager implements IClientTickHandler
             this.selectionCooldowns.put(key, new SelectionCooldown(cooldownTicks, !clickHold));
         }
 
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (action.hotkey() != null)
         {
             IKeybind binding = action.hotkey().getKeybind();
@@ -547,7 +547,7 @@ public final class KeybindPieManager implements IClientTickHandler
     @Override
     public void onClientTick(Minecraft client)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         this.refreshInputSession(client);
         this.pruneReleasedInputs(client, null);
         //#endif
@@ -639,7 +639,7 @@ public final class KeybindPieManager implements IClientTickHandler
                 .toList();
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private List<PieAction> wheelCandidates(InputConstants.Key key, Screen screen)
     {
         List<PieAction> actions = new ArrayList<>();
@@ -718,7 +718,7 @@ public final class KeybindPieManager implements IClientTickHandler
     {
         // MaLiLib subtracts 100 from MouseButtonEvent.input(), which is the
         // SDL mouse button number on 26.3. The wheel stores compact negatives.
-        return code < -80 && code > -100
+        return code < -80 && code >= -100
                 ? InputCompat.mouseButtonToLayoutCode(code + 100) : code;
     }
 
@@ -890,7 +890,7 @@ public final class KeybindPieManager implements IClientTickHandler
         {
             return;
         }
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (this.customMappingsSynchronized && this.synchronizedMappings == client.options.keyMappings) return;
         this.synchronizedMappings = client.options.keyMappings;
         //#else
@@ -920,7 +920,7 @@ public final class KeybindPieManager implements IClientTickHandler
         this.customMappingsSynchronized = false;
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private void refreshInputSession(Minecraft client)
     {
         if (this.inputLevel != client.level)
@@ -998,7 +998,7 @@ public final class KeybindPieManager implements IClientTickHandler
 
     private static boolean isIgnored(InputConstants.Key key)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         return IgnoredKeySelection.isIgnored(keyCode(key),
                 IgnoredKeySelection.parse(Configs.KEYBIND_IGNORED_KEYS.getStringValue()),
                 Configs.KEYBIND_INVERT_IGNORED_KEYS.getBooleanValue());
@@ -1053,7 +1053,7 @@ public final class KeybindPieManager implements IClientTickHandler
         this.activeCustomCombos.clear();
         this.orderedComboProgress.clear();
         this.pressedInputKeys.clear();
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         this.pressedInputOrder.clear();
         //#endif
         this.activeKey = null;

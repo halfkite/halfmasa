@@ -1,14 +1,14 @@
-[中文](https://github.com/halfkite/halfmasa/blob/ds1/features_cn.md) | [English](https://github.com/halfkite/halfmasa/blob/ds1/features_en.md)
+[中文](https://github.com/halfkite/halfmasa/blob/main/features_cn.md) | [English](https://github.com/halfkite/halfmasa/blob/main/features_en.md)
 
 # halfmasa Features and Configuration
 
-> Documentation version `1.6.0` | Open the configuration screen with `X + H` (or from Mod Menu) | Disabled by default unless noted; an empty hotkey means unbound
+> Documentation version `1.6.1` | Open the configuration screen with `X + H` (or from Mod Menu) | Disabled by default unless noted; an empty hotkey means unbound
 
 ## Schematic Features
 
 | Name | Type | Default | Description |
 |---|---|---|---|
-| Easy Place automatic refill<br>`litematicaAutoRefill` | Boolean with hotkey | unbound, `false` | When Easy Place runs out of an item, take it from a fake player (32 by default; 0 means half a stack), then query categorized inventory by item ID. Recheck local materials before taking items. Requires Litematica, Fabric API, and FGA (inventory API v1). Missing channel/permission, out of stock, or a full inventory displays a notice and stops; an uncertain take pauses refilling until reconnect. [Acceptance steps](https://github.com/halfkite/halfmasa/blob/ds1/docs/litematica-auto-refill.md) |
+| Easy Place automatic refill<br>`litematicaAutoRefill` | Boolean with hotkey | unbound, `false` | When Easy Place runs out of an item, take it from a fake player (32 by default; 0 means half a stack), then query categorized inventory by item ID. Recheck local materials before taking items. Requires Litematica, Fabric API, and FGA (inventory API v1). Missing channel/permission, out of stock, or a full inventory displays a notice and stops; an uncertain take pauses refilling until reconnect. [Acceptance steps](https://github.com/halfkite/halfmasa/blob/main/docs/litematica-auto-refill.md) |
 | Allow schematic refill from fake-player stock<br>`litematicaRefillAllowFake` | Boolean | `false` | Allow Easy Place refill to take items from fake-player stock. |
 | Schematic refill amount<br>`litematicaRefillAmount` | Integer | `32` | Amount to take per request; 0 means half a stack. Range: 0–64. |
 | Silent schematic refill<br>`litematicaRefillSilent` | Boolean with hotkey | unbound, `false` | Take items directly from offline stock without summoning or logging out a fake player. Requires the FGA `silent_take` interface. |
@@ -22,7 +22,7 @@
 | Schematic deletion block filter<br>`litematicaDeleteFilter` | Boolean | `false` | Filter blocks by block ID when deleting from a schematic (26.3). |
 | Schematic deletion block whitelist<br>`litematicaDeleteWhitelist` | String list | `[]` | Block IDs allowed by the schematic deletion whitelist (26.3). |
 | Schematic deletion block blacklist<br>`litematicaDeleteBlacklist` | String list | `[]` | Block IDs excluded by the schematic deletion blacklist (26.3). |
-| Schematic paste block filter<br>`litematicaPasteFilter` | Boolean | `false` | Filter blocks by block ID when pasting a schematic (26.3). [Compatibility and acceptance](https://github.com/halfkite/halfmasa/blob/ds1/docs/litematica-block-filters.md) |
+| Schematic paste block filter<br>`litematicaPasteFilter` | Boolean | `false` | Filter blocks by block ID when pasting a schematic (26.3). [Compatibility and acceptance](https://github.com/halfkite/halfmasa/blob/main/docs/litematica-block-filters.md) |
 | Schematic paste block whitelist<br>`litematicaPasteWhitelist` | String list | `[]` | Block IDs allowed by the schematic paste whitelist (26.3). |
 | Schematic paste block blacklist<br>`litematicaPasteBlacklist` | String list | `[]` | Block IDs excluded by the schematic paste blacklist (26.3). |
 

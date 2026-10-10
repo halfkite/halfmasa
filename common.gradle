@@ -132,7 +132,12 @@ processResources {
     filesMatching('fabric.mod.json') { expand properties }
     filesMatching('halfmasa.mixins.json') {
         filter { line ->
-            if (project.mcVersion < 26_03_00 && [
+            if (project.mcVersion >= 26_00_00 && line.contains('"AggregationGameRendererAccessor"')) return null
+            if (project.mcVersion >= 1_21_04 && line.contains('"BakedSpawnerItemMixin"')) return null
+            if (project.mcVersion >= 1_21_10 && line.contains('"LegacyItemAggregationMixin"')) return null
+            if (project.mcVersion < 1_21_04 && ['"SpawnerItemModelMixin"', '"SpawnerItemLayerAccessor"', '"SpawnerItemRenderStateAccessor"'].any { line.contains(it) }) return null
+            if (project.mcVersion < 1_21_10 && line.contains('"TrialSpawnerRendererAccessor"')) return null
+            if (project.mcVersion < 1_21_01 && [
                     '"LitematicaSaveBlockFilterMixin"', '"LitematicaDeleteBlockFilterMixin"',
                     '"LitematicaAreaDeleteBlockFilterMixin"', '"LitematicaFilteredContainerAccessor"',
                     '"LitematicaTaskWorldAccessor"',
@@ -194,6 +199,20 @@ java {
 sourceSets {
     main {
         java {
+            if (project.mcVersion >= 26_00_00) {
+                exclude 'io/github/halfmasa/xaerobinding/mixin/AggregationGameRendererAccessor.java'
+            }
+            if (project.mcVersion >= 1_21_04) {
+                exclude 'io/github/halfmasa/xaerobinding/feature/BakedSpawnerPreview.java'
+                exclude 'io/github/halfmasa/xaerobinding/mixin/BakedSpawnerItemMixin.java'
+            }
+            if (project.mcVersion >= 1_21_05) {
+                exclude 'io/github/halfmasa/xaerobinding/feature/SpawnerPreviewBakedModel.java'
+            }
+            if (project.mcVersion >= 1_21_10) {
+                exclude 'io/github/halfmasa/xaerobinding/feature/LegacySpawnerItemModel.java'
+                exclude 'io/github/halfmasa/xaerobinding/mixin/LegacyItemAggregationMixin.java'
+            }
             if (project.mcVersion >= 26_02_00) {
                 exclude 'io/github/halfmasa/xaerobinding/mixin/BookEditScreenMixin.java'
                 exclude 'io/github/halfmasa/xaerobinding/mixin/BookEditDisplayCacheMixin.java'

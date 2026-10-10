@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.feature;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;

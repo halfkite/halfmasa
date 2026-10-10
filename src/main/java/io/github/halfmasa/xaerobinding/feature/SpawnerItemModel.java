@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.feature;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.10
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,11 +17,17 @@ import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.special.SpecialModelRenderer;
+//#if MC >= 26.0
 import net.minecraft.client.resources.model.cuboid.ItemTransform;
+//#else
+//$$ import net.minecraft.client.renderer.block.model.ItemTransform;
+//#endif
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
+//#if MC >= 26.2
 import net.minecraft.world.entity.EntitySpawnRequest;
+//#endif
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ItemOwner;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -42,7 +48,7 @@ public final class SpawnerItemModel implements ItemModel
     private static ClientLevel previewLevel;
     private static final PreviewRenderer PREVIEW_RENDERER = new PreviewRenderer(false);
     private static final PreviewRenderer GUI_PREVIEW_RENDERER = new PreviewRenderer(true);
-    private static final Vector3fc[] EXTENTS = {new Vector3f(0, 0, 0), new Vector3f(1, 1, 1)};
+    private static final Vector3f[] EXTENTS = {new Vector3f(0, 0, 0), new Vector3f(1, 1, 1)};
     private final ItemModel cage;
     private final SpawnerItemAppearance.Info info;
 
@@ -70,11 +76,13 @@ public final class SpawnerItemModel implements ItemModel
         if (entity == null) return;
         var dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
         var preview = new SpawnerRenderState();
-        TrialSpawnerRenderer.extractSpawnerData(preview, 0, entity, dispatcher, 0, 0);
+        io.github.halfmasa.xaerobinding.mixin.TrialSpawnerRendererAccessor.halfmasa$extractSpawnerData(preview, 0, entity, dispatcher, 0, 0);
         if (preview.displayEntity == null) return;
         if (gui) preview.scale = SpawnerItemPresentation.guiScale(entity.getType(), preview.scale);
         preview.displayEntity.nameTag = null;
+        //#if MC >= 26.0
         preview.displayEntity.scoreText = null;
+        //#endif
         preview.displayEntity.shadowRadius = 0;
         preview.displayEntity.shadowPieces.clear();
         preview.displayEntity.leashStates = null;
@@ -82,20 +90,30 @@ public final class SpawnerItemModel implements ItemModel
         var base = (SpawnerItemLayerAccessor) layers.halfmasa$getLayers()[firstLayer];
         var layer = state.newLayer();
         boolean foreground = gui && Float.isFinite(front[0]);
+        org.joml.Matrix4f previewTransform = null;
         if (foreground)
         {
+            //#if MC >= 26.0
             layer.setItemTransform(ItemTransform.NO_TRANSFORM);
             layer.setLocalTransform(SpawnerItemPresentation.foregroundTransform(base.halfmasa$getItemTransform(),
                     base.halfmasa$getLocalTransform(), entity.getBbWidth(), entity.getBbHeight(), preview.scale, front[0]));
+            //#else
+            //$$ layer.setTransform(ItemTransform.NO_TRANSFORM);
+            //$$ previewTransform = SpawnerItemPresentation.foregroundTransform(base.halfmasa$getItemTransform(), new org.joml.Matrix4f(), entity.getBbWidth(), entity.getBbHeight(), preview.scale, front[0]);
+            //#endif
         }
         else
         {
+            //#if MC >= 26.0
             layer.setItemTransform(base.halfmasa$getItemTransform());
             layer.setLocalTransform(base.halfmasa$getLocalTransform());
+            //#else
+            //$$ layer.setTransform(base.halfmasa$getItemTransform());
+            //#endif
         }
         layer.setUsesBlockLight(true);
         layer.setExtents(() -> EXTENTS);
-        layer.setupSpecialModel(foreground ? GUI_PREVIEW_RENDERER : PREVIEW_RENDERER, preview);
+        layer.setupSpecialModel(foreground ? GUI_PREVIEW_RENDERER : PREVIEW_RENDERER, new PreviewState(preview, previewTransform));
         // GUI atlas entries must distinguish entity NBT such as baby/slime/armor variants.
         state.appendModelIdentityElement(this.info.mobs().getFirst());
     }
@@ -109,7 +127,12 @@ public final class SpawnerItemModel implements ItemModel
         // Preview only the occupant, without spawning its passenger tree or retaining world positions.
         for (String field : new String[]{"Passengers", "UUID", "Pos", "Motion", "Rotation"}) copy.remove(field);
         Entity entity = EntityType.loadEntityRecursive(copy, level,
-                new EntitySpawnRequest(EntitySpawnReason.SPAWNER, true), entityToProcess -> {
+                //#if MC >= 26.2
+                new EntitySpawnRequest(EntitySpawnReason.SPAWNER, true),
+                //#else
+                //$$ EntitySpawnReason.SPAWNER,
+                //#endif
+                entityToProcess -> {
                     entityToProcess.setId(PREVIEW_IDS.getAndIncrement());
                     return entityToProcess;
                 });
@@ -130,18 +153,33 @@ public final class SpawnerItemModel implements ItemModel
         }
     }
 
-    private static final class PreviewRenderer implements SpecialModelRenderer<SpawnerRenderState>
+    private record PreviewState(SpawnerRenderState state, org.joml.Matrix4f transform) {}
+
+    private static final class PreviewRenderer implements SpecialModelRenderer<PreviewState>
     {
         private final boolean gui;
 
         private PreviewRenderer(boolean gui) { this.gui = gui; }
 
         @Override
-        public void submit(SpawnerRenderState state, PoseStack poses, SubmitNodeCollector collector,
+        public void submit(PreviewState argument,
+                           //#if MC < 26.0
+                           //$$ ItemDisplayContext context,
+                           //#endif
+                           PoseStack poses, SubmitNodeCollector collector,
                            int light, int overlay, boolean foil, int outline)
         {
+            var state = argument.state();
+            poses.pushPose();
+            if (argument.transform() != null) poses.mulPose(argument.transform());
             var client = Minecraft.getInstance();
+            //#if MC >= 26.2
             var camera = client.gameRenderer.gameRenderState().levelRenderState.cameraRenderState;
+            //#elseif MC >= 26.0
+            //$$ var camera = client.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
+            //#else
+            //$$ var camera = client.gameRenderer.getLevelRenderState().cameraRenderState;
+            //#endif
             state.displayEntity.lightCoords = light;
             if (this.gui)
             {
@@ -152,10 +190,15 @@ public final class SpawnerItemModel implements ItemModel
                 SpawnerRenderer.submitEntityInSpawner(poses, collector, state.displayEntity,
                         client.getEntityRenderDispatcher(), state.spin, state.scale, camera);
             }
+            poses.popPose();
         }
 
+        //#if MC >= 1.21.11
         @Override public void getExtents(Consumer<Vector3fc> consumer) { for (var point : EXTENTS) consumer.accept(point); }
-        @Override public SpawnerRenderState extractArgument(ItemStack stack) { return null; }
+        //#else
+        //$$ @Override public void getExtents(java.util.Set<Vector3f> points) { java.util.Collections.addAll(points, EXTENTS); }
+        //#endif
+        @Override public PreviewState extractArgument(ItemStack stack) { return null; }
     }
 
 }

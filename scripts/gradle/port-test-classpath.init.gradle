@@ -1,0 +1,10 @@
+gradle.projectsEvaluated {
+    rootProject.subprojects.each { p ->
+        p.tasks.register('portTestClasspath') {
+            doLast {
+                def file = rootProject.file("build/port-classpath-${p.name}.txt")
+                file.text = p.sourceSets.main.compileClasspath.asPath
+            }
+        }
+    }
+}

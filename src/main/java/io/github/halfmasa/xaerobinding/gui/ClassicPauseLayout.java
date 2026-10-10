@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.gui;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import java.util.EnumMap;
 import java.util.List;
 import java.util.ArrayList;
@@ -18,9 +18,19 @@ public final class ClassicPauseLayout
 
     public static Layout arrange(int screenWidth, int screenHeight, boolean mods, List<Size> extraSizes)
     {
+        return arrange(screenWidth, screenHeight, mods, extraSizes, screenHeight / 4 + 8);
+    }
+
+    public static Layout arrangeTitle(int screenWidth, int screenHeight, boolean mods, List<Size> extraSizes)
+    {
+        return arrange(screenWidth, screenHeight, mods, extraSizes, screenHeight / 4 + 48);
+    }
+
+    private static Layout arrange(int screenWidth, int screenHeight, boolean mods, List<Size> extraSizes, int preferredTop)
+    {
         int rows = mods ? 5 : 4;
         int mainHeight = rows * (BUTTON_HEIGHT + GAP) - GAP;
-        int top = Math.max(MARGIN, Math.min(screenHeight / 4 + 8, screenHeight - MARGIN - mainHeight));
+        int top = Math.max(MARGIN, Math.min(preferredTop, screenHeight - MARGIN - mainHeight));
         int extraHeight = extraSizes.stream().mapToInt(Size::height).max().orElse(BUTTON_HEIGHT);
         extraHeight = Math.max(1, Math.min(extraHeight, Math.max(1, screenHeight - top - MARGIN)));
         int rowsPerColumn = Math.max(1, (screenHeight - MARGIN - top + GAP) / (extraHeight + GAP));

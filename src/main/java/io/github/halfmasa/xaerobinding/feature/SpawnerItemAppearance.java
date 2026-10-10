@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.feature;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.io.IOException;
@@ -46,13 +46,17 @@ public final class SpawnerItemAppearance
         Kind kind = stack.is(Items.TRIAL_SPAWNER) ? Kind.TRIAL_SPAWNER :
                 stack.is(Items.VAULT) ? Kind.VAULT : Kind.SPAWNER;
         var component = stack.get(DataComponents.BLOCK_ENTITY_DATA);
+        //#if MC >= 1.21.10
         CompoundTag data = component != null ? component.copyTagWithoutId() : new CompoundTag();
+        //#else
+        //$$ CompoundTag data = component != null ? component.copyTag() : new CompoundTag();
+        //#endif
         var blockState = stack.get(DataComponents.BLOCK_STATE);
         Map<String, String> properties = blockState != null ? blockState.properties() : Map.of();
-        String lootTable = data.getCompoundOrEmpty("config").getStringOr("loot_table", "");
+        String lootTable = CageNbt.string(CageNbt.compound(data, "config"), "loot_table", "");
         boolean ominous = kind != Kind.SPAWNER && Boolean.parseBoolean(properties.getOrDefault("ominous",
                 Boolean.toString(kind == Kind.VAULT && lootTable.endsWith("reward_ominous"))));
-        long cooldownEndsAt = data.getLongOr("cooldown_ends_at", 0);
+        long cooldownEndsAt = CageNbt.longValue(data, "cooldown_ends_at", 0);
         String state = properties.getOrDefault(kind == Kind.VAULT ? "vault_state" : "trial_spawner_state",
                 kind == Kind.TRIAL_SPAWNER && cooldownEndsAt > gameTime ? "cooldown" : "inactive");
         if (kind == Kind.TRIAL_SPAWNER && !List.of("inactive", "waiting_for_players", "active",
@@ -85,15 +89,16 @@ public final class SpawnerItemAppearance
                                               HolderLookup.Provider registries)
     {
         String spawnKey = kind == Kind.SPAWNER ? "SpawnData" : "spawn_data";
-        CompoundTag selected = data.getCompoundOrEmpty(spawnKey).getCompoundOrEmpty("entity");
+        CompoundTag selected = CageNbt.compound(CageNbt.compound(data, spawnKey), "entity");
         if (validMob(selected)) return List.of(selected.copy());
         if (kind == Kind.SPAWNER) return potentials(data, "SpawnPotentials");
         String configKey = ominous ? "ominous_config" : "normal_config";
-        CompoundTag inline = data.getCompoundOrEmpty(configKey);
+        CompoundTag inline = CageNbt.compound(data, configKey);
         if (!inline.isEmpty()) return potentials(inline, "spawn_potentials");
-        String id = data.getStringOr(configKey, "");
+        String id = CageNbt.string(data, configKey, "");
         Identifier identifier = Identifier.tryParse(id);
         if (identifier == null) return List.of();
+        //#if MC >= 1.21.3
         if (registries != null)
         {
             var lookup = registries.lookup(Registries.TRIAL_SPAWNER_CONFIG);
@@ -102,9 +107,14 @@ public final class SpawnerItemAppearance
                 var config = lookup.get().get(ResourceKey.create(Registries.TRIAL_SPAWNER_CONFIG, identifier));
                 if (config.isPresent())
                     return distinct(config.get().value().spawnPotentialsDefinition().unwrap().stream()
+                            //#if MC >= 1.21.5
                             .map(weighted -> weighted.value().getEntityToSpawn().copy()).toList());
+                            //#else
+                            //$$ .map(weighted -> weighted.data().getEntityToSpawn().copy()).toList());
+                            //#endif
             }
         }
+        //#endif
         // These server-side configs are not necessarily present in a client's synced registries.
         // Vanilla's packaged definitions supply the same preview as the server defaults.
         if (!identifier.getNamespace().equals("minecraft") || !identifier.getPath().startsWith("trial_chamber/")) return List.of();
@@ -131,10 +141,10 @@ public final class SpawnerItemAppearance
     private static List<CompoundTag> potentials(CompoundTag config, String key)
     {
         var result = new ArrayList<CompoundTag>();
-        var potentials = config.getListOrEmpty(key);
+        var potentials = CageNbt.list(config, key);
         for (int i = 0; i < potentials.size(); i++)
         {
-            CompoundTag mob = potentials.getCompoundOrEmpty(i).getCompoundOrEmpty("data").getCompoundOrEmpty("entity");
+            CompoundTag mob = CageNbt.compound(CageNbt.compound(CageNbt.compound(potentials, i), "data"), "entity");
             if (validMob(mob)) result.add(mob.copy());
         }
         return distinct(result);
@@ -142,7 +152,7 @@ public final class SpawnerItemAppearance
 
     private static boolean validMob(CompoundTag data)
     {
-        Identifier id = Identifier.tryParse(data.getStringOr("id", ""));
+        Identifier id = Identifier.tryParse(CageNbt.string(data, "id", ""));
         return id != null && BuiltInRegistries.ENTITY_TYPE.containsKey(id);
     }
 
@@ -153,12 +163,16 @@ public final class SpawnerItemAppearance
 
     public static Component mobName(CompoundTag data)
     {
-        Identifier id = Identifier.tryParse(data.getStringOr("id", ""));
+        Identifier id = Identifier.tryParse(CageNbt.string(data, "id", ""));
+        //#if MC >= 1.21.3
         var type = id != null ? BuiltInRegistries.ENTITY_TYPE.getValue(id) : null;
+        //#else
+        //$$ var type = id != null ? BuiltInRegistries.ENTITY_TYPE.get(id) : null;
+        //#endif
         Component name = type != null ? type.getDescription() : Component.translatable("halfmasa.spawner_item.unknown_mob");
-        if (data.getBooleanOr("IsBaby", false)) name = Component.translatable("halfmasa.spawner_item.baby", name);
+        if (CageNbt.bool(data, "IsBaby", false)) name = Component.translatable("halfmasa.spawner_item.baby", name);
         if (data.contains("Size")) name = Component.translatable("halfmasa.spawner_item.size", name,
-                1 << Math.clamp(data.getIntOr("Size", 0), 0, 6));
+                1 << Math.clamp(CageNbt.integer(data, "Size", 0), 0, 6));
         return name;
     }
 

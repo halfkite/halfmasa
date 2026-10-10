@@ -1,4 +1,4 @@
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 package io.github.halfmasa.xaerobinding.mixin;
 
 import io.github.halfmasa.xaerobinding.feature.LitematicaBlockFilters;
@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class LitematicaPasteCommandBlockFilterMixin
 {
     // Skip before setblock, special block handling, NBT modification or clone preparation.
-    @Inject(method = "shouldSetBlock(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/block/state/BlockState;)Z",
+    @Inject(method = "shouldSetBlock",
             at = @At("HEAD"), cancellable = true)
     private void halfmasa$filterSingleBlock(BlockState schematic, BlockState actual, CallbackInfoReturnable<Boolean> cir)
     {
@@ -23,7 +23,7 @@ public abstract class LitematicaPasteCommandBlockFilterMixin
     }
 
     // Native fill volumes contain a single schematic state. Reject the entire volume before queuing commands.
-    @Inject(method = "pasteVolume(IIIIIILnet/minecraft/world/level/block/state/BlockState;)V",
+    @Inject(method = "pasteVolume",
             at = @At("HEAD"), cancellable = true)
     private void halfmasa$filterVolume(int x1, int y1, int z1, int x2, int y2, int z2, BlockState schematic, CallbackInfo ci)
     {

@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.feature;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -41,28 +41,45 @@ public final class SpawnerPickCapture implements IClientTickHandler
         var blockEntity = client.level.getBlockEntity(position);
         CompoundTag data = blockEntity != null ? blockEntity.getUpdateTag(client.level.registryAccess()) : new CompoundTag();
         this.pending = new Pending(client.level, item, propertiesFor(state),
-                data.getCompoundOrEmpty("spawn_data").getCompoundOrEmpty("entity").copy(),
+                CageNbt.compound(CageNbt.compound(data, "spawn_data"), "entity").copy(),
                 System.nanoTime() + REPLY_TIMEOUT_NANOS);
     }
 
     static BlockItemStateProperties propertiesFor(BlockState state)
     {
         var properties = new HashMap<String, String>();
+        //#if MC >= 26.0
         state.getValues().forEach(value -> {
             var property = value.property();
             if (property.getName().equals("ominous") || property.getName().equals("trial_spawner_state") ||
                     property.getName().equals("vault_state") || property.getName().equals("facing"))
                 properties.put(property.getName(), value.valueName());
         });
+        //#else
+        //$$ for (var property : state.getProperties()) {
+        //$$     String name = property.getName();
+        //$$     if (name.equals("ominous") || name.equals("trial_spawner_state") || name.equals("vault_state") || name.equals("facing")) properties.put(name, propertyValue(state, property));
+        //$$ }
+        //#endif
         return new BlockItemStateProperties(Map.copyOf(properties));
     }
+
+    //#if MC < 26.0
+    //$$ private static <T extends Comparable<T>> String propertyValue(BlockState state, net.minecraft.world.level.block.state.properties.Property<T> property) { return property.getName(state.getValue(property)); }
+    //#endif
 
     public void acknowledge(int slot) { if (this.pending != null) this.replySlot = slot; }
 
     @Override
     public void onClientTick(Minecraft client)
     {
+        //#if MC >= 1.21.10
         SpawnerItemModel.clearIfWorldChanged(client.level);
+        //#elseif MC >= 1.21.4
+        //$$ LegacySpawnerItemModel.clearIfWorldChanged(client.level);
+        //#else
+        //$$ BakedSpawnerPreview.clearIfWorldChanged(client.level);
+        //#endif
         if (this.pending == null) return;
         if (client.level != this.pending.level() || client.player == null || client.gameMode == null ||
                 !client.player.isCreative() || System.nanoTime() > this.pending.expiresAt())
@@ -70,7 +87,12 @@ public final class SpawnerPickCapture implements IClientTickHandler
             this.pending = null;
             return;
         }
-        if (this.replySlot < 0 || this.replySlot >= 9 || client.player.getInventory().getSelectedSlot() != this.replySlot) return;
+        //#if MC >= 1.21.5
+        int selectedSlot = client.player.getInventory().getSelectedSlot();
+        //#else
+        //$$ int selectedSlot = client.player.getInventory().selected;
+        //#endif
+        if (this.replySlot < 0 || this.replySlot >= 9 || selectedSlot != this.replySlot) return;
         ItemStack received = client.player.getInventory().getItem(this.replySlot);
         ItemStack copy = restoreCopiedItem(received, this.pending.item(), this.pending.properties(), this.pending.sourceMob());
         if (copy.isEmpty()) return;
@@ -86,7 +108,11 @@ public final class SpawnerPickCapture implements IClientTickHandler
     {
         var entityData = received.get(DataComponents.BLOCK_ENTITY_DATA);
         if (!received.is(expected) || entityData == null) return ItemStack.EMPTY;
-        CompoundTag mob = entityData.copyTagWithoutId().getCompoundOrEmpty("spawn_data").getCompoundOrEmpty("entity");
+        //#if MC >= 1.21.10
+        CompoundTag mob = CageNbt.compound(CageNbt.compound(entityData.copyTagWithoutId(), "spawn_data"), "entity");
+        //#else
+        //$$ CompoundTag mob = CageNbt.compound(CageNbt.compound(entityData.copyTag(), "spawn_data"), "entity");
+        //#endif
         if (!sourceMob.isEmpty() && !sourceMob.equals(mob)) return ItemStack.EMPTY;
         ItemStack copy = received.copy();
         copy.set(DataComponents.BLOCK_STATE, properties);

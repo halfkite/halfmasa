@@ -8,9 +8,18 @@
 [![MC Versions](https://cf.way2muchnoise.eu/versions/For%20MC_1661919_all.svg)](https://www.curseforge.com/minecraft/mc-mods/halfmasa)
 [![GitHub](https://img.shields.io/github/downloads/halfkite/halfmasa/total?color=161616&label=GitHub%20downloads&logo=github)](https://github.com/halfkite/halfmasa/releases)
 
-halfmasa is a Minecraft Fabric client utility mod for Xaero and MaLiLib users. It brings together waypoint management, schematic refills, Void Trading, creative-mode tools, and interface improvements. Most optional features are disabled by default; see the configuration documentation for individual defaults.
+halfmasa is a Minecraft Fabric client-side utility mod that brings together waypoint management, schematic refills, Void Trading, creative-mode tools, and interface improvements. Most optional features are disabled by default; see the configuration documentation for their defaults.
 
-## Dependencies
+Supports the Fabric Loader and Minecraft versions `1.21.1`–`26.3`.
+
+## Documentation
+
+- [Chinese feature and configuration guide](https://github.com/halfkite/halfmasa/blob/main/features_cn.md)
+- [English feature and configuration guide](https://github.com/halfkite/halfmasa/blob/main/features_en.md)
+
+Press `X + H` to open the halfmasa configuration screen, or open it through Mod Menu. See the feature guide for all features and hotkey settings.
+
+## Dependencies and Integrations
 
 | Name | Type | Description |
 |---|---|---|
@@ -18,19 +27,12 @@ halfmasa is a Minecraft Fabric client utility mod for Xaero and MaLiLib users. I
 | [MaLiLib](https://modrinth.com/mod/malilib) | Required | Install the MaLiLib version matching your Minecraft version. |
 | [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) / [World Map](https://modrinth.com/mod/xaeros-world-map) | Optional integration | Provides waypoint binding and map features. |
 | [Mod Menu](https://github.com/TerraformersMC/ModMenu) | Optional integration | Adds an entry for opening the halfmasa configuration screen from the mod list. |
-| [Litematica](https://link.mcmod.cn/target/aHR0cHM6Ly9naXRodWIuY29tL3Nha3VyYS1yeW9rby9saXRlbWF0aWNh), Fabric API | Feature-specific | Easy Place refills require a compatible Litematica version and Fabric API. |
-| [Carpet-FGA-Addition](https://github.com/halfkite/Carpet-FGA-Addition) | Optional server component | Easy Place and printer refills require a compatible FGA inventory API and the required server permissions. |
-| [QuickShulker](https://github.com/MoRanpcy/quickshulker), Void Trading server extension | Feature-specific | Void Trading material preparation can retrieve emeralds from carried QuickShulker boxes and requires compatible server support. |
-| [Conflux Map](https://github.com/Conflux-Union/conflux-map) | Optional integration | Adds waypoint-list, temporary waypoint, and teleport-related extensions. |
+| [Litematica](https://link.mcmod.cn/target/aHR0cHM6Ly9naXRodWIuY29tL3Nha3VyYS1yeW9rby9saXRlbWF0aWNh) | Feature-specific | Easy Place refills require a compatible version of Litematica. |
+| [Carpet-FGA-Addition](https://github.com/halfkite/Carpet-FGA-Addition) | Optional server component | Schematic and printer refills require a compatible FGA inventory API and the required server permissions. |
+| [QuickShulker](https://github.com/MoRanpcy/quickshulker) | Feature-specific | Void Trading material preparation can retrieve emeralds from carried QuickShulker boxes; this requires compatible server support. |
+| [Conflux Map](https://github.com/Conflux-Union/conflux-map) | Optional integration | Adds waypoint lists, temporary waypoints, and teleport-related extensions. |
 
-The halfmasa mod itself is client-side; ordinary client features do not require halfmasa on the server. Features that use a server inventory API or the Void Trading extension require the corresponding server component. See the [feature and configuration guide](features_en.md) for details.
-
-## Supported Versions
-
-| Minecraft | halfmasa | Minimum Fabric Loader |
-|---|---|---|
-| `1.21.1`, `1.21.3`, `1.21.4`, `1.21.5`, `1.21.8`, `1.21.10`, `1.21.11` | `1.6.0` | `0.17.3` |
-| `26.1.2`, `26.2`, `26.3` | `1.6.0` | `0.18.4` |
+The halfmasa mod itself is client-side; ordinary client features do not require halfmasa on the server. Features that depend on a server inventory API or Void Trading extension require the corresponding server component. See the [compatibility and configuration guide](https://github.com/halfkite/halfmasa/blob/main/features_en.md) for details.
 
 ## Downloads
 
@@ -38,50 +40,31 @@ The halfmasa mod itself is client-side; ordinary client features do not require 
 - [Modrinth](https://modrinth.com/project/9ZHJ1Ue9)
 - [CurseForge](https://www.curseforge.com/minecraft/mc-mods/halfmasa)
 
-Download the JAR for your Minecraft version and place it in that game instance's `mods` folder. For a custom game directory, use the absolute path configured in your launcher profile.
+Download the JAR for your Minecraft version and place it in that game instance's `mods` folder.
 
 ## Features
 
 ### Waypoints and Maps
 
-- Bind singleplayer worlds to Xaero waypoint roots so renamed, moved, or restored worlds can keep using their existing waypoints.
-- Switch between multiple singleplayer saves directories; import or export multi-dimension waypoint bundles with deduplication, undo, and redo.
-- Extend Conflux Map with combined local and shared waypoint lists, temporary waypoints cleared when rejoining a world, close-map-after-teleport behavior, and a configurable teleport height for locations with unknown elevation.
+- Bind singleplayer saves to Xaero waypoint directories so existing waypoints remain available after a save is renamed, moved, or restored from a backup.
+- Switch between multiple singleplayer save directories; import or export waypoint sets across dimensions with deduplication, undo, and redo.
+- Extend Conflux Map with local and shared waypoint lists, temporary waypoints that expire when you leave the world, close-map-after-teleport behavior, and a configurable teleport height for destinations with unknown elevation.
 
 ### Schematic Refills and Void Trading
 
-- Minecraft 26.3 adds independent [schematic save, deletion, and paste block filters](docs/litematica-block-filters_en.md) in the Other Mod Extensions tab, using block ID whitelists or blacklists.
+- Refill materials for Litematica Easy Place and compatible printer integrations. Configure whether to retrieve items from fake-player inventories, the refill amount, and silent withdrawals.
+- Minecraft 26.3 adds [allowlists and blocklists for schematic saving, deletion, and pasting](https://github.com/halfkite/halfmasa/blob/main/docs/litematica-block-filters_en.md). Filter saved content, world blocks allowed for deletion, and pasted content by block ID; configure each in the Other Mod Extensions tab.
+- Automatically open villager trading screens and buy offers by trade-row number or output-item allowlist. The screen can close or acquired items can be dropped after trading.
+- Void Trading can identify fake players in the same boat or minecart and restore them after the trading screen closes. Material preparation supports uncrafting emerald blocks and retrieving emeralds from QuickShulker.
+- Automatic refills require a server inventory API; Void Trading material preparation requires the corresponding server extension. See the [schematic refill guide](https://github.com/halfkite/halfmasa/blob/main/docs/litematica-auto-refill.md) and [feature configuration guide](https://github.com/halfkite/halfmasa/blob/main/features_en.md) for compatibility details.
 
-- Refill materials for Litematica Easy Place and compatible printer integrations. Configure fake-player stock access, refill amounts, and silent withdrawals.
-- Automatically open villager trade screens and buy offers through the local player's trading interface by row number or output-item whitelist. The screen can close or the acquired items can be dropped after trading.
-- Void Trading can identify fake players aboard the same boat or minecart and restore them after the trade screen closes. Material preparation can uncraft emerald blocks and retrieve emeralds from QuickShulker boxes.
-- Automatic refills require a server inventory API; Void Trading material preparation requires its server extension. See the [refill compatibility guide](docs/litematica-auto-refill.md) and [feature guide](features_en.md) for details.
+### Creative Mode and Interface Improvements
 
-### Creative Tools and Interface Improvements
-
-- Fill shulker boxes, chests, offhand containers, and bundles; manage creative search history, expandable creative entries, and saved hotbars.
-- Adds a "Trial" creative tab that gathers trial spawners for every vanilla mob (normal / ominous / cooldown) plus trial vaults.
-- Use JEI/REI recipe and usage histories, inventory movement, fast scrolling, draggable lists, and a configurable hotkey radial menu.
-- Includes boat camera and held-item options, screenshot clipboard copying, elytra time information, Chinese-English display spacing, an in-game IME, and other client-side interface helpers.
-
-## Documentation
-
-- [English features and configuration](features_en.md)
-- [中文功能与配置说明](features_cn.md)
-- [Litematica and printer refill compatibility](docs/litematica-auto-refill.md)
-- [Version compatibility notes](docs/version_compatibility.md)
-- [Modrinth English description](docs/modrinth_en.md)
-- [Build and release process](docs/releasing.md)
-- [Web GPT project instructions and review workflow (Chinese)](docs/web-gpt-project-instructions.md)
-
-Press `X + H` to open the halfmasa configuration screen, or open it through Mod Menu. See the feature guide for all options and hotkeys.
-
-## Development Build
-
-```powershell
-.\gradlew.bat buildAllVersions
-```
+- Fill shulker boxes, chests, offhand containers, and bundles; organize creative search history, expandable creative inventory entries, and saved hotbars.
+- Adds a Trial creative tab with trial spawners for every vanilla mob (normal, ominous, and cooldown states) and trial vaults.
+- Provides JEI/REI recipe and usage search history, inventory movement, fast scrolling, draggable lists, and a configurable hotkey radial menu.
+- Includes boat camera and held-item display options, screenshot clipboard copying, elytra time information, Chinese-English text spacing, an in-game IME, and other client-side interface helpers.
 
 ## License
 
-The project is released under the [MIT License](LICENSE). Third-party attributions and license details are listed in [THIRD_PARTY_NOTICES.md](src/main/resources/META-INF/halfmasa/THIRD_PARTY_NOTICES.md).
+The project is released under the [MIT License](https://github.com/halfkite/halfmasa/blob/main/LICENSE). Third-party attributions and license details are listed in [THIRD_PARTY_NOTICES.md](https://github.com/halfkite/halfmasa/blob/main/src/main/resources/META-INF/halfmasa/THIRD_PARTY_NOTICES.md).

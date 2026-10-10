@@ -16,12 +16,8 @@ public abstract class PrinterMaterialRequestMixin
 {
     // beta25 also exposes Item and Item[] overloads. Both delegate to this List overload.
     // Select its complete descriptor so the callback cannot be applied to a different signature.
-    //#if MC >= 26.3
     @Inject(method = "request(Ljava/util/List;Lnet/minecraft/world/item/Item;Lme/aleksilassila/litematica/printer/integration/inventory/MaterialRequest$Source;)Lme/aleksilassila/litematica/printer/integration/inventory/MaterialReservation;",
-    //#else
-    //$$ @Inject(method = "request",
-    //#endif
-            at = @At("RETURN"), cancellable = true, require = 0)
+            at = @At("RETURN"), cancellable = true, remap = true)
     private void halfmasa$requestStock(List<Item> items, Item preferred, @Coerce Object source, CallbackInfoReturnable<Object> cir)
     {
         Object original = cir.getReturnValue();

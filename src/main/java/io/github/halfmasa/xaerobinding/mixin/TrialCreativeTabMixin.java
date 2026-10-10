@@ -8,7 +8,7 @@ import net.minecraft.world.item.CreativeModeTabs;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import org.spongepowered.asm.mixin.Shadow;
 //#endif
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,7 +24,7 @@ import io.github.halfmasa.xaerobinding.feature.TrialCreativeTab;
 @Mixin(CreativeModeTabs.class)
 public abstract class TrialCreativeTabMixin
 {
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     @Shadow private static CreativeModeTab.ItemDisplayParameters CACHED_PARAMETERS;
     @Unique private static boolean halfmasa$trialEnabled;
 
@@ -55,7 +55,7 @@ public abstract class TrialCreativeTabMixin
     @Unique
     private static List<CreativeModeTab> halfmasa$withTrialTab(List<CreativeModeTab> original)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         // Registered tabs are supplied by the registry and Fabric's page allocator.
         // Without Fabric's allocator, the inventory button supplies access instead.
         return original;

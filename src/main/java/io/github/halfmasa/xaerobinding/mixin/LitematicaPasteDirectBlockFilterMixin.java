@@ -1,4 +1,4 @@
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 package io.github.halfmasa.xaerobinding.mixin;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public abstract class LitematicaPasteDirectBlockFilterMixin
 {
     @Redirect(method = "placeBlocksWithinChunk", at = @At(value = "INVOKE",
-            target = "Lfi/dy/masa/litematica/schematic/container/LitematicaBlockStateContainer;get(III)Lnet/minecraft/world/level/block/state/BlockState;"))
+            target = "Lfi/dy/masa/litematica/schematic/container/LitematicaBlockStateContainer;get(III)Lnet/minecraft/world/level/block/state/BlockState;", remap = true))
     private static BlockState halfmasa$skipExcludedBlock(@Coerce Object container, int x, int y, int z)
     {
         BlockState state = ((LitematicaFilteredContainerAccessor) container).halfmasa$getState(x, y, z);

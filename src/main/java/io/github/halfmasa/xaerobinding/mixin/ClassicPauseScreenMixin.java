@@ -1,12 +1,11 @@
 package io.github.halfmasa.xaerobinding.mixin;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import java.util.List;
 import java.util.EnumMap;
 import io.github.halfmasa.xaerobinding.config.Configs;
 import io.github.halfmasa.xaerobinding.gui.ClassicPauseLayout;
 import io.github.halfmasa.xaerobinding.gui.ClassicPauseLayout.Role;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Button;
 import io.github.halfmasa.xaerobinding.gui.ClassicModsButton;
@@ -41,8 +40,12 @@ public abstract class ClassicPauseScreenMixin extends Screen
     }
 
     // Wait until all init injections, including recording and Mod Menu, have added their controls.
+    //#if MC >= 26.0
     @Inject(method = "extractRenderState", at = @At("HEAD"))
-    private void halfmasa_applyClassicLayout(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta, CallbackInfo ci)
+    //#else
+    //$$ @Inject(method = "render", at = @At("HEAD"))
+    //#endif
+    private void halfmasa_applyClassicLayout(CallbackInfo ci)
     {
         if (!showPauseMenu) return;
         if (!Configs.CLASSIC_PAUSE_MENU.getBooleanValue())
@@ -97,7 +100,7 @@ public abstract class ClassicPauseScreenMixin extends Screen
                 case "gui.advancements" -> Role.ADVANCEMENTS;
                 case "gui.stats" -> Role.STATS;
                 case "menu.options" -> Role.OPTIONS;
-                case "options.worldOptions.button" -> Role.WORLD_OPTIONS;
+                case "options.worldOptions.button", "menu.shareToLan" -> Role.WORLD_OPTIONS;
                 default -> null;
             };
         }

@@ -1,8 +1,12 @@
 package io.github.halfmasa.xaerobinding.feature;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import com.mojang.blaze3d.vertex.PoseStack;
+//#if MC >= 26.0
 import net.minecraft.client.resources.model.cuboid.ItemTransform;
+//#else
+//$$ import net.minecraft.client.renderer.block.model.ItemTransform;
+//#endif
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
@@ -27,7 +31,12 @@ public final class SpawnerItemPresentation
                                                float width, float height, float scale, float cageFront)
     {
         var pose = new PoseStack();
+        //#if MC >= 1.21.5
         itemTransform.apply(false, pose.last());
+        //#else
+        //$$ itemTransform.apply(false, pose);
+        //$$ pose.translate(-0.5F, -0.5F, -0.5F);
+        //#endif
         Matrix4f transform = new Matrix4f(pose.last().pose()).mul(localTransform);
         // Use the cage's center and size, but not its isometric rotation: GUI mobs stand
         // upright and face the viewer instead of inheriting the spawner's tilted pose.

@@ -11,7 +11,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import net.minecraft.client.renderer.entity.state.ItemEntityRenderState;
 import net.minecraft.world.entity.item.ItemEntity;
 
@@ -53,7 +53,7 @@ public abstract class EntityRenderDispatcherAggregationMixin
             E entity, float partialTick, CallbackInfoReturnable<EntityRenderState> cir)
     {
         EntityRenderState state = cir.getReturnValue();
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         // Vanilla renders several copies for a single stacked ItemEntity. The
         // item switch should reduce that draw count even without a second entity.
         if (Configs.ITEM_RENDER_AGGREGATION.getBooleanValue() &&
@@ -73,7 +73,7 @@ public abstract class EntityRenderDispatcherAggregationMixin
                     side ? entity.getBbHeight() * 0.5D : entity.getBbHeight() + 0.5D,
                     0.0D);
             halfmasa_applyNeatName(state, label);
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             EntityRenderAggregation.getInstance().trackLabel(entity, state);
             //#endif
         }

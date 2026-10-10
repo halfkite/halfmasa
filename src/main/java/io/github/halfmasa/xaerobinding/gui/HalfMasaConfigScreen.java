@@ -13,7 +13,7 @@ import fi.dy.masa.malilib.util.StringUtils;
 import io.github.halfmasa.xaerobinding.XaeroWorldBinding;
 import io.github.halfmasa.xaerobinding.config.Configs;
 import io.github.halfmasa.xaerobinding.feature.MaLiLibConfigScrollAccess;
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import io.github.halfmasa.xaerobinding.feature.ConfigScrollMemory;
 //#endif
 
@@ -24,12 +24,12 @@ public final class HalfMasaConfigScreen extends GuiConfigsBase implements Scroll
     public HalfMasaConfigScreen()
     {
         super(10, 52, XaeroWorldBinding.MOD_ID, null, "halfmasa.gui.title");
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         this.tab = Tab.valueOf(ConfigScrollMemory.restoreSelectedTab());
         //#endif
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     @Override
     public void removed()
     {
@@ -134,7 +134,7 @@ public final class HalfMasaConfigScreen extends GuiConfigsBase implements Scroll
         @Override
         public void actionPerformedWithButton(ButtonBase button, int mouseButton)
         {
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             this.screen.selectTab(this.selected);
             //#else
             //$$ this.screen.tab = this.selected;
@@ -148,7 +148,7 @@ public final class HalfMasaConfigScreen extends GuiConfigsBase implements Scroll
         }
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private enum Tab
     //#else
     //$$ private enum Tab

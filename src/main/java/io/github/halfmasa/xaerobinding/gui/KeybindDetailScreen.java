@@ -373,7 +373,7 @@ public final class KeybindDetailScreen extends GuiBase
 
     private boolean isConfirmKey(int keyCode)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         return false;
         //#else
         //$$ return Configs.KEYMAP_CONFIRM_SETTING.getKeybind().getKeys().contains(keyCode);
@@ -577,7 +577,7 @@ public final class KeybindDetailScreen extends GuiBase
         return super.keyReleased(event);
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
     {
@@ -744,7 +744,7 @@ public final class KeybindDetailScreen extends GuiBase
 
     private String confirmKeyText()
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         return "";
         //#else
         //$$ String text = Configs.KEYMAP_CONFIRM_SETTING.getKeybind().getKeysDisplayString();

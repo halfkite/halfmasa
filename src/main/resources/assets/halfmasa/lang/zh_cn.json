@@ -26,7 +26,7 @@
   "halfmasa.config.disabled.comment.entityAggregationSeparateSizes": "同类生物按幼年/成年和体型大小分别统计、判断聚合阈值并渲染各自的代表实体；关闭后同类生物一起计算；默认开启",
   "halfmasa.config.ported.name.classicPauseMenu": "经典暂停菜单",
   "halfmasa.config.ported.prettyName.classicPauseMenu": "经典暂停菜单",
-  "halfmasa.config.ported.comment.classicPauseMenu": "恢复经典暂停菜单排列：回到游戏、进度与统计、模组、选项与世界选项、退出；附加按钮移到右侧，随窗口大小分列排列；默认关闭",
+  "halfmasa.config.ported.comment.classicPauseMenu": "恢复经典主页与暂停菜单排列：回到游戏、进度与统计、模组、选项与世界选项、退出；附加按钮移到右侧，随窗口大小分列排列；默认关闭",
   "halfmasa.config.ported.name.keymapBackgroundTransparency": "按键设置背景透明度",
   "halfmasa.config.ported.prettyName.keymapBackgroundTransparency": "按键设置背景透明度",
   "halfmasa.config.ported.comment.keymapBackgroundTransparency": "调整按键绑定界面的背景透明度，0% 不透明、100% 完全透明；默认 31%，保持原有背景效果",

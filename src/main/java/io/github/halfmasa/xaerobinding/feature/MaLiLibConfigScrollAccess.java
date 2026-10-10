@@ -6,7 +6,7 @@ public interface MaLiLibConfigScrollAccess
 
     void halfmasa$restoreConfigScroll();
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     void halfmasa$beforeConfigCategoryChange();
     //#endif
 }

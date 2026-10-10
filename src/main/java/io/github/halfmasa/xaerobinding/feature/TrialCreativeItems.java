@@ -2,11 +2,10 @@ package io.github.halfmasa.xaerobinding.feature;
 
 import java.util.ArrayList;
 import java.util.List;
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.component.BlockItemStateProperties;
-import net.minecraft.world.item.component.TypedEntityData;
 //#endif
 
 import net.minecraft.core.component.DataComponents;
@@ -78,7 +77,7 @@ public final class TrialCreativeItems
             items.add(vault(true));
             cachedItems = List.copyOf(items);
         }
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         // Templates are cached, but absolute cooldown timestamps belong to the current world.
         Minecraft client = Minecraft.getInstance();
         long gameTime = client != null && client.level != null ? client.level.getGameTime() : 0;
@@ -86,8 +85,12 @@ public final class TrialCreativeItems
         for (int i = 2; i < ENTRIES.size() * 3; i += 3)
         {
             ItemStack copy = cachedItems.get(i).copy();
-            TypedEntityData<BlockEntityType<?>> data = copy.get(DataComponents.BLOCK_ENTITY_DATA);
+            var data = copy.get(DataComponents.BLOCK_ENTITY_DATA);
+            //#if MC >= 1.21.10
             CompoundTag tag = data.copyTagWithoutId();
+            //#else
+            //$$ CompoundTag tag = data.copyTag();
+            //#endif
             tag.putLong(TAG_COOLDOWN_ENDS_AT, gameTime + COOLDOWN_OFFSET_TICKS);
             writeBlockEntityData(copy, halfmasa$trialSpawnerType(), tag);
             items.set(i, copy);
@@ -118,7 +121,7 @@ public final class TrialCreativeItems
             // A far-future timestamp puts the placed spawner straight into the cooldown state.
             tag.putLong(TAG_COOLDOWN_ENDS_AT, COOLDOWN_OFFSET_TICKS);
         }
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         // The registered config supplies valid SpawnData, including baby zombie NBT,
         // bogged instead of the nonexistent poison_skeleton type, and slime sizes.
         stack.set(DataComponents.BLOCK_STATE, new BlockItemStateProperties(Map.of(
@@ -143,7 +146,7 @@ public final class TrialCreativeItems
     {
         ItemStack stack = new ItemStack(Items.VAULT);
         CompoundTag tag = new CompoundTag();
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         stack.set(DataComponents.BLOCK_STATE, new BlockItemStateProperties(Map.of(
                 "ominous", Boolean.toString(ominous))));
         if (ominous)
@@ -184,58 +187,43 @@ public final class TrialCreativeItems
      */
     private static void writeConfig(CompoundTag tag, String key, Entry entry)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.3
         tag.putString(key, "minecraft:" + entry.configId +
                 (TAG_OMINOUS_CONFIG.equals(key) ? "/ominous" : "/normal"));
-        //#elseif MC >= 1.21.3
-        //$$ tag.putString(key, "minecraft:" + entry.configId);
         //#else
-        //$$ tag.put(key, fallbackConfig(entry.entityId));
+        //$$ tag.put(key, fallbackConfig(entry, key));
         //#endif
     }
 
     //#if MC < 1.21.3
-    /**
-     * Builds a complete inline spawner config for 1.21.1, which has no spawner config registry.
-     * The values mirror the vanilla trial chamber defaults, with the spawn potential replaced
-     * by the requested mob.
-     */
-    private static CompoundTag fallbackConfig(String entity)
-    {
-        CompoundTag config = new CompoundTag();
-        config.putInt("spawn_range", 4);
-        config.putFloat("total_mobs", 6.0F);
-        config.putFloat("simultaneous_mobs", 2.0F);
-        config.putFloat("total_mobs_added_per_player", 2.0F);
-        config.putFloat("simultaneous_mobs_added_per_player", 1.0F);
-        config.putInt("ticks_between_spawn", 40);
-
-        CompoundTag potential = new CompoundTag();
-        potential.putInt("weight", 1);
-        CompoundTag data = new CompoundTag();
-        data.putString(TAG_ID, entityId(entity));
-        potential.put("data", data);
-        ListTag potentials = new ListTag();
-        potentials.add(potential);
-        config.put("spawn_potentials", potentials);
-
-        ListTag loot = new ListTag();
-        CompoundTag key = new CompoundTag();
-        key.putString("type", "minecraft:loot_table");
-        key.putString("value", "minecraft:spawners/trial_chamber/key");
-        loot.add(key);
-        CompoundTag consumables = new CompoundTag();
-        consumables.putString("type", "minecraft:loot_table");
-        consumables.putString("value", "minecraft:spawners/trial_chamber/consumables");
-        loot.add(consumables);
-        config.put("loot_tables_to_eject", loot);
-
-        CompoundTag ominous = new CompoundTag();
-        ominous.putString("type", "minecraft:loot_table");
-        ominous.putString("value", "minecraft:spawners/trial_chamber/items_to_drop_when_ominous");
-        config.put("items_to_drop_when_ominous", ominous);
-        return config;
-    }
+    //$$ /** Read the exact inline config from this version's naturally generated chamber. */
+    //$$ private static CompoundTag fallbackConfig(Entry entry, String key)
+    //$$ {
+        //$$ String path = entry.configId.substring("trial_chamber/".length());
+        //$$ if (path.equals("breeze")) path = "breeze/breeze";
+        //$$ String resource = "/data/minecraft/structure/trial_chambers/spawner/" + path + ".nbt";
+        //$$ try (var stream = TrialCreativeItems.class.getResourceAsStream(resource))
+        //$$ {
+            //$$ if (stream == null) throw new IllegalStateException("Missing vanilla trial spawner " + resource);
+            //$$ CompoundTag structure = net.minecraft.nbt.NbtIo.readCompressed(stream, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+            //$$ ListTag blocks = structure.getList("blocks", net.minecraft.nbt.Tag.TAG_COMPOUND);
+            //$$ for (int i = 0; i < blocks.size(); i++)
+            //$$ {
+                //$$ CompoundTag data = blocks.getCompound(i).getCompound("nbt");
+                //$$ if (data.contains(key, net.minecraft.nbt.Tag.TAG_COMPOUND))
+                //$$ {
+                    //$$ // TrialSpawnerBlockEntity.loadAdditional merges normal values into ominous config.
+                    //$$ CompoundTag base = TAG_OMINOUS_CONFIG.equals(key) ? data.getCompound(TAG_NORMAL_CONFIG).copy() : new CompoundTag();
+                    //$$ return base.merge(data.getCompound(key));
+                //$$ }
+            //$$ }
+            //$$ throw new IllegalStateException("Missing " + key + " in vanilla trial spawner " + resource);
+        //$$ }
+        //$$ catch (java.io.IOException exception)
+        //$$ {
+            //$$ throw new IllegalStateException("Cannot read vanilla trial spawner " + resource, exception);
+        //$$ }
+    //$$ }
     //#endif
 
     private static void writeBlockEntityData(ItemStack stack, BlockEntityType<?> type, CompoundTag tag)

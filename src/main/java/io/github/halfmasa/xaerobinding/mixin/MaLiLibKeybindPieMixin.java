@@ -1,9 +1,11 @@
 package io.github.halfmasa.xaerobinding.mixin;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import com.mojang.blaze3d.platform.InputConstants;
 import fi.dy.masa.malilib.event.InputEventHandler;
+//#if MC >= 1.21.10
 import net.minecraft.client.input.MouseButtonEvent;
+//#endif
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,13 +19,21 @@ public abstract class MaLiLibKeybindPieMixin
 {
     @Inject(method = "onMouseClick", at = @At(value = "INVOKE",
             target = "Lfi/dy/masa/malilib/event/InputEventHandler;checkKeyBindsForChanges(I)Z"))
+    //#if MC >= 1.21.10
     private void halfmasa_trackMasaMouse(MouseButtonEvent event, int action,
+    //#else
+    //$$ private void halfmasa_trackMasaMouse(int mouseX, int mouseY, int button, int action, net.minecraft.client.Minecraft client,
+    //#endif
             CallbackInfoReturnable<Boolean> cir)
     {
         if (action == InputConstants.PRESS || action == InputConstants.RELEASE)
         {
             KeybindPieManager.getInstance().handleMasaMouseInput(
+                    //#if MC >= 1.21.10
                     InputConstants.Type.MOUSE.getOrCreate(event.button()),
+                    //#else
+                    //$$ InputConstants.Type.MOUSE.getOrCreate(button),
+                    //#endif
                     action == InputConstants.PRESS);
         }
     }

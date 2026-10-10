@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.mixin;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import io.github.halfmasa.xaerobinding.feature.TrialCreativeTab;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;

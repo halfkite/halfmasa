@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.mixin;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.4
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;

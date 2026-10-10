@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.feature;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
@@ -9,8 +9,12 @@ import java.util.stream.Collectors;
 /** A local draft; opening, toggling and resetting never write the live config. */
 public final class IgnoredKeySelection
 {
+    //#if MC >= 26.3
     // SDL keyboard scancodes and the shared negative mouse-button codes.
     public static final String DEFAULT_KEYS = "-3,-2,-1,4,7,22,26,224,225,226,228,229,230";
+    //#else
+    //$$ public static final String DEFAULT_KEYS = "-3,-2,-1,65,68,83,87,340,341,342,344,345,346";
+    //#endif
     private final Set<Integer> original;
     private final Set<Integer> defaults;
     private final Set<Integer> selected;

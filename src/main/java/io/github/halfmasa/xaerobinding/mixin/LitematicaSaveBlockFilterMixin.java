@@ -1,4 +1,4 @@
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 package io.github.halfmasa.xaerobinding.mixin;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
@@ -23,7 +23,7 @@ public abstract class LitematicaSaveBlockFilterMixin
 
     // Substitute before Litematica counts blocks or reads block entity data.
     @Redirect(method = {"takeBlocksFromWorld", "takeBlocksFromWorldWithinChunk"},
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;getBlockState(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/state/BlockState;"))
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;getBlockState(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/state/BlockState;", remap = true))
     private BlockState halfmasa$filterSavedBlock(Level world, BlockPos position)
     {
         BlockState state = world.getBlockState(position);

@@ -1,10 +1,14 @@
 package io.github.halfmasa.xaerobinding.gui;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import java.util.ArrayList;
 import java.util.List;
 import fi.dy.masa.malilib.gui.GuiBase;
+//#if MC >= 1.21.11
 import fi.dy.masa.malilib.render.GuiContext;
+//#else
+//$$ import net.minecraft.client.gui.GuiGraphics;
+//#endif
 import fi.dy.masa.malilib.util.StringUtils;
 import io.github.halfmasa.xaerobinding.compat.InputCompat;
 import io.github.halfmasa.xaerobinding.config.Configs;
@@ -12,8 +16,10 @@ import io.github.halfmasa.xaerobinding.config.KeymapLayout;
 import io.github.halfmasa.xaerobinding.feature.IgnoredKeySelection;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
+//#if MC >= 1.21.10
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+//#endif
 import net.minecraft.network.chat.Component;
 
 public final class IgnoredKeysScreen extends GuiBase
@@ -59,7 +65,11 @@ public final class IgnoredKeysScreen extends GuiBase
     }
 
     @Override
+    //#if MC >= 1.21.11
     protected void drawContents(GuiContext graphics, int mouseX, int mouseY, float partialTick)
+    //#else
+    //$$ protected void drawContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)
+    //#endif
     {
         String hint = StringUtils.translate(this.inverted ? "halfmasa.gui.ignored_keys.allow_hint" : "halfmasa.gui.ignored_keys.hint");
         hint = this.mc.font.plainSubstrByWidth(hint, Math.max(1, this.getScreenWidth() - 130));
@@ -79,7 +89,11 @@ public final class IgnoredKeysScreen extends GuiBase
         this.drawWrapped(graphics, names, y + 6, this.getScreenHeight() - 34);
     }
 
+    //#if MC >= 1.21.11
     private int drawWrapped(GuiContext graphics, String text, int y, int bottom)
+    //#else
+    //$$ private int drawWrapped(GuiGraphics graphics, String text, int y, int bottom)
+    //#endif
     {
         int width = this.getScreenWidth() - 20;
         while (!text.isEmpty() && y + 9 <= bottom)
@@ -95,20 +109,31 @@ public final class IgnoredKeysScreen extends GuiBase
     }
 
     @Override
+    //#if MC >= 1.21.10
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
+    //#else
+    //$$ public boolean onMouseClicked(int mouseX, int mouseY, int button)
+    //#endif
     {
-        if (InputCompat.isPrimaryMouseButton(event.button()))
+        //#if MC >= 1.21.10
+        int button = event.button(); int mouseX = (int) event.x(), mouseY = (int) event.y();
+        //#endif
+        if (InputCompat.isPrimaryMouseButton(button))
         {
             for (var cell : this.cells)
             {
-                if (cell.contains(event.x(), event.y()))
+                if (cell.contains(mouseX, mouseY))
                 {
                     this.draft.toggle(cell.code());
                     return true;
                 }
             }
         }
+        //#if MC >= 1.21.10
         return super.mouseClicked(event, doubleClick);
+        //#else
+        //$$ return super.onMouseClicked(mouseX, mouseY, button);
+        //#endif
     }
 
     private void saveAndExit()
@@ -136,14 +161,25 @@ public final class IgnoredKeysScreen extends GuiBase
     }
 
     @Override
+    //#if MC >= 1.21.10
     public boolean keyPressed(KeyEvent event)
+    //#else
+    //$$ public boolean onKeyTyped(int keyCode, int scanCode, int modifiers)
+    //#endif
     {
-        if (event.key() == InputCompat.escapeKeyCode())
+        //#if MC >= 1.21.10
+        int keyCode = event.key();
+        //#endif
+        if (keyCode == InputCompat.escapeKeyCode())
         {
             this.onClose();
             return true;
         }
+        //#if MC >= 1.21.10
         return super.keyPressed(event);
+        //#else
+        //$$ return super.onKeyTyped(keyCode, scanCode, modifiers);
+        //#endif
     }
 
     public static boolean isEditingKeys(Screen screen)

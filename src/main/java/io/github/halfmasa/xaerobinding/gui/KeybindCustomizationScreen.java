@@ -21,7 +21,7 @@ import io.github.halfmasa.xaerobinding.feature.KeybindCustomizationStore;
 
 public final class KeybindCustomizationScreen extends GuiBase
 {
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private static final String TRANSLATION_PREFIX = "halfmasa.gui.conflict_selection_editor.";
     //#else
     //$$ private static final String TRANSLATION_PREFIX = "halfmasa.gui.keybind_editor.";

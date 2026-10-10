@@ -147,7 +147,7 @@ public final class KeybindCustomizationStore
         return get(mapping).activationContext;
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     public synchronized boolean participatesInWheel(KeyMapping mapping)
     {
         return participatesInWheel(mapping.getName());
@@ -231,7 +231,7 @@ public final class KeybindCustomizationStore
         public ActivationContext activationContext = ActivationContext.AUTO;
         public List<Integer> comboKeys = new ArrayList<>();
         public boolean requireKeyOrder;
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         public boolean disableWheel;
         /** Null keeps the key-dependent default; explicit choices override it. */
         public Boolean wheelEnabled;
@@ -281,7 +281,7 @@ public final class KeybindCustomizationStore
                     !this.hideCategory && this.sectorColor == null &&
                     this.activationContext == ActivationContext.AUTO &&
                     this.comboKeys.isEmpty() && !this.requireKeyOrder
-                    //#if MC >= 26.3
+                    //#if MC >= 1.21.1
                     && !this.disableWheel && this.wheelEnabled == null
                     //#endif
                     ;

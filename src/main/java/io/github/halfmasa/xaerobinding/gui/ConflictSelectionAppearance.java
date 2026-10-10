@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.gui;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 /** Shared colors and list geometry for both conflict-selection layouts. */
 public final class ConflictSelectionAppearance
 {

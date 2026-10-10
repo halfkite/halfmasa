@@ -1,14 +1,14 @@
-[中文](https://github.com/halfkite/halfmasa/blob/ds1/features_cn.md) | [English](https://github.com/halfkite/halfmasa/blob/ds1/features_en.md)
+[中文](https://github.com/halfkite/halfmasa/blob/main/features_cn.md) | [English](https://github.com/halfkite/halfmasa/blob/main/features_en.md)
 
 # halfmasa 功能与配置
 
-> 文档版本 `1.6.0` ｜ 按 `X+H` 打开配置（也可从 Mod Menu 进入）｜ 除特别说明外默认关闭，热键空表示不绑定
+> 文档版本 `1.6.1` ｜ 按 `X+H` 打开配置（也可从 Mod Menu 进入）｜ 除特别说明外默认关闭，热键空表示不绑定
 
 ## 投影相关功能
 
 | 名称 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
-| 投影轻松放置自动补货<br>`litematicaAutoRefill` | 带热键布尔值 | 无快捷键, `false` | 轻松放置物品耗尽时从假人取货（默认32，0为半组），再按物品ID查分类库存；取货前复查本地材料。需 Litematica + Fabric API + FGA(库存API v1)。无频道/权限/缺货/背包满时提示并停止；取物不确定时暂停至重连。[验收步骤](https://github.com/halfkite/halfmasa/blob/ds1/docs/litematica-auto-refill.md) |
+| 投影轻松放置自动补货<br>`litematicaAutoRefill` | 带热键布尔值 | 无快捷键, `false` | 轻松放置物品耗尽时从假人取货（默认32，0为半组），再按物品ID查分类库存；取货前复查本地材料。需 Litematica + Fabric API + FGA(库存API v1)。无频道/权限/缺货/背包满时提示并停止；取物不确定时暂停至重连。[验收步骤](https://github.com/halfkite/halfmasa/blob/main/docs/litematica-auto-refill.md) |
 | 投影允许从假人库存取货<br>`litematicaRefillAllowFake` | 布尔值 | `false` | 允许轻松放置补货从假人库存取货 |
 | 投影取货数量<br>`litematicaRefillAmount` | 整数 | `32` | 每次取货数量，0=半组。范围 0–64 |
 | 投影补货静默取物<br>`litematicaRefillSilent` | 带热键布尔值 | 无快捷键, `false` | 静默取物，直接扣减离线来源库存，不召唤/下线假人。需 FGA `silent_take` 接口 |
@@ -22,7 +22,7 @@
 | 投影删除黑白名单<br>`litematicaDeleteFilter` | 布尔值 | `false` | 投影删除时按方块ID筛选（26.3） |
 | 投影删除方块白名单<br>`litematicaDeleteWhitelist` | 字符串列表 | `[]` | 投影删除白名单（26.3） |
 | 投影删除方块黑名单<br>`litematicaDeleteBlacklist` | 字符串列表 | `[]` | 投影删除黑名单（26.3） |
-| 投影粘贴黑白名单<br>`litematicaPasteFilter` | 布尔值 | `false` | 投影粘贴时按方块ID筛选（26.3）。[兼容范围与验收](https://github.com/halfkite/halfmasa/blob/ds1/docs/litematica-block-filters.md) |
+| 投影粘贴黑白名单<br>`litematicaPasteFilter` | 布尔值 | `false` | 投影粘贴时按方块ID筛选（26.3）。[兼容范围与验收](https://github.com/halfkite/halfmasa/blob/main/docs/litematica-block-filters.md) |
 | 投影粘贴方块白名单<br>`litematicaPasteWhitelist` | 字符串列表 | `[]` | 投影粘贴白名单（26.3） |
 | 投影粘贴方块黑名单<br>`litematicaPasteBlacklist` | 字符串列表 | `[]` | 投影粘贴黑名单（26.3） |
 

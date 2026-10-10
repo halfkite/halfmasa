@@ -48,6 +48,12 @@ public class TrialPauseCheck {
    check(options.y()==world.y()&&world.x()>options.x(),"world options not paired with options");
    for(Rect r:l.extras())check(r.x()>=back.x()+back.width()+4,"extra button not on the right");
   }
+  case "title" -> {
+   var l=ClassicPauseLayout.arrangeTitle(854,480,true,Collections.nCopies(5,new Size(20,20)));
+   var back=l.main().get(Role.RETURN);
+   check(back.y()==168,"title controls overlap logo area");
+   for(var r:l.extras())check(r.x()>=back.x()+back.width()+4,"title extra controls not on the right");
+  }
   case "resize" -> {
    for(int w:new int[]{240,320,426,640,854,1280})for(int h:new int[]{180,240,480})for(int n:new int[]{0,1,5,12,20}){
     var sizes=new ArrayList<Size>();for(int i=0;i<n;i++)sizes.add(new Size(i%3==0?100:20,i%5==0?24:20));
@@ -140,6 +146,7 @@ class TrialAndClassicPauseTests(unittest.TestCase):
   if proc.returncode:raise AssertionError(proc.stdout+proc.stderr)
  def scenario(self,name):
   proc=subprocess.run([self.java,"-classpath",str(self.work),"TrialPauseCheck",name],capture_output=True,text=True);self.assertEqual(proc.returncode,0,proc.stdout+proc.stderr)
+ def test_title_rows_clear_logo_and_extras_stay_right(self):self.scenario("title")
  def test_classic_rows_and_all_extra_buttons_on_right(self):self.scenario("classic")
  def test_small_windows_and_multiple_columns_never_overlap(self):self.scenario("resize")
  def test_without_modmenu_no_empty_middle_row(self):self.scenario("without_modmenu")

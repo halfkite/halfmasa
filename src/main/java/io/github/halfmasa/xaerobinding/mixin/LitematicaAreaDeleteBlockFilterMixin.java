@@ -1,4 +1,4 @@
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 package io.github.halfmasa.xaerobinding.mixin;
 
 import io.github.halfmasa.xaerobinding.feature.LitematicaBlockFilters;
@@ -16,7 +16,7 @@ public abstract class LitematicaAreaDeleteBlockFilterMixin
     @Shadow protected abstract void queueFillCommandForBox(int x1, int y1, int z1, int x2, int y2, int z2);
 
     @Redirect(method = "directFillBox", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/world/level/Level;getBlockState(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/state/BlockState;"))
+            target = "Lnet/minecraft/world/level/Level;getBlockState(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/state/BlockState;", remap = true))
     private BlockState halfmasa$protectDirectDelete(Level level, BlockPos position)
     {
         BlockState state = level.getBlockState(position);

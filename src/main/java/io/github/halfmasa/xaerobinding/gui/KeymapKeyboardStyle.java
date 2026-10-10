@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.gui;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;

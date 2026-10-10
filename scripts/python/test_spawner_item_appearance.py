@@ -195,7 +195,7 @@ class SpawnerItemAppearanceTests(unittest.TestCase):
    tick.write_text('package fi.dy.masa.malilib.interfaces; public interface IClientTickHandler { void onClientTick(net.minecraft.client.Minecraft client); }', encoding="utf-8")
    model = work / "SpawnerItemModel.java"
    model.write_text('package io.github.halfmasa.xaerobinding.feature; public class SpawnerItemModel { public static void clearIfWorldChanged(net.minecraft.client.multiplayer.ClientLevel level) {} }', encoding="utf-8")
-   sources = [ROOT / "src/main/java/io/github/halfmasa/xaerobinding/feature" / name for name in ("TrialCreativeItems.java", "SpawnerItemAppearance.java", "SpawnerPickCapture.java", "SpawnerItemPresentation.java")]
+   sources = [ROOT / "src/main/java/io/github/halfmasa/xaerobinding/feature" / name for name in ("TrialCreativeItems.java", "SpawnerItemAppearance.java", "SpawnerPickCapture.java", "SpawnerItemPresentation.java", "CageNbt.java")]
    result = subprocess.run([str(java / "bin/javac.exe"), "-encoding", "UTF-8", "-cp", classpath, "-d", folder, *map(str, sources), str(stub), str(tick), str(model), str(harness)], capture_output=True)
    self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
    result = subprocess.run([str(java / "bin/java.exe"), "-Dfile.encoding=UTF-8", "-cp", folder + os.pathsep + classpath, "SpawnerAppearanceCheck", str(ROOT)], cwd=folder, capture_output=True, timeout=60)

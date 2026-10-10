@@ -25,7 +25,7 @@ public abstract class ItemStackTooltipMixin
             CallbackInfoReturnable<List<Component>> callback)
     {
         ElytraTimeService.addTooltip((ItemStack) (Object) this, callback.getReturnValue());
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         var client = net.minecraft.client.Minecraft.getInstance();
         io.github.halfmasa.xaerobinding.feature.SpawnerItemAppearance.addTooltip(
                 (ItemStack) (Object) this, context.registries(),

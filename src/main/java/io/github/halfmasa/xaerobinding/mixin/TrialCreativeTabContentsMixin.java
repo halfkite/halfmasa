@@ -27,7 +27,7 @@ public abstract class TrialCreativeTabContentsMixin
     @Inject(method = "getDisplayItems", at = @At("HEAD"), cancellable = true)
     private void halfmasa_trialTabItems(CallbackInfoReturnable<Collection<ItemStack>> cir)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (TrialCreativeTab.isRegistered()) return;
         //#endif
         if (!TrialCreativeTab.isTrialTab((CreativeModeTab) (Object) this))
@@ -42,7 +42,7 @@ public abstract class TrialCreativeTabContentsMixin
         }
         cir.setReturnValue(items);
     }
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     @Inject(method = "hasAnyItems", at = @At("HEAD"), cancellable = true)
     private void halfmasa_localTrialVisibility(CallbackInfoReturnable<Boolean> cir)
     {

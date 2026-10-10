@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.gui;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 /** Converts the user-facing transparency percentage to a black screen overlay. */
 public final class KeymapBackground
 {

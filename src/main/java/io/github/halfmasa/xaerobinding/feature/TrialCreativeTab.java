@@ -27,13 +27,19 @@ public final class TrialCreativeTab
     private TrialCreativeTab() {}
 
     /** Returns the shared tab instance, creating it on first use. */
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private static boolean registered;
 
     /** Register during mod initialization, before the registry is frozen. */
     public static void initialize()
     {
-        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("fabric-creative-tab-api-v1"))
+        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded(
+            //#if MC >= 26.0
+            "fabric-creative-tab-api-v1"
+            //#else
+            //$$ "fabric-item-group-api-v1"
+            //#endif
+            ))
         {
             tab = TrialCreativeTabRegistration.register();
             registered = true;

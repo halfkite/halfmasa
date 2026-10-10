@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.extract.LevelExtractor;
 //$$ import net.minecraft.client.renderer.MultiBufferSource;
 //$$ import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 //$$ import net.minecraft.network.chat.Component;
+//$$ import net.minecraft.world.phys.Vec3;
 //#endif
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.entity.Entity;
@@ -19,11 +20,17 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
+//#if MC >= 1.21.10
+//#if MC >= 26.0
 import net.minecraft.client.renderer.state.level.LevelRenderState;
+//#else
+//$$ import net.minecraft.client.renderer.state.LevelRenderState;
+//#endif
+//#endif
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 //#endif
 
@@ -61,7 +68,7 @@ public abstract class EntityRenderAggregationMixin
         return EntityRenderAggregation.getInstance().filterForRendering(level.entitiesForRendering());
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.10
     @Inject(method = "extractVisibleEntities", at = @At("TAIL"))
     private void halfmasa_layoutAggregationLabels(Camera camera, Frustum frustum,
             DeltaTracker delta, LevelRenderState levelState, CallbackInfo ci)
@@ -69,6 +76,7 @@ public abstract class EntityRenderAggregationMixin
         EntityRenderAggregation.getInstance().layoutLabels(levelState);
     }
 
+    //#if MC >= 26.0
     // Check the visibility boundary as well: renderer replacements may bypass
     // the entitiesForRendering redirect while still calling isEntityVisible.
     @Inject(method = "isEntityVisible", at = @At("HEAD"), cancellable = true)
@@ -81,6 +89,7 @@ public abstract class EntityRenderAggregationMixin
             cir.setReturnValue(false);
         }
     }
+    //#endif
     //#endif
 
     //#if MC < 1.21.10
@@ -107,6 +116,8 @@ public abstract class EntityRenderAggregationMixin
     //$$             .getOptionListValue() == io.github.halfmasa.xaerobinding.config.EntityLabelPosition.SIDE;
     //$$
     //$$     matrices.pushPose();
+    //$$     Vec3 offset = EntityRenderAggregation.getInstance().getLabelOffset(entity);
+    //$$     matrices.translate(offset.x, offset.y, offset.z);
     //$$     matrices.translate(
     //$$             entity.getX() - cameraX + (side ? entity.getBbWidth() * 0.5D + 0.35D : 0.0D),
     //$$             entity.getY() - cameraY + (side ? entity.getBbHeight() * 0.5D : entity.getBbHeight() + 0.5D),

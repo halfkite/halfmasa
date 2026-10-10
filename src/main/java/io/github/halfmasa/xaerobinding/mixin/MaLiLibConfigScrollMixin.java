@@ -16,7 +16,7 @@ public abstract class MaLiLibConfigScrollMixin implements MaLiLibConfigScrollAcc
 {
     @Unique private String halfmasa$currentScrollKey;
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     @Inject(method = "initGui", at = @At("HEAD"), remap = false)
     private void halfmasa$saveBeforeInit(CallbackInfo ci)
     {

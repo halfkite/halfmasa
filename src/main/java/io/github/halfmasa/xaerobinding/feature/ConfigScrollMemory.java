@@ -11,7 +11,7 @@ import fi.dy.masa.malilib.gui.widgets.WidgetSearchBar;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
 import io.github.halfmasa.xaerobinding.gui.ScrollCategoryKeyProvider;
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import fi.dy.masa.malilib.gui.widgets.WidgetSearchBarConfigs;
 import io.github.halfmasa.xaerobinding.mixin.ConfigSearchBarAccessor;
 //#endif
@@ -24,7 +24,7 @@ public final class ConfigScrollMemory
     private static final String CUSTOM_GROUP_CHOICE_PREFIX = "custom-groups:choice:";
     private static final Map<String, Double> POSITIONS = new HashMap<>();
     private static String customGroupSource = "halfmasa";
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private record SearchState(String text, boolean open, List<Integer> keys, int position) {}
     private static final Map<String, SearchState> SEARCHES = new HashMap<>();
     private static String selectedHalfMasaTab = "ALL";
@@ -54,7 +54,7 @@ public final class ConfigScrollMemory
     {
         POSITIONS.clear();
         customGroupSource = "halfmasa";
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         SEARCHES.clear();
         clearSelectedTab();
         //#endif
@@ -108,12 +108,16 @@ public final class ConfigScrollMemory
     public static void save(GuiConfigsBase screen, WidgetListBase<?, ?> widget, String key)
     {
         if (!enabled() || widget == null || key == null) return;
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (!Configs.KEEP_CONFIG_SEARCH_POSITION.getBooleanValue()) return;
         WidgetSearchBar search = widget.getSearchBarWidget();
         if (search != null)
         {
+            //#if MC >= 1.21.11
             String text = ((ConfigSearchBarAccessor) search).halfmasa$getSearchBox().getValueWrapper();
+            //#else
+            //$$ String text = ((ConfigSearchBarAccessor) search).halfmasa$getSearchBox().getTextWrapper();
+            //#endif
             List<Integer> keys = search instanceof WidgetSearchBarConfigs configs
                     ? List.copyOf(configs.getKeybind().getKeys()) : List.of();
             SEARCHES.put(key, new SearchState(text, search.isSearchOpen(), keys, widget.getScrollbar().getValue()));
@@ -127,7 +131,7 @@ public final class ConfigScrollMemory
     {
         String key = key(screen);
         if (!enabled() || widget == null) return key;
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (!Configs.KEEP_CONFIG_SEARCH_POSITION.getBooleanValue()) return key;
         SearchState state = SEARCHES.get(key);
         WidgetSearchBar search = widget.getSearchBarWidget();
@@ -135,7 +139,11 @@ public final class ConfigScrollMemory
         {
             var textField = ((ConfigSearchBarAccessor) search).halfmasa$getSearchBox();
             // Restore filters first, then clamp against the rebuilt result list.
+            //#if MC >= 1.21.11
             textField.setValueWrapper(state.text());
+            //#else
+            //$$ textField.setTextWrapper(state.text());
+            //#endif
             search.setSearchOpen(state.open());
             textField.setFocusedWrapper(false);
             if (search instanceof WidgetSearchBarConfigs configs)

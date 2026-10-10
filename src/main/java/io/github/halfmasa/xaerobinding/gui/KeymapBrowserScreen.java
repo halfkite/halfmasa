@@ -18,7 +18,11 @@ import net.minecraft.client.input.KeyEvent;
 //#endif
 
 //#if MC >= 1.21.11
+//#if MC >= 1.21.11
 import fi.dy.masa.malilib.render.GuiContext;
+//#else
+//$$ import net.minecraft.client.gui.GuiGraphics;
+//#endif
 //#else
 //$$ import net.minecraft.client.gui.GuiGraphics;
 //#endif
@@ -35,9 +39,13 @@ import fi.dy.masa.malilib.gui.GuiTextFieldGeneric;
 import fi.dy.masa.malilib.gui.button.ButtonGeneric;
 import fi.dy.masa.malilib.hotkeys.IHotkey;
 import fi.dy.masa.malilib.hotkeys.KeybindCategory;
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import fi.dy.masa.malilib.hotkeys.KeybindSettings;
+//#if MC >= 26.0
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+//#else
+//$$ import net.minecraft.client.gui.GuiGraphics;
+//#endif
 import io.github.halfmasa.xaerobinding.feature.IgnoredKeySelection;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import fi.dy.masa.malilib.hotkeys.KeybindMulti;
@@ -71,7 +79,7 @@ public final class KeymapBrowserScreen extends GuiBase
     private static final int COMBINATION_CONFLICT_FILL = 0xB0401414;
     private static final int SINGLE_CONFLICT_BORDER = 0xFFE09090;
     private static final int COMBINATION_CONFLICT_BORDER = 0xFFB04040;
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private static int rememberedScrollOffset;
     private static final Set<String> rememberedCollapsedGroups = new HashSet<>();
     private int categoryButtonX;
@@ -103,7 +111,7 @@ public final class KeymapBrowserScreen extends GuiBase
     private String search = "";
     private int categoryIndex;
     private boolean showKeyboard = true;
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private boolean layout122;
     //#endif
     private boolean showConflictsOnly;
@@ -124,14 +132,14 @@ public final class KeymapBrowserScreen extends GuiBase
     public KeymapBrowserScreen()
     {
         this.setTitle(StringUtils.translate("halfmasa.gui.keymap_browser.title"));
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         this.scrollOffset = rememberedScrollOffset;
         this.collapsedGroups.addAll(rememberedCollapsedGroups);
         this.layout122 = ((KeymapLayout) Configs.KEYMAP_KEYBOARD_LAYOUT.getOptionListValue()).isExtended();
         //#endif
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     @Override
     public void removed()
     {
@@ -186,7 +194,7 @@ public final class KeymapBrowserScreen extends GuiBase
 
     private record RowColumns(int modX, int categoryX, int actionX, int keyX,
             int resetX, int detailX, int right
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             , int wheelX, int confirmX
             //#endif
             )
@@ -195,7 +203,7 @@ public final class KeymapBrowserScreen extends GuiBase
 
     private int keyboardTop()
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         return this.headerBottom;
         //#else
         //$$ return HEADER_HEIGHT;
@@ -204,16 +212,20 @@ public final class KeymapBrowserScreen extends GuiBase
 
     private int listBottom()
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         return this.getScreenHeight() - 14;
         //#else
         //$$ return this.getScreenHeight() - 32;
         //#endif
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     @Override
+    //#if MC >= 1.21.11
     protected void drawScreenBackground(GuiContext graphics, int mouseX, int mouseY)
+    //#else
+    //$$ protected void drawScreenBackground(GuiGraphics graphics, int mouseX, int mouseY)
+    //#endif
     {
         graphics.fill(0, 0, this.getScreenWidth(), this.getScreenHeight(),
                 KeymapBackground.color(Configs.KEYMAP_BACKGROUND_TRANSPARENCY.getIntegerValue()));
@@ -302,26 +314,26 @@ public final class KeymapBrowserScreen extends GuiBase
     {
         super.initGui();
         this.clearElements();
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         String editingId = this.rebindingEntry == null ? null : entryId(this.rebindingEntry);
         //#endif
         this.rebuildEntries();
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (editingId != null) this.rebindingEntry = this.allEntries.stream()
                 .filter(entry -> editingId.equals(entryId(entry))).findFirst().orElse(null);
         //#endif
         this.refilter(false);
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         this.initHeader();
         //#endif
         this.keyCells.clear();
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         this.keyboardBindings = this.allEntries.stream()
                 .map(entry -> new KeymapKeyboardStyle.Binding(this.orderedEntryKeys(entry), entry.isVanilla(),
                         entry.conflicted())).toList();
         this.ignoredKeyboardKeys = IgnoredKeySelection.parse(Configs.KEYBIND_IGNORED_KEYS.getStringValue());
         //#endif
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         this.keyCells.addAll(this.layout122
                 ? KeymapKeyboardLayout.keys122(10, this.keyboardTop(), this.getScreenWidth() - 20)
                 : KeymapKeyboardLayout.keys(10, this.keyboardTop(), this.getScreenWidth() - 20));
@@ -329,17 +341,17 @@ public final class KeymapBrowserScreen extends GuiBase
         //$$ this.keyCells.addAll(KeymapKeyboardLayout.keys(10, this.keyboardTop(), this.getScreenWidth() - 20));
         //#endif
 
-        //#if MC < 26.3
+        //#if MC < 1.21.3
         //$$         int controlsY = 26;
         //$$         int rightMargin = 10;
         //$$         int keyboardButtonWidth = 86;
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         //$$         int layoutButtonWidth = 94;
         //#endif
         //$$         int conflictButtonWidth = 112;
         //$$         int categoryButtonWidth = 190;
         //$$         int keyboardX = this.getScreenWidth() - keyboardButtonWidth - rightMargin;
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         //$$         int layoutX = keyboardX - layoutButtonWidth - 6;
         //$$         int conflictX = layoutX - conflictButtonWidth - 6;
         //#else
@@ -363,7 +375,7 @@ public final class KeymapBrowserScreen extends GuiBase
         //$$             return true;
         //$$         });
         //$$
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         //$$         this.categoryButtonX = categoryX;
         //$$         this.categoryButtonY = controlsY - 2;
         //$$         this.categoryButtonWidth = categoryButtonWidth;
@@ -382,7 +394,7 @@ public final class KeymapBrowserScreen extends GuiBase
         //$$                     this.showKeyboard = !this.showKeyboard;
         //$$                     this.initGui();
         //$$                 });
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         //$$         this.addButton(this.browserButton(layoutX, controlsY - 2, layoutButtonWidth, 20,
         //$$                 StringUtils.translate(this.layout122
         //$$                         ? "halfmasa.gui.keymap_browser.layout_122"
@@ -418,7 +430,7 @@ public final class KeymapBrowserScreen extends GuiBase
         //$$                             this.collapsedGroups.add(this.groupKey(entry));
         //$$                         }
         //$$                     }
-                    //#if MC < 26.3
+                    //#if MC < 1.21.3
                     //$$ this.scrollOffset = 0;
                     //#endif
         //$$                     this.initGui();
@@ -426,7 +438,7 @@ public final class KeymapBrowserScreen extends GuiBase
         //$$
         //#endif
 
-        //#if MC < 26.3
+        //#if MC < 1.21.3
         //$$ int bottom = this.getScreenHeight() - 28;
         //$$ this.addButton(this.browserButton(10, bottom, 110, 20,
         //$$         StringUtils.translate("halfmasa.gui.keymap_browser.open_editor")),
@@ -439,14 +451,14 @@ public final class KeymapBrowserScreen extends GuiBase
 
     private ButtonGeneric browserButton(int x, int y, int width, int height, String label)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         return new BrowserButton(x, y, width, height, label);
         //#else
         //$$ return new ButtonGeneric(x, y, width, height, label);
         //#endif
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     static final class BrowserButton extends ButtonGeneric
     {
         BrowserButton(int x, int y, int width, int height, String label)
@@ -455,7 +467,13 @@ public final class KeymapBrowserScreen extends GuiBase
         }
 
         @Override
+        //#if MC >= 1.21.11
         public void render(GuiContext graphics, int mouseX, int mouseY, boolean selected)
+        //#elseif MC >= 1.21.8
+        //$$ public void render(GuiGraphics graphics, int mouseX, int mouseY, boolean selected)
+        //#else
+        //$$ public void render(int mouseX, int mouseY, boolean selected, GuiGraphics graphics)
+        //#endif
         {
             if (!this.visible) return;
             this.hovered = this.isMouseOver(mouseX, mouseY);
@@ -474,21 +492,49 @@ public final class KeymapBrowserScreen extends GuiBase
     }
 
     @Override
+    //#if MC >= 26.0
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick)
+    //#else
+    //$$ public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)
+    //#endif
     {
         this.hoveredEntry = null;
+        //#if MC >= 26.0
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        //#else
+        //$$ super.render(graphics, mouseX, mouseY, partialTick);
+        //#endif
+        //#if MC >= 1.21.11
         GuiContext context = GuiContext.fromGuiGraphics(graphics);
+        //#else
+        //$$ GuiGraphics context = graphics;
+        //#endif
         // Draw overlays after the whole screen, in a new stratum above text fields and buttons.
         if (this.categoryPanelOpen)
         {
+            //#if MC >= 1.21.8
             context.nextStratum();
+            //#else
+            //$$ context.pose().pushPose();
+            //$$ context.pose().translate(0, 0, 400);
+            //#endif
             this.drawCategoryPanel(context, mouseX, mouseY);
+            //#if MC < 1.21.8
+            //$$ context.pose().popPose();
+            //#endif
         }
         else if (this.hoveredEntry != null)
         {
+            //#if MC >= 1.21.8
             context.nextStratum();
+            //#else
+            //$$ context.pose().pushPose();
+            //$$ context.pose().translate(0, 0, 400);
+            //#endif
             this.drawEntryTooltip(context, this.hoveredEntry, mouseX, mouseY);
+            //#if MC < 1.21.8
+            //$$ context.pose().popPose();
+            //#endif
         }
     }
 
@@ -652,14 +698,14 @@ public final class KeymapBrowserScreen extends GuiBase
         List<BrowserEntry> entries = new ArrayList<>();
         for (KeyMapping mapping : mappings)
         {
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             KeybindCustomizationStore.Entry custom = this.customization(mapping.getName());
             //#else
             //$$ KeybindCustomizationStore.Entry custom = KeybindCustomizationStore.getInstance().get(mapping);
             //#endif
             boolean customCombo = custom.comboKeys != null && !custom.comboKeys.isEmpty();
             boolean unbound = mapping.isUnbound() && !customCombo;
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             BrowserEntry preview = new BrowserEntry(mapping, null, "", "", "", null, "", ConflictType.NONE);
             String keyText = this.keyListText(this.orderedEntryKeys(preview));
             //#else
@@ -676,7 +722,7 @@ public final class KeymapBrowserScreen extends GuiBase
         {
             for (IHotkey hotkey : category.getHotkeys())
             {
-                //#if MC >= 26.3
+                //#if MC >= 1.21.1
                 BrowserEntry preview = new BrowserEntry(null, hotkey, "", "", "", null, "", ConflictType.NONE);
                 String display = this.keyListText(this.orderedEntryKeys(preview));
                 //#else
@@ -835,7 +881,7 @@ public final class KeymapBrowserScreen extends GuiBase
         {
             groupCounts.merge(this.groupKey(entry), 1, Integer::sum);
         }
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         Set<BrowserEntry> bestMatches = new HashSet<>();
         if (!this.selectedCombo.isEmpty() && !this.visibleEntries.isEmpty())
         {
@@ -860,7 +906,7 @@ public final class KeymapBrowserScreen extends GuiBase
         Set<String> addedGroups = new HashSet<>();
         for (BrowserEntry entry : this.visibleEntries)
         {
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             if (bestMatches.contains(entry)) continue;
             //#endif
             String group = this.groupKey(entry);
@@ -881,7 +927,7 @@ public final class KeymapBrowserScreen extends GuiBase
         return entry.modName();
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private boolean isBestMatchGroup(String group)
     {
         return !this.selectedCombo.isEmpty() &&
@@ -909,7 +955,7 @@ public final class KeymapBrowserScreen extends GuiBase
         {
             this.collapsedGroups.remove(group);
         }
-        //#if MC < 26.3
+        //#if MC < 1.21.3
         //$$ this.scrollOffset = 0;
         //#endif
         this.initGui();
@@ -995,7 +1041,7 @@ public final class KeymapBrowserScreen extends GuiBase
         return this.mc.font.plainSubstrByWidth(action, maxWidth);
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private String[] keyboardLegendLabels()
     {
         return new String[] {
@@ -1025,7 +1071,7 @@ public final class KeymapBrowserScreen extends GuiBase
     //$$ }
     //#endif
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private int[] keyboardLegendColors()
     {
         return new int[] {KeymapKeyboardStyle.BOUND, KeymapKeyboardStyle.VANILLA_DOT,
@@ -1048,7 +1094,7 @@ public final class KeymapBrowserScreen extends GuiBase
     //$$ }
     //#endif
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private int[] keyboardLegendBorders()
     {
         return new int[] {0xFF59616E, KeymapKeyboardStyle.VANILLA_DOT,
@@ -1093,7 +1139,11 @@ public final class KeymapBrowserScreen extends GuiBase
     }
 
     //#if MC >= 1.21.11
+    //#if MC >= 1.21.11
     private void drawKeyboardLegend(GuiContext graphics, int x, int y, int width)
+    //#else
+    //$$ private void drawKeyboardLegend(GuiGraphics graphics, int x, int y, int width)
+    //#endif
     //#else
     //$$ private void drawKeyboardLegend(GuiGraphics graphics, int x, int y, int width)
     //#endif
@@ -1116,7 +1166,7 @@ public final class KeymapBrowserScreen extends GuiBase
             }
             int itemX = x + cursor + gap;
             int itemY = y + row * 12;
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             if (index >= 1 && index <= 6)
             {
                 KeymapKeyboardRenderer.drawMarker(graphics, itemX + 2, itemY + 2, colors[index]);
@@ -1127,7 +1177,7 @@ public final class KeymapBrowserScreen extends GuiBase
             this.drawRect(graphics, itemX, itemY, itemX + swatchSize, itemY + swatchSize, borders[index]);
             this.drawRect(graphics, itemX + 1, itemY + 1, itemX + swatchSize - 1,
                     itemY + swatchSize - 1, colors[index]);
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             }
             //#endif
             int textWidth = Math.max(1, Math.min(this.mc.font.width(labels[index]), width - cursor - swatchSize - 4));
@@ -1138,7 +1188,11 @@ public final class KeymapBrowserScreen extends GuiBase
     }
 
     //#if MC >= 1.21.11
+    //#if MC >= 1.21.11
     private void drawMagnifier(GuiContext graphics, int x, int y)
+    //#else
+    //$$ private void drawMagnifier(GuiGraphics graphics, int x, int y)
+    //#endif
     //#else
     //$$ private void drawMagnifier(GuiGraphics graphics, int x, int y)
     //#endif
@@ -1170,7 +1224,7 @@ public final class KeymapBrowserScreen extends GuiBase
 
     private int keyboardHeight()
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         return this.layout122 ? KeymapKeyboardLayout.HEIGHT_122 : KEYBOARD_HEIGHT;
         //#else
         //$$ return KEYBOARD_HEIGHT;
@@ -1180,7 +1234,7 @@ public final class KeymapBrowserScreen extends GuiBase
     private RowColumns rowColumns(int x, int width)
     {
         int right = x + width;
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         int wheelX = right - Math.min(112, Math.max(62, width / 5));
         int detailX = wheelX - Math.min(93, Math.max(62, width / 6));
         int resetX = detailX - Math.min(46, Math.max(28, width / 12));
@@ -1222,7 +1276,7 @@ public final class KeymapBrowserScreen extends GuiBase
      * The full set of keys a binding sits on, in one combined code space;
      * mouse keys are stored as negative codes so both kinds share one set.
      */
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private java.util.Set<Integer> entryKeySet(BrowserEntry entry)
     {
         return new HashSet<>(this.orderedEntryKeys(entry));
@@ -1270,7 +1324,11 @@ public final class KeymapBrowserScreen extends GuiBase
 
     //#if MC >= 1.21.11
     @Override
+    //#if MC >= 1.21.11
     protected void drawContents(GuiContext graphics, int mouseX, int mouseY, float partialTick)
+    //#else
+    //$$ protected void drawContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)
+    //#endif
     //#else
     //$$ @Override
     //$$ protected void drawContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)
@@ -1292,7 +1350,7 @@ public final class KeymapBrowserScreen extends GuiBase
                 StringUtils.translate("halfmasa.gui.keymap_browser.count",
                         this.visibleEntries.size(), this.allEntries.size()),
                 x + width - 120, 12, 0xFFC0C0C0);
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         this.drawMagnifier(graphics, 12, this.searchIconY);
         //#else
         //$$ this.drawMagnifier(graphics, 12, 30);
@@ -1319,7 +1377,7 @@ public final class KeymapBrowserScreen extends GuiBase
         this.drawString(graphics, StringUtils.translate("halfmasa.gui.keymap_browser.column_key"),
                 columns.keyX() + 4, headerY + 4, 0xFFB0B0B0);
 
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         this.drawCenteredFittedKeyLabel(graphics, StringUtils.translate("halfmasa.gui.keymap_browser.reset"),
                 columns.resetX(), columns.detailX(), headerY, LIST_HEADER_HEIGHT, 0xFFB0B0B0);
         this.drawCenteredFittedKeyLabel(graphics, StringUtils.translate("halfmasa.gui.keymap_browser.column_order"),
@@ -1346,7 +1404,7 @@ public final class KeymapBrowserScreen extends GuiBase
             {
                 this.drawRect(graphics, x, y, x + contentWidth, y + ROW_HEIGHT, 0xB0202630);
                 String marker = this.collapsedGroups.contains(row.group()) ? "[+] " : "[-] ";
-                //#if MC >= 26.3
+                //#if MC >= 1.21.1
                 if (this.isBestMatchGroup(row.group())) marker = "";
                 //#endif
                 this.drawString(graphics, marker + row.group() + " (" + row.groupCount() + ")",
@@ -1371,7 +1429,7 @@ public final class KeymapBrowserScreen extends GuiBase
                     : keyHovered ? 0x70404050 : 0x30202028;
             this.drawRect(graphics, columns.keyX(), y + 1, columns.resetX() - 3, y + ROW_HEIGHT - 1, keyColor);
             String keyLabel = this.rebindingEntry == entry
-                    //#if MC >= 26.3
+                    //#if MC >= 1.21.1
                     ? this.rebindDraft.touched() ? this.keyNames(this.rebindDraft.keys())
                             : StringUtils.translate("halfmasa.gui.keymap_browser.choose_keys")
                     //#else
@@ -1383,7 +1441,7 @@ public final class KeymapBrowserScreen extends GuiBase
                     Math.max(1, columns.resetX() - columns.keyX() - 10));
             this.drawString(graphics, fittedKey, columns.keyX() + 4, y + 5,
                     entry.conflicted() ? 0xFFFF6060 : 0xFFFFD080);
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             if (this.rebindingEntry == entry)
             {
                 this.drawRect(graphics, columns.confirmX(), y + 1, columns.keyX() - 3, y + ROW_HEIGHT - 1,
@@ -1399,7 +1457,7 @@ public final class KeymapBrowserScreen extends GuiBase
             this.drawCenteredFittedKeyLabel(graphics,
                     StringUtils.translate("halfmasa.gui.keymap_browser.reset"),
                     columns.resetX(), columns.detailX() - 3, y, ROW_HEIGHT, 0xFFE0E0E0);
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             boolean orderHovered = hovered && mouseX >= columns.detailX() && mouseX < columns.wheelX();
             this.drawRect(graphics, columns.detailX(), y + 1, columns.wheelX() - 3,
                     y + ROW_HEIGHT - 1, orderHovered ? 0xA0404A5C : 0x80202632);
@@ -1425,7 +1483,7 @@ public final class KeymapBrowserScreen extends GuiBase
 
             if (hovered && (entry.conflicted() || !action.equals(actionName) || !fittedKey.equals(keyLabel)))
             {
-                //#if MC >= 26.3
+                //#if MC >= 1.21.1
                 this.hoveredEntry = entry;
                 //#else
                 //$$ this.drawEntryTooltip(graphics, entry, mouseX, mouseY);
@@ -1457,7 +1515,7 @@ public final class KeymapBrowserScreen extends GuiBase
                     grab * this.scrollbarMaxOffset / Math.max(1, trackHeight - thumbHeight)));
         }
 
-        //#if MC < 26.3
+        //#if MC < 1.21.3
         //$$ if (this.categoryPanelOpen)
         //$$ {
         //$$     this.drawCategoryPanel(graphics, mouseX, mouseY);
@@ -1465,7 +1523,7 @@ public final class KeymapBrowserScreen extends GuiBase
         //#endif
         if (this.rebindingEntry != null)
         {
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             String hint = StringUtils.translate(this.bindingMode == KeymapBindingMode.VIRTUAL
                     ? "halfmasa.gui.keymap_browser.capture_virtual_hint" : "halfmasa.gui.keymap_browser.capture_physical_hint");
             this.drawString(graphics, this.mc.font.plainSubstrByWidth(hint, Math.max(1, this.getScreenWidth() - 20)),
@@ -1478,12 +1536,16 @@ public final class KeymapBrowserScreen extends GuiBase
     }
 
     //#if MC >= 1.21.11
+    //#if MC >= 1.21.11
     private void drawCategoryPanel(GuiContext graphics, int mouseX, int mouseY)
     //#else
     //$$ private void drawCategoryPanel(GuiGraphics graphics, int mouseX, int mouseY)
     //#endif
+    //#else
+    //$$ private void drawCategoryPanel(GuiGraphics graphics, int mouseX, int mouseY)
+    //#endif
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         this.updateCategoryPanelBounds();
         int panelWidth = this.categoryPanelWidth;
         //#else
@@ -1537,7 +1599,11 @@ public final class KeymapBrowserScreen extends GuiBase
     }
 
     //#if MC >= 1.21.11
+    //#if MC >= 1.21.11
     private void drawKeyboard(GuiContext graphics, int x, int y, int width, int mouseX, int mouseY)
+    //#else
+    //$$ private void drawKeyboard(GuiGraphics graphics, int x, int y, int width, int mouseX, int mouseY)
+    //#endif
     //#else
     //$$ private void drawKeyboard(GuiGraphics graphics, int x, int y, int width, int mouseX, int mouseY)
     //#endif
@@ -1549,12 +1615,16 @@ public final class KeymapBrowserScreen extends GuiBase
     }
 
     //#if MC >= 1.21.11
+    //#if MC >= 1.21.11
     private void drawKeyCell(GuiContext graphics, KeymapKeyboardLayout.Key key, int mouseX, int mouseY)
     //#else
     //$$ private void drawKeyCell(GuiGraphics graphics, KeymapKeyboardLayout.Key key, int mouseX, int mouseY)
     //#endif
+    //#else
+    //$$ private void drawKeyCell(GuiGraphics graphics, KeymapKeyboardLayout.Key key, int mouseX, int mouseY)
+    //#endif
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         boolean ignored = IgnoredKeySelection.isIgnored(key.code(), this.ignoredKeyboardKeys,
                 Configs.KEYBIND_INVERT_IGNORED_KEYS.getBooleanValue());
         var indicators = KeymapKeyboardStyle.indicators(this.keyboardBindings, key.codes(), ignored);
@@ -1605,7 +1675,7 @@ public final class KeymapBrowserScreen extends GuiBase
     //$$             sourceFill = 0x66285028;
     //$$         }
     //$$
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
     //$$         this.drawRect(graphics, left, y, right, y + cellHeight,
     //$$                 selected ? 0x90605820 : sourceFill);
             //#else
@@ -1643,7 +1713,7 @@ public final class KeymapBrowserScreen extends GuiBase
     //$$         this.drawRect(graphics, right - 1, y, right, y + cellHeight, sourceBorder);
     //$$         if (!selected && conflictKinds.any())
     //$$         {
-                //#if MC >= 26.3
+                //#if MC >= 1.21.1
     //$$             int markerLeft = Math.max(left + 1, right - 4);
     //$$             int markerRight = right - 1;
     //$$             int markerMiddle = y + cellHeight / 2;
@@ -1691,7 +1761,11 @@ public final class KeymapBrowserScreen extends GuiBase
     }
 
     //#if MC >= 1.21.11
+    //#if MC >= 1.21.11
     private void drawCenteredFittedKeyLabel(GuiContext graphics, String label, int left, int right,
+    //#else
+    //$$ private void drawCenteredFittedKeyLabel(GuiGraphics graphics, String label, int left, int right,
+    //#endif
             int y, int height, int color)
     //#else
     //$$ private void drawCenteredFittedKeyLabel(GuiGraphics graphics, String label, int left, int right,
@@ -1718,7 +1792,7 @@ public final class KeymapBrowserScreen extends GuiBase
         //#endif
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private int countVanillaKeyboard(int code)
     {
         return (int) this.allEntries.stream().filter(BrowserEntry::isVanilla)
@@ -1741,7 +1815,7 @@ public final class KeymapBrowserScreen extends GuiBase
     //$$ }
     //#endif
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private int countVanillaMouse(int code)
     {
         return this.countVanillaKeyboard(-code - 1);
@@ -1763,7 +1837,7 @@ public final class KeymapBrowserScreen extends GuiBase
     //$$ }
     //#endif
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private int countMalilib(int code)
     {
         return (int) this.allEntries.stream().filter(entry -> !entry.isVanilla())
@@ -1821,7 +1895,7 @@ public final class KeymapBrowserScreen extends GuiBase
 
     private static String keyLabel(int code)
     {
-        //#if MC < 26.3
+        //#if MC < 1.21.3
         //$$ if (code >= 65 && code <= 90)
         //$$ {
             //$$ return String.valueOf((char) code);
@@ -1886,7 +1960,11 @@ public final class KeymapBrowserScreen extends GuiBase
     }
 
     //#if MC >= 1.21.11
+    //#if MC >= 1.21.11
     private void drawRect(GuiContext graphics, int x1, int y1, int x2, int y2, int color)
+    //#else
+    //$$ private void drawRect(GuiGraphics graphics, int x1, int y1, int x2, int y2, int color)
+    //#endif
     //#else
     //$$ private void drawRect(GuiGraphics graphics, int x1, int y1, int x2, int y2, int color)
     //#endif
@@ -1898,20 +1976,24 @@ public final class KeymapBrowserScreen extends GuiBase
     }
 
     //#if MC >= 1.21.11
+    //#if MC >= 1.21.11
     private void drawEntryTooltip(GuiContext graphics, BrowserEntry entry, int mouseX, int mouseY)
+    //#else
+    //$$ private void drawEntryTooltip(GuiGraphics graphics, BrowserEntry entry, int mouseX, int mouseY)
+    //#endif
     //#else
     //$$ private void drawEntryTooltip(GuiGraphics graphics, BrowserEntry entry, int mouseX, int mouseY)
     //#endif
     {
         List<String> lines = new ArrayList<>();
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         lines.add(entry.displayName() != null ? entry.displayName() : entry.action());
         if (entry == this.rebindingEntry && this.rebindDraft.touched())
             lines.add(StringUtils.translate("halfmasa.gui.keymap_browser.pending_keys", this.keyNames(this.rebindDraft.keys())));
         //#endif
         if (entry.conflictType() == ConflictType.COMBINATION)
         {
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             lines.add(StringUtils.translate("halfmasa.gui.keymap_browser.conflict_type.combination"));
             //#else
             //$$ lines.add(StringUtils.translate("halfmasa.gui.keymap_browser.legend.combination"));
@@ -1919,7 +2001,7 @@ public final class KeymapBrowserScreen extends GuiBase
         }
         else if (entry.conflictType() == ConflictType.SINGLE)
         {
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             lines.add(StringUtils.translate("halfmasa.gui.keymap_browser.conflict_type.single"));
             //#else
             //$$ lines.add(StringUtils.translate("halfmasa.gui.keymap_browser.legend.single"));
@@ -1938,7 +2020,7 @@ public final class KeymapBrowserScreen extends GuiBase
         {
             return;
         }
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         List<String> wrapped = new ArrayList<>();
         int maxWidth = Math.max(1, this.getScreenWidth() - 24);
         for (String line : lines)
@@ -1976,7 +2058,7 @@ public final class KeymapBrowserScreen extends GuiBase
         }
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private List<Integer> orderedEntryKeys(BrowserEntry entry)
     {
         List<Integer> draft = this.draftKeys.get(entryId(entry));
@@ -1990,6 +2072,7 @@ public final class KeymapBrowserScreen extends GuiBase
         InputConstants.Key key = ((KeyMappingAccessor) entry.mapping()).halfmasa$getBoundKey();
         if (InputConstants.UNKNOWN.equals(key)) return List.of();
         List<Integer> keys = new ArrayList<>();
+        //#if MC >= 1.21.11
         if (this.isDebugOnlyMapping(entry.mapping()) && this.mc.options != null && this.mc.options.keyDebugModifier != null)
         {
             KeyMapping modifier = this.mc.options.keyDebugModifier;
@@ -2001,6 +2084,7 @@ public final class KeymapBrowserScreen extends GuiBase
                 if (InputCompat.isKeyboardKey(modifierKey)) keys.add(modifierKey.getValue());
             }
         }
+        //#endif
         keys.add(key.getType() == InputConstants.Type.MOUSE
                 ? InputCompat.mouseButtonToLayoutCode(key.getValue()) : key.getValue());
         return keys;
@@ -2008,7 +2092,7 @@ public final class KeymapBrowserScreen extends GuiBase
 
     private static int normalizeMasaCode(int code)
     {
-        return code < -80 && code > -100 ? InputCompat.mouseButtonToLayoutCode(code + 100) : code;
+        return code < -80 && code >= -100 ? InputCompat.mouseButtonToLayoutCode(code + 100) : code;
     }
     //#else
     //$$ private List<Integer> orderedEntryKeys(BrowserEntry entry)
@@ -2101,7 +2185,7 @@ public final class KeymapBrowserScreen extends GuiBase
                 });
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.10
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
     {
@@ -2135,11 +2219,14 @@ public final class KeymapBrowserScreen extends GuiBase
     //$$ @Override
     //$$ public boolean onMouseClicked(int mouseX, int mouseY, int button)
     //$$ {
+    //$$     if (this.categoryPanelOpen && this.handleClick(mouseX, mouseY, button, net.minecraft.client.gui.screens.Screen.hasControlDown())) return true;
+    //$$     if (super.onMouseClicked(mouseX, mouseY, button)) return true;
     //$$     if (this.handleClick(mouseX, mouseY, button, net.minecraft.client.gui.screens.Screen.hasControlDown()))
     //$$     {
     //$$         return true;
     //$$     }
-    //$$     return super.onMouseClicked(mouseX, mouseY, button);
+    //$$     if (this.rebindingEntry != null && this.bindingMode == KeymapBindingMode.PHYSICAL) { this.rebindDraft.press(InputCompat.mouseButtonToLayoutCode(button)); return true; }
+    //$$     return false;
     //$$ }
     //#endif
 
@@ -2152,7 +2239,7 @@ public final class KeymapBrowserScreen extends GuiBase
 
         if (this.categoryPanelOpen)
         {
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             this.updateCategoryPanelBounds();
             int panelWidth = this.categoryPanelWidth;
             //#else
@@ -2190,7 +2277,7 @@ public final class KeymapBrowserScreen extends GuiBase
                     mouseY >= cell.y() && mouseY < cell.y() + cell.height())
                 {
                     List<Integer> comboCodes = cell.codes();
-                    //#if MC >= 26.3
+                    //#if MC >= 1.21.1
                     if (this.rebindingEntry != null)
                     {
                         if (this.bindingMode == KeymapBindingMode.PHYSICAL) return false;
@@ -2242,7 +2329,7 @@ public final class KeymapBrowserScreen extends GuiBase
                 DisplayRow row = rows.get(index);
                 if (row.isGroup())
                 {
-                    //#if MC >= 26.3
+                    //#if MC >= 1.21.1
                     if (this.isBestMatchGroup(row.group())) return true;
                     //#endif
                     this.toggleGroup(row.group());
@@ -2250,7 +2337,7 @@ public final class KeymapBrowserScreen extends GuiBase
                 }
                 BrowserEntry entry = row.entry();
                 RowColumns columns = this.rowColumns(10, this.getScreenWidth() - 34);
-                //#if MC >= 26.3
+                //#if MC >= 1.21.1
                 if (this.rebindingEntry != null && this.rebindDraft.touched())
                 {
                     if (entry == this.rebindingEntry && mouseX >= columns.confirmX() && mouseX < columns.keyX())
@@ -2265,7 +2352,7 @@ public final class KeymapBrowserScreen extends GuiBase
                 //#endif
                 if (mouseX >= columns.detailX())
                 {
-                    //#if MC >= 26.3
+                    //#if MC >= 1.21.1
                     this.toggleKeyOrder(entry);
                     //#else
                     //$$ this.openDetail(entry);
@@ -2282,7 +2369,7 @@ public final class KeymapBrowserScreen extends GuiBase
                     this.beginRebind(entry);
                     return true;
                 }
-                //#if MC < 26.3
+                //#if MC < 1.21.3
                 //$$ // Keep the existing wheel-context shortcut, without stealing the
                 //$$ // explicit key and detail controls from the row.
                 //$$ if (ctrlDown && entry.isVanilla())
@@ -2301,7 +2388,7 @@ public final class KeymapBrowserScreen extends GuiBase
         return false;
     }
 
-    //#if MC < 26.3
+    //#if MC < 1.21.3
     //$$ private void openDetail(BrowserEntry entry)
     //$$ {
     //$$     KeybindDetailScreen detail = new KeybindDetailScreen(entry);
@@ -2313,7 +2400,7 @@ public final class KeymapBrowserScreen extends GuiBase
     private void beginRebind(BrowserEntry entry)
     {
         this.rebindingEntry = entry;
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         this.rebindDraft.reset();
         if (this.bindingMode == KeymapBindingMode.VIRTUAL && !this.showKeyboard)
         {
@@ -2328,14 +2415,14 @@ public final class KeymapBrowserScreen extends GuiBase
     private void cancelRebind()
     {
         this.rebindingEntry = null;
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         this.rebindDraft.reset();
         //#endif
         this.pendingRebindKeys.clear();
         this.heldRebindKeys.clear();
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private void applyRebind(List<Integer> keys)
     {
         BrowserEntry entry = this.rebindingEntry;
@@ -2397,7 +2484,7 @@ public final class KeymapBrowserScreen extends GuiBase
     //$$ }
     //#endif
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private void resetKey(BrowserEntry entry)
     {
         this.beginRebind(entry);
@@ -2442,13 +2529,21 @@ public final class KeymapBrowserScreen extends GuiBase
     //$$ }
     //#endif
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     @Override
+    //#if MC >= 1.21.10
     public boolean keyPressed(KeyEvent event)
+    //#else
+    //$$ public boolean onKeyTyped(int keyCode, int scanCode, int modifiers)
+    //#endif
     {
         if (this.rebindingEntry != null)
         {
+            //#if MC >= 1.21.10
             int code = event.key();
+            //#else
+            //$$ int code = keyCode;
+            //#endif
             if (code == InputCompat.escapeKeyCode())
             {
                 this.rebindDraft.clear();
@@ -2461,29 +2556,48 @@ public final class KeymapBrowserScreen extends GuiBase
             }
             return true;
         }
-        if (event.key() == InputCompat.escapeKeyCode() && !this.selectedCombo.isEmpty())
+        //#if MC >= 1.21.10
+        int keyCode = event.key();
+        //#endif
+        if (keyCode == InputCompat.escapeKeyCode() && !this.selectedCombo.isEmpty())
         {
             this.selectedCombo.clear();
             this.refilter();
             return true;
         }
-        if (event.key() == InputCompat.escapeKeyCode())
+        if (keyCode == InputCompat.escapeKeyCode())
         {
             this.onClose();
             return true;
         }
+        //#if MC >= 1.21.10
         return super.keyPressed(event);
+        //#else
+        //$$ return super.onKeyTyped(keyCode, scanCode, modifiers);
+        //#endif
     }
 
     @Override
+    //#if MC >= 1.21.10
     public boolean keyReleased(KeyEvent event)
+    //#else
+    //$$ public boolean keyReleased(int keyCode, int scanCode, int modifiers)
+    //#endif
     {
         if (this.rebindingEntry != null)
         {
+            //#if MC >= 1.21.10
             this.heldRebindKeys.remove(event.key());
+            //#else
+            //$$ this.heldRebindKeys.remove(keyCode);
+            //#endif
             return true;
         }
+        //#if MC >= 1.21.10
         return super.keyReleased(event);
+        //#else
+        //$$ return super.keyReleased(keyCode, scanCode, modifiers);
+        //#endif
     }
     //#endif
 
@@ -2546,7 +2660,7 @@ public final class KeymapBrowserScreen extends GuiBase
     public boolean onMouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY)
     //#endif
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         int panelWidth = this.categoryPanelWidth;
         //#else
         //$$ int panelWidth = PANEL_WIDTH;

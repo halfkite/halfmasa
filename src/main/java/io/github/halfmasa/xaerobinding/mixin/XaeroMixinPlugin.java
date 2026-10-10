@@ -14,11 +14,6 @@ public final class XaeroMixinPlugin implements IMixinConfigPlugin
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName)
     {
-    //#if MC < 26.3
-    //$$ if (mixinClassName.endsWith("MaLiLibKeybindPieMixin") ||
-    //$$         mixinClassName.endsWith("TrialCreativeInventoryMixin") ||
-    //$$         mixinClassName.endsWith("ClassicPauseScreenMixin")) return false;
-    //#endif
         if (mixinClassName.endsWith("PrinterZxyInventoryRefillMixin"))
         {
             return !hasPrinterCoordinator() && !hasPrinterInventoryCheck() && hasPrinterZxyInventoryCheck();
@@ -28,7 +23,7 @@ public final class XaeroMixinPlugin implements IMixinConfigPlugin
             boolean coordinator = hasPrinterCoordinator();
             return mixinClassName.endsWith("PrinterMaterialRequestMixin") ? coordinator : !coordinator && hasPrinterInventoryCheck();
         }
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
         if (mixinClassName.endsWith("LitematicaSaveBlockFilterMixin") ||
                 mixinClassName.endsWith("LitematicaDeleteBlockFilterMixin") ||
                 mixinClassName.endsWith("LitematicaAreaDeleteBlockFilterMixin") ||

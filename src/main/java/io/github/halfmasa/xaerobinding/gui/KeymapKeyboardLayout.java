@@ -118,7 +118,7 @@ public final class KeymapKeyboardLayout
     private static void addRow(List<Key> result, String[] cells, int x, int y, int width, float totalUnits)
     {
         float unit = width / totalUnits;
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         float usedUnits = 0.0F;
         //#else
         //$$ float cellX = x;
@@ -128,7 +128,7 @@ public final class KeymapKeyboardLayout
             String[] parts = cell.split(":");
             int code = InputCompat.layoutKeyCode(Integer.parseInt(parts[1]));
             float units = Float.parseFloat(parts[2]);
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             int cellX = x + Math.round(unit * usedUnits);
             int cellRight = x + Math.round(unit * (usedUnits + units)) - CELL_GAP;
             int cellWidth = Math.max(1, cellRight - cellX);
@@ -139,13 +139,13 @@ public final class KeymapKeyboardLayout
                     ? 2 * CELL_HEIGHT + CELL_GAP : CELL_HEIGHT;
             if (code != 0)
             {
-                //#if MC >= 26.3
+                //#if MC >= 1.21.1
                 result.add(new Key(code, parts[0], cellX, y, cellWidth, cellHeight, code < 0));
                 //#else
                 //$$ result.add(new Key(code, parts[0], (int) cellX, y, cellWidth, cellHeight, code < 0));
                 //#endif
             }
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             usedUnits += units;
             //#else
             //$$ cellX += cellWidth + CELL_GAP;
@@ -156,7 +156,7 @@ public final class KeymapKeyboardLayout
     public record Key(int code, String label, int x, int y, int width, int height, boolean mouse,
             List<Integer> codes)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         public boolean contains(double mouseX, double mouseY)
         {
             return mouseX >= this.x && mouseX < this.x + this.width &&

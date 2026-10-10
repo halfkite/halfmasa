@@ -42,7 +42,7 @@ public final class Configs implements IConfigHandler
 {
     private static final String CONFIG_DIRECTORY_NAME = "halfmasa";
     private static final String CONFIG_FILE_NAME = "halfmasa.json";
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private static final int CONFIG_VERSION = 46;
     //#else
     //$$ private static final int CONFIG_VERSION = 39;
@@ -229,7 +229,7 @@ public final class Configs implements IConfigHandler
             List.of(LITEMATICA_AUTO_REFILL, LITEMATICA_REFILL_EXPANDED), LITEMATICA_REFILL_CHILDREN,
             List.of(PRINTER_AUTO_REFILL, PRINTER_REFILL_EXPANDED), PRINTER_REFILL_CHILDREN)
             .flatMap(list -> list.stream().map(config -> (IConfigBase) config)).toList();
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     public static final ConfigBooleanHotkeyed LITEMATICA_SAVE_FILTER = new ConfigBooleanHotkeyed(
             "litematicaSaveFilter", false, "").apply(PORTED_KEY);
     public static final ConfigBoolean LITEMATICA_SAVE_FILTER_EXPANDED = new ConfigBoolean(
@@ -373,14 +373,14 @@ public final class Configs implements IConfigHandler
             "bridgingAdjacency", BridgingAdjacencyMode.CORNERS).apply(PORTED_KEY);
     public static final ConfigBoolean BRIDGING_EXPANDED = new ConfigBoolean(
             "bridgingExpanded", false).apply(PORTED_KEY);
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private static final String KEYBIND_SELECTION_KEY = "halfmasa.config.conflict_selection";
     //#else
     //$$ private static final String KEYBIND_SELECTION_KEY = PORTED_KEY;
     //#endif
     public static final ConfigBooleanHotkeyed KEYBIND_PIE_MENU = new ConfigBooleanHotkeyed(
             "keybindPieMenu", false, "").apply(KEYBIND_SELECTION_KEY);
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     public static final ConfigOptionList KEYBIND_SELECTION_LAYOUT = new ConfigOptionList(
             "keybindSelectionLayout", KeybindSelectionLayout.WHEEL).apply(KEYBIND_SELECTION_KEY);
     //#endif
@@ -401,13 +401,13 @@ public final class Configs implements IConfigHandler
             "keymapDirectRebind", false).apply(PORTED_KEY);
     public static final ConfigBoolean KEYMAP_RELEASE_CONFIRM = new ConfigBoolean(
             "keymapReleaseConfirm", false).apply(PORTED_KEY);
-    //#if MC < 26.3
+    //#if MC < 1.21.3
     //$$ public static final ConfigHotkey KEYMAP_CONFIRM_SETTING = new ConfigHotkey(
     //$$         "keymapConfirmSetting", "ENTER").apply(PORTED_KEY);
     //#endif
     public static final ConfigBoolean KEYMAP_SETTINGS_EXPANDED = new ConfigBoolean(
             "keymapSettingsExpanded", false).apply(PORTED_KEY);
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     public static final ConfigBoolean CLASSIC_PAUSE_MENU = new ConfigBoolean(
             "classicPauseMenu", false).apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed KEYMAP_SETTINGS_GROUP = new ConfigBooleanHotkeyed(
@@ -430,7 +430,7 @@ public final class Configs implements IConfigHandler
             "keybindPieAttackWorkaround", true).apply(KEYBIND_SELECTION_KEY);
     public static final ConfigString KEYBIND_IGNORED_KEYS = new ConfigString(
             "keybindPieIgnoredKeys",
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             io.github.halfmasa.xaerobinding.feature.IgnoredKeySelection.DEFAULT_KEYS
             //#else
             //$$ "87,65,83,68,340"
@@ -440,13 +440,13 @@ public final class Configs implements IConfigHandler
             "keybindPieInvertIgnoredKeys", false).apply(KEYBIND_SELECTION_KEY);
     public static final ConfigInteger KEYBIND_CIRCLE_VERTICES = new ConfigInteger(
             "keybindPieCircleVertices", 60, 12, 360, true).apply(KEYBIND_SELECTION_KEY);
-    //#if MC < 26.3
+    //#if MC < 1.21.3
     //$$ public static final ConfigBoolean KEYBIND_BLEND = new ConfigBoolean(
     //$$         "keybindPieBlend", true).apply(KEYBIND_SELECTION_KEY);
     //#endif
     public static final ConfigBoolean KEYBIND_DARKEN_BACKGROUND = new ConfigBoolean(
             "keybindPieDarkenBackground", true).apply(KEYBIND_SELECTION_KEY);
-    //#if MC < 26.3
+    //#if MC < 1.21.3
     //$$ public static final ConfigBoolean KEYBIND_BLUR_BACKGROUND = new ConfigBoolean(
     //$$         "keybindPieBlurBackground", true).apply(KEYBIND_SELECTION_KEY);
     //$$ public static final ConfigBoolean KEYBIND_LABEL_SHADOW = new ConfigBoolean(
@@ -454,7 +454,7 @@ public final class Configs implements IConfigHandler
     //#endif
     public static final ConfigDouble KEYBIND_EXPANSION = new ConfigDouble(
             "keybindPieExpansion", 1.15D, 1.0D, 2.0D, true).apply(KEYBIND_SELECTION_KEY);
-    //#if MC < 26.3
+    //#if MC < 1.21.3
     //$$ public static final ConfigInteger KEYBIND_MARGIN = new ConfigInteger(
     //$$         "keybindPieMargin", 0, 0, 200, true).apply(KEYBIND_SELECTION_KEY);
     //$$ public static final ConfigInteger KEYBIND_LABEL_INSET = new ConfigInteger(
@@ -484,7 +484,7 @@ public final class Configs implements IConfigHandler
             "reloadKeybindPieData", "").applyTranslationKey(KEYBIND_SELECTION_KEY);
     public static final ActionHotkey OPEN_KEYMAP_BROWSER = new ActionHotkey(
             "openKeymapBrowser", "").applyTranslationKey(PORTED_KEY);
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     public static final ConfigBoolean KEEP_CONFIG_POSITION_EXPANDED = new ConfigBoolean(
             "keepConfigPositionExpanded", false).apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed KEEP_CONFIG_SEARCH_POSITION = new ConfigBooleanHotkeyed(
@@ -597,7 +597,7 @@ public final class Configs implements IConfigHandler
             ITEM_MANAGER_RECIPE_HISTORY_EXPANDED);
 
     private static final List<IConfigBase> KEYBIND_PIE_SETTINGS = List.of(
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             KEYBIND_SELECTION_LAYOUT,
             //#endif
             KEYBIND_REPEAT_COOLDOWN,
@@ -606,16 +606,16 @@ public final class Configs implements IConfigHandler
             KEYBIND_IGNORED_KEYS,
             KEYBIND_INVERT_IGNORED_KEYS,
             KEYBIND_CIRCLE_VERTICES,
-            //#if MC < 26.3
+            //#if MC < 1.21.3
             //$$ KEYBIND_BLEND,
             //#endif
             KEYBIND_DARKEN_BACKGROUND,
-            //#if MC < 26.3
+            //#if MC < 1.21.3
             //$$ KEYBIND_BLUR_BACKGROUND,
             //$$ KEYBIND_LABEL_SHADOW,
             //#endif
             KEYBIND_EXPANSION,
-            //#if MC < 26.3
+            //#if MC < 1.21.3
             //$$ KEYBIND_MARGIN,
             //$$ KEYBIND_LABEL_INSET,
             //#endif
@@ -629,7 +629,7 @@ public final class Configs implements IConfigHandler
             KEYBIND_GRADATION,
             KEYBIND_ANIMATE);
     private static final List<IConfigBase> KEYMAP_SETTINGS_CHILDREN = List.of(
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             OPEN_KEYMAP_BROWSER, KEYMAP_BINDING_MODE, KEYMAP_KEYBOARD_LAYOUT, KEYMAP_BACKGROUND_TRANSPARENCY);
             //#else
             //$$ OPEN_KEYMAP_BROWSER,
@@ -690,7 +690,7 @@ public final class Configs implements IConfigHandler
             List.of(ITEM_MANAGER_RECIPE_HISTORY),
             ITEM_MANAGER_RECIPE_HISTORY_CHILDREN,
             List.of(BETTER_SAVED_HOTBARS, KEEP_MOD_MENU_SCROLL)
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
             , KEEP_CONFIG_POSITION_CHILDREN
     //#endif
             )
@@ -789,7 +789,7 @@ public final class Configs implements IConfigHandler
             BUNDLE_FILL,
             FILL_SAFETY,
             GIVE_FULL_INVENTORY_EXPANDED)
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
             , List.of(KEEP_CONFIG_POSITION_EXPANDED, CLASSIC_PAUSE_MENU), KEEP_CONFIG_POSITION_CHILDREN
     //#endif
             )
@@ -838,7 +838,7 @@ public final class Configs implements IConfigHandler
             CONFLUX_MAP_CONFIGS,
             ITEM_MANAGER_RECIPE_HISTORY_CONFIGS
             , REFILL_EXTENSION_CONFIGS
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
             , SCHEMATIC_FILTER_CONFIGS
     //#endif
 
@@ -851,7 +851,7 @@ public final class Configs implements IConfigHandler
             "disableNonSourceFluidRendering", false, "").apply(DISABLED_KEY);
     public static final ConfigBooleanHotkeyed ENTITY_RENDER_AGGREGATION = new ConfigBooleanHotkeyed(
             "entityRenderAggregation", false, "").apply(DISABLED_KEY);
-//#if MC >= 26.3
+//#if MC >= 1.21.1
     public static final ConfigBooleanHotkeyed ITEM_RENDER_AGGREGATION = new ConfigBooleanHotkeyed(
             "itemRenderAggregation", true, "").apply(DISABLED_KEY);
     public static final ConfigBoolean ENTITY_AGGREGATION_SEPARATE_SIZES = new ConfigBoolean(
@@ -882,7 +882,7 @@ public final class Configs implements IConfigHandler
             DISABLE_FLUID_RENDERING,
             DISABLE_NON_SOURCE_FLUID_RENDERING,
             ENTITY_RENDER_AGGREGATION,
-//#if MC >= 26.3
+//#if MC >= 1.21.1
             ITEM_RENDER_AGGREGATION,
             ENTITY_AGGREGATION_SEPARATE_SIZES,
 //#endif
@@ -973,7 +973,7 @@ public final class Configs implements IConfigHandler
                     VOID_TRADING_DROP_TRADE_ITEMS,
                     VOID_TRADING_AUTO_UNCRAFT_EMERALD_BLOCKS,
                     VOID_TRADING_QUICK_SHULKER,
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
                     LITEMATICA_SAVE_FILTER,
                     LITEMATICA_DELETE_FILTER,
                     LITEMATICA_PASTE_FILTER,
@@ -997,7 +997,7 @@ public final class Configs implements IConfigHandler
                     DISABLE_FLUID_RENDERING,
                     DISABLE_NON_SOURCE_FLUID_RENDERING,
                     ENTITY_RENDER_AGGREGATION,
-//#if MC >= 26.3
+//#if MC >= 1.21.1
                     ITEM_RENDER_AGGREGATION,
 //#endif
                     ENTITY_AGGREGATION_COUNT_ONLY,
@@ -1008,7 +1008,7 @@ public final class Configs implements IConfigHandler
                     ITEM_MANAGER_RECIPE_HISTORY,
                     CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION,
                     KEEP_MOD_MENU_SCROLL,
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
                     KEEP_CONFIG_SEARCH_POSITION,
                     KEEP_CONFIG_SELECTED_TAB,
     //#endif
@@ -1018,7 +1018,7 @@ public final class Configs implements IConfigHandler
                     FAST_SCROLLING_PRIMARY_HOTKEY,
                     FAST_SCROLLING_SECONDARY_HOTKEY,
                     KEYBIND_PIE_MENU,
-                    //#if MC >= 26.3
+                    //#if MC >= 1.21.1
                     KEYMAP_SETTINGS_GROUP,
                     OPEN_KEYMAP_BROWSER,
                     //#else
@@ -1128,7 +1128,7 @@ public final class Configs implements IConfigHandler
 
             if (configVersion < CONFIG_VERSION)
             {
-                //#if MC >= 26.3
+                //#if MC >= 1.21.1
                 if (configVersion < 42)
                 {
                     KEYMAP_SETTINGS_GROUP.setBooleanValue(true);
@@ -1166,7 +1166,7 @@ public final class Configs implements IConfigHandler
                     KEYBIND_IGNORED_KEYS.setValueFromString(migrateIgnoredKeyCodes(
                             KEYBIND_IGNORED_KEYS.getStringValue()));
                 }
-                //#if MC >= 26.3
+                //#if MC >= 1.21.1
                 if (configVersion < 41)
                 {
                     // Expand only the previous defaults; preserve user-edited ignored lists.
@@ -1410,7 +1410,7 @@ public final class Configs implements IConfigHandler
 
     public static ConfigBoolean getExpansionConfig(IConfigBase config)
     {
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
         if (config == KEEP_MOD_MENU_SCROLL) return KEEP_CONFIG_POSITION_EXPANDED;
     //#endif
         if (config == KEYBIND_PIE_MENU) return KEYBIND_WHEEL_EXPANDED;
@@ -1418,7 +1418,7 @@ public final class Configs implements IConfigHandler
         if (config == KEYMAP_SETTINGS_GROUP) return KEYMAP_SETTINGS_EXPANDED;
         if (config == NIGHT_VISION_FADE) return NIGHT_VISION_FADE_EXPANDED;
         if (config == VOID_TRADING) return VOID_TRADING_EXPANDED;
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
         if (config == LITEMATICA_SAVE_FILTER) return LITEMATICA_SAVE_FILTER_EXPANDED;
         if (config == LITEMATICA_DELETE_FILTER) return LITEMATICA_DELETE_FILTER_EXPANDED;
         if (config == LITEMATICA_PASTE_FILTER) return LITEMATICA_PASTE_FILTER_EXPANDED;
@@ -1446,7 +1446,7 @@ public final class Configs implements IConfigHandler
     public static boolean isExpandedChild(IConfigBase config)
     {
         return
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
                 KEEP_CONFIG_POSITION_CHILDREN.contains(config) ||
     //#endif
                 KEYBIND_PIE_SETTINGS.contains(config) ||
@@ -1454,7 +1454,7 @@ public final class Configs implements IConfigHandler
                 KEYMAP_SETTINGS_CHILDREN.contains(config) ||
                 config == NIGHT_VISION_FADE_SECONDS ||
                 isVoidTradingChild(config) ||
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
                 LITEMATICA_SAVE_FILTER_CHILDREN.contains(config) || LITEMATICA_DELETE_FILTER_CHILDREN.contains(config) ||
                 LITEMATICA_PASTE_FILTER_CHILDREN.contains(config) ||
     //#endif
@@ -1476,7 +1476,7 @@ public final class Configs implements IConfigHandler
 
     public static IConfigBase getExpansionParent(IConfigBase config)
     {
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
         if (KEEP_CONFIG_POSITION_CHILDREN.contains(config)) return KEEP_MOD_MENU_SCROLL;
     //#endif
         if (KEYBIND_PIE_SETTINGS.contains(config)) return KEYBIND_PIE_MENU;
@@ -1484,7 +1484,7 @@ public final class Configs implements IConfigHandler
         if (KEYMAP_SETTINGS_CHILDREN.contains(config)) return KEYMAP_SETTINGS_GROUP;
         if (config == NIGHT_VISION_FADE_SECONDS) return NIGHT_VISION_FADE;
         if (isVoidTradingChild(config)) return VOID_TRADING;
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
         if (LITEMATICA_SAVE_FILTER_CHILDREN.contains(config)) return LITEMATICA_SAVE_FILTER;
         if (LITEMATICA_DELETE_FILTER_CHILDREN.contains(config)) return LITEMATICA_DELETE_FILTER;
         if (LITEMATICA_PASTE_FILTER_CHILDREN.contains(config)) return LITEMATICA_PASTE_FILTER;
@@ -1545,7 +1545,7 @@ public final class Configs implements IConfigHandler
                         config != PlantCenteringConfigs.CENTER_PLANT_MODELS_EXPANDED)
                 .filter(config -> config != CONFLUX_MAP_EXTENSIONS_EXPANDED && config != LITEMATICA_REFILL_EXPANDED && config != PRINTER_REFILL_EXPANDED)
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
                 .filter(config -> config != KEEP_CONFIG_POSITION_EXPANDED)
                 .filter(config -> !KEEP_CONFIG_POSITION_CHILDREN.contains(config) || KEEP_CONFIG_POSITION_EXPANDED.getBooleanValue())
     //#endif
@@ -1555,7 +1555,7 @@ public final class Configs implements IConfigHandler
                 .filter(config -> config != NIGHT_VISION_FADE_SECONDS || NIGHT_VISION_FADE_EXPANDED.getBooleanValue())
                 .filter(config -> !isVoidTradingChild(config) || VOID_TRADING_EXPANDED.getBooleanValue())
                 .filter(config -> !isConfluxMapExtensionChild(config) || CONFLUX_MAP_EXTENSIONS_EXPANDED.getBooleanValue())
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
                 .filter(config -> config != LITEMATICA_SAVE_FILTER_EXPANDED && config != LITEMATICA_DELETE_FILTER_EXPANDED)
                 .filter(config -> !LITEMATICA_SAVE_FILTER_CHILDREN.contains(config) || LITEMATICA_SAVE_FILTER_EXPANDED.getBooleanValue())
                 .filter(config -> !LITEMATICA_DELETE_FILTER_CHILDREN.contains(config) || LITEMATICA_DELETE_FILTER_EXPANDED.getBooleanValue())
@@ -1591,7 +1591,7 @@ public final class Configs implements IConfigHandler
     private static boolean isEntityAggregationChild(IConfigBase config)
     {
         return config == ENTITY_AGGREGATION_COUNT_ONLY ||
-//#if MC >= 26.3
+//#if MC >= 1.21.1
                 config == ITEM_RENDER_AGGREGATION ||
                 config == ENTITY_AGGREGATION_SEPARATE_SIZES ||
 //#endif
@@ -1636,7 +1636,7 @@ public final class Configs implements IConfigHandler
         java.util.ArrayList<IConfigBase> result = new java.util.ArrayList<>();
         for (IConfigBase config : PORTED)
         {
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
             if (config == KEEP_CONFIG_POSITION_EXPANDED) continue;
     //#endif
             if (config == CONFLUX_MAP_EXTENSIONS_EXPANDED)
@@ -1760,7 +1760,7 @@ public final class Configs implements IConfigHandler
 
     private static boolean isGenericExpandedChildVisible(IConfigBase config)
     {
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
         if (KEEP_CONFIG_POSITION_CHILDREN.contains(config)) return KEEP_CONFIG_POSITION_EXPANDED.getBooleanValue();
     //#endif
         if (config == NIGHT_VISION_FADE_SECONDS)
@@ -1771,7 +1771,7 @@ public final class Configs implements IConfigHandler
         {
             return VOID_TRADING_EXPANDED.getBooleanValue();
         }
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
         if (LITEMATICA_SAVE_FILTER_CHILDREN.contains(config)) return LITEMATICA_SAVE_FILTER_EXPANDED.getBooleanValue();
         if (LITEMATICA_DELETE_FILTER_CHILDREN.contains(config)) return LITEMATICA_DELETE_FILTER_EXPANDED.getBooleanValue();
         if (LITEMATICA_PASTE_FILTER_CHILDREN.contains(config)) return LITEMATICA_PASTE_FILTER_EXPANDED.getBooleanValue();

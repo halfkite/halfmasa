@@ -1,4 +1,4 @@
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 package io.github.halfmasa.xaerobinding.feature;
 
 import io.github.halfmasa.xaerobinding.config.Configs;

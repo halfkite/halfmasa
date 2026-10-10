@@ -65,7 +65,7 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
             GuiBase.openGui(new HalfMasaConfigScreen());
             return true;
         });
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         Configs.KEEP_CONFIG_SEARCH_POSITION.setValueChangeCallback(config -> {
             if (!Configs.KEEP_CONFIG_SEARCH_POSITION.getBooleanValue()) ConfigScrollMemory.clearConfigState();
         });
@@ -94,7 +94,7 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         Configs.WAYPOINT_HISTORY.setAction(1, WaypointClientActions::redo);
         registerTrigger(Configs.GIVE_FULL_INVENTORY, GiveFullInventory::onKeybind);
         registerTrigger(Configs.REPORT_ELYTRA_TIME, ElytraTimeService::reportEquippedElytra);
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         BooleanSupplier openKeymap = () -> {
             if (!Configs.KEYMAP_SETTINGS_GROUP.getBooleanValue()) return false;
             if (!KeymapBrowserScreen.isEditingBindings(MinecraftClientCompat.getScreen(Minecraft.getInstance())))
@@ -161,7 +161,7 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         Configs.DISABLE_FLUID_RENDERING.setValueChangeCallback(config -> refreshWorldRendering());
         Configs.DISABLE_NON_SOURCE_FLUID_RENDERING.setValueChangeCallback(config -> refreshWorldRendering());
         Configs.ENTITY_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         Configs.ITEM_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
         Configs.ENTITY_AGGREGATION_SEPARATE_SIZES.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
         Configs.ENTITY_RENDER_AGGREGATION.setComment("halfmasa.config.disabled.comment.entityRenderAggregation.mc263");
@@ -189,7 +189,7 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         TickHandler.getInstance().registerClientTickHandler(BridgingAssist.getInstance());
         TickHandler.getInstance().registerClientTickHandler(FastLoadingController.getInstance());
         TickHandler.getInstance().registerClientTickHandler(EntityRenderAggregation.getInstance());
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.SpawnerPickCapture.getInstance());
         //#endif
         TickHandler.getInstance().registerClientTickHandler(ItemSearchHistoryService.getInstance());

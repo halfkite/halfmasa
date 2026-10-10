@@ -26,7 +26,7 @@
   "halfmasa.config.disabled.comment.entityAggregationSeparateSizes": "Groups matching mobs separately by baby/adult status and body size, applying the threshold, count and representative rendering to each group. Disable to group matching mobs together; enabled by default",
   "halfmasa.config.ported.name.classicPauseMenu": "Classic pause menu",
   "halfmasa.config.ported.prettyName.classicPauseMenu": "Classic pause menu",
-  "halfmasa.config.ported.comment.classicPauseMenu": "Restore classic pause menu rows and move additional buttons to the right. Mod Menu becomes a full-width row; side buttons wrap into columns on smaller windows. Disabled by default.",
+  "halfmasa.config.ported.comment.classicPauseMenu": "Restore classic title and pause menu rows and move additional buttons to the right. Mod Menu becomes a full-width row; side buttons wrap into columns on smaller windows. Disabled by default.",
   "halfmasa.config.ported.name.keymapBackgroundTransparency": "Key binding background transparency",
   "halfmasa.config.ported.prettyName.keymapBackgroundTransparency": "Key binding background transparency",
   "halfmasa.config.ported.comment.keymapBackgroundTransparency": "Background transparency of the key binding screen: 0% opaque, 100% transparent. The default 31% preserves the previous appearance.",

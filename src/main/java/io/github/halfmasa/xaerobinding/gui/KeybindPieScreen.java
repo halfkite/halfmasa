@@ -5,7 +5,11 @@ import java.util.List;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 //#if MC >= 1.21.11
+//#if MC >= 1.21.11
 import fi.dy.masa.malilib.render.GuiContext;
+//#else
+//$$ import net.minecraft.client.gui.GuiGraphics;
+//#endif
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 //#else
@@ -19,7 +23,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import fi.dy.masa.malilib.gui.GuiBase;
 
 import io.github.halfmasa.xaerobinding.config.Configs;
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import io.github.halfmasa.xaerobinding.config.KeybindSelectionLayout;
 //#endif
 import io.github.halfmasa.xaerobinding.feature.KeybindCustomizationStore;
@@ -28,7 +32,7 @@ import io.github.halfmasa.xaerobinding.feature.KeybindPieManager;
 public final class KeybindPieScreen extends GuiBase
 {
     private InputConstants.Key conflictedKey;
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private List<KeybindPieManager.PieAction> conflicts;
     //#else
     //$$ private final List<KeyMapping> conflicts;
@@ -38,12 +42,12 @@ public final class KeybindPieScreen extends GuiBase
     private int selected = -1;
     private int ticks;
     private int selectionClickButton = -1;
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private int listScroll;
     private ConflictSelectionAppearance.ListLayout renderedListLayout;
     //#endif
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     public KeybindPieScreen(InputConstants.Key conflictedKey, List<KeybindPieManager.PieAction> conflicts)
     //#else
     //$$ public KeybindPieScreen(InputConstants.Key conflictedKey, List<KeyMapping> conflicts)
@@ -54,7 +58,7 @@ public final class KeybindPieScreen extends GuiBase
         this.setTitle("");
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     public void updateSelection(InputConstants.Key key, List<KeybindPieManager.PieAction> actions)
     {
         this.conflictedKey = key;
@@ -73,7 +77,7 @@ public final class KeybindPieScreen extends GuiBase
         super.initGui();
         this.centerX = this.getScreenWidth() / 2;
         this.centerY = this.getScreenHeight() / 2;
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         this.renderedListLayout = null;
         //#endif
     }
@@ -86,13 +90,17 @@ public final class KeybindPieScreen extends GuiBase
 
     //#if MC >= 1.21.11
     @Override
+    //#if MC >= 1.21.11
     protected void drawScreenBackground(GuiContext graphics, int mouseX, int mouseY)
+    //#else
+    //$$ protected void drawScreenBackground(GuiGraphics graphics, int mouseX, int mouseY)
+    //#endif
     //#else
     //$$ @Override
     //$$ protected void drawScreenBackground(GuiGraphics graphics, int mouseX, int mouseY)
     //#endif
     {
-        //#if MC < 26.3
+        //#if MC < 1.21.3
         //$$ if (Configs.KEYBIND_BLUR_BACKGROUND.getBooleanValue() ||
         //$$     Configs.KEYBIND_DARKEN_BACKGROUND.getBooleanValue())
         //$$ {
@@ -107,13 +115,17 @@ public final class KeybindPieScreen extends GuiBase
 
     //#if MC >= 1.21.11
     @Override
+    //#if MC >= 1.21.11
     protected void drawContents(GuiContext graphics, int mouseX, int mouseY, float partialTick)
+    //#else
+    //$$ protected void drawContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)
+    //#endif
     //#else
     //$$ @Override
     //$$ protected void drawContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)
     //#endif
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (this.listMode())
         {
             this.drawList(graphics, mouseX, mouseY, partialTick);
@@ -122,7 +134,7 @@ public final class KeybindPieScreen extends GuiBase
         //#endif
         int count = this.conflicts.size();
         double radius = Math.min(this.centerX, this.centerY) * Configs.KEYBIND_SCALE.getDoubleValue();
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         radius = Math.max(32.0D, radius);
         //#else
         //$$ radius = Math.max(32.0D, radius - Configs.KEYBIND_MARGIN.getIntegerValue());
@@ -208,7 +220,7 @@ public final class KeybindPieScreen extends GuiBase
             double labelRadius = radius * 0.72D;
             int x = this.centerX + (int) (Math.cos(angle) * labelRadius);
             int y = this.centerY + (int) (Math.sin(angle) * labelRadius) - 4;
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             String label = this.conflicts.get(index).displayName();
             //#else
             //$$ String label = KeybindCustomizationStore.getInstance().displayName(this.conflicts.get(index));
@@ -216,7 +228,7 @@ public final class KeybindPieScreen extends GuiBase
             int maxWidth = Math.max(60, (int) (radius * 0.8D));
             label = this.mc.font.plainSubstrByWidth(label, maxWidth);
             int width = this.mc.font.width(label);
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             graphics.drawString(this.mc.font, label, x - width / 2, y,
                     ConflictSelectionAppearance.Palette.textColor(colors[index]), false);
             //#else
@@ -230,7 +242,7 @@ public final class KeybindPieScreen extends GuiBase
         }
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private boolean listMode()
     {
         return Configs.KEYBIND_SELECTION_LAYOUT.getOptionListValue() == KeybindSelectionLayout.LIST;
@@ -265,7 +277,11 @@ public final class KeybindPieScreen extends GuiBase
         return this.listLayout(1.0D).visibleRows();
     }
 
+    //#if MC >= 1.21.11
     private void drawList(GuiContext graphics, int mouseX, int mouseY, float partialTick)
+    //#else
+    //$$ private void drawList(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)
+    //#endif
     {
         double progress = this.openingProgress(partialTick);
         if (progress <= 0.0D)
@@ -301,12 +317,28 @@ public final class KeybindPieScreen extends GuiBase
             int color = this.sectorColor(index);
             graphics.fill(left - extra, y, right + extra - scrollWidth, y + layout.rowHeight(), color);
             String label = this.mc.font.plainSubstrByWidth(this.conflicts.get(index).displayName(), textWidth);
+            //#if MC >= 1.21.8
             graphics.pose().pushMatrix();
+            //#else
+            //$$ graphics.pose().pushPose();
+            //#endif
+            //#if MC >= 1.21.8
             graphics.pose().translate((float) (left + inset), (float) (y + layout.rowHeight() / 2));
+            //#else
+            //$$ graphics.pose().translate((float) (left + inset), (float) (y + layout.rowHeight() / 2), 0.0F);
+            //#endif
+            //#if MC >= 1.21.8
             graphics.pose().scale(layout.textScale(), layout.textScale());
+            //#else
+            //$$ graphics.pose().scale(layout.textScale(), layout.textScale(), 1.0F);
+            //#endif
             graphics.drawString(this.mc.font, label, 0, -4,
                     ConflictSelectionAppearance.Palette.textColor(color), false);
+            //#if MC >= 1.21.8
             graphics.pose().popMatrix();
+            //#else
+            //$$ graphics.pose().popPose();
+            //#endif
         }
         if (this.conflicts.size() > visibleRows)
         {
@@ -350,7 +382,7 @@ public final class KeybindPieScreen extends GuiBase
 
     private int sectorColor(int sector)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         var action = this.conflicts.get(sector);
         var custom = KeybindCustomizationStore.getInstance().get(action.mapping() == null
                 ? action.hotkey().getName() : action.mapping().getName());
@@ -394,7 +426,11 @@ public final class KeybindPieScreen extends GuiBase
     }
 
     //#if MC >= 1.21.11
+    //#if MC >= 1.21.11
     private void fillRun(GuiContext graphics, int startX, int endX, int y, int step, int color)
+    //#else
+    //$$ private void fillRun(GuiGraphics graphics, int startX, int endX, int y, int step, int color)
+    //#endif
     //#else
     //$$ private void fillRun(GuiGraphics graphics, int startX, int endX, int y, int step, int color)
     //#endif
@@ -430,7 +466,7 @@ public final class KeybindPieScreen extends GuiBase
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (this.listMode()) this.selected = this.listIndexAt(event.x(), event.y());
         //#endif
         if (this.selected >= 0 &&
@@ -445,7 +481,7 @@ public final class KeybindPieScreen extends GuiBase
     @Override
     public boolean mouseReleased(MouseButtonEvent event)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (this.listMode()) this.selected = this.listIndexAt(event.x(), event.y());
         //#endif
         if (this.conflictedKey.getType() == InputConstants.Type.MOUSE && event.button() == this.conflictedKey.getValue())
@@ -544,7 +580,7 @@ public final class KeybindPieScreen extends GuiBase
 
     private void finish(boolean clickHold)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         KeybindPieManager.PieAction action = this.selected >= 0 && this.selected < this.conflicts.size()
                 ? this.conflicts.get(this.selected) : null;
         KeybindPieManager.getInstance().completeSelection(action, clickHold);

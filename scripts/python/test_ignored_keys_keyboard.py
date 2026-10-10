@@ -202,6 +202,7 @@ class IgnoredKeysKeyboardTests(unittest.TestCase):
         harness.write_text(HARNESS, encoding="utf-8")
         source_root = ROOT / "src/main/java/io/github/halfmasa/xaerobinding"
         stubs = {
+            "io/github/halfmasa/xaerobinding/compat/InputCompat.java": "package io.github.halfmasa.xaerobinding.compat; public class InputCompat { public static int layoutKeyCode(int code) { return code == 32 ? 44 : code; } }",
             "fi/dy/masa/malilib/render/GuiContext.java": """package fi.dy.masa.malilib.render;
                 public class GuiContext {
                     public final java.util.List<int[]> fills=new java.util.ArrayList<>();

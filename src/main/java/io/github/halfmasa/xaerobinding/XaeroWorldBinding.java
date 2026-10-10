@@ -18,7 +18,7 @@ public final class XaeroWorldBinding implements ModInitializer
     @Override
     public void onInitialize()
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         io.github.halfmasa.xaerobinding.feature.TrialCreativeTab.initialize();
         //#endif
         ScreenshotClipboard.initialize();
