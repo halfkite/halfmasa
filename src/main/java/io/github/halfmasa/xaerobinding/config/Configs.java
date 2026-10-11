@@ -440,13 +440,13 @@ public final class Configs implements IConfigHandler
             "keybindPieInvertIgnoredKeys", false).apply(KEYBIND_SELECTION_KEY);
     public static final ConfigInteger KEYBIND_CIRCLE_VERTICES = new ConfigInteger(
             "keybindPieCircleVertices", 60, 12, 360, true).apply(KEYBIND_SELECTION_KEY);
-    //#if MC < 1.21.3
+    //#if MC < 1.21.1
     //$$ public static final ConfigBoolean KEYBIND_BLEND = new ConfigBoolean(
     //$$         "keybindPieBlend", true).apply(KEYBIND_SELECTION_KEY);
     //#endif
     public static final ConfigBoolean KEYBIND_DARKEN_BACKGROUND = new ConfigBoolean(
             "keybindPieDarkenBackground", true).apply(KEYBIND_SELECTION_KEY);
-    //#if MC < 1.21.3
+    //#if MC < 1.21.1
     //$$ public static final ConfigBoolean KEYBIND_BLUR_BACKGROUND = new ConfigBoolean(
     //$$         "keybindPieBlurBackground", true).apply(KEYBIND_SELECTION_KEY);
     //$$ public static final ConfigBoolean KEYBIND_LABEL_SHADOW = new ConfigBoolean(
@@ -454,7 +454,7 @@ public final class Configs implements IConfigHandler
     //#endif
     public static final ConfigDouble KEYBIND_EXPANSION = new ConfigDouble(
             "keybindPieExpansion", 1.15D, 1.0D, 2.0D, true).apply(KEYBIND_SELECTION_KEY);
-    //#if MC < 1.21.3
+    //#if MC < 1.21.1
     //$$ public static final ConfigInteger KEYBIND_MARGIN = new ConfigInteger(
     //$$         "keybindPieMargin", 0, 0, 200, true).apply(KEYBIND_SELECTION_KEY);
     //$$ public static final ConfigInteger KEYBIND_LABEL_INSET = new ConfigInteger(
@@ -606,16 +606,16 @@ public final class Configs implements IConfigHandler
             KEYBIND_IGNORED_KEYS,
             KEYBIND_INVERT_IGNORED_KEYS,
             KEYBIND_CIRCLE_VERTICES,
-            //#if MC < 1.21.3
+            //#if MC < 1.21.1
             //$$ KEYBIND_BLEND,
             //#endif
             KEYBIND_DARKEN_BACKGROUND,
-            //#if MC < 1.21.3
+            //#if MC < 1.21.1
             //$$ KEYBIND_BLUR_BACKGROUND,
             //$$ KEYBIND_LABEL_SHADOW,
             //#endif
             KEYBIND_EXPANSION,
-            //#if MC < 1.21.3
+            //#if MC < 1.21.1
             //$$ KEYBIND_MARGIN,
             //$$ KEYBIND_LABEL_INSET,
             //#endif
@@ -750,12 +750,18 @@ public final class Configs implements IConfigHandler
             KEYBIND_PIE_MENU,
             KEYBIND_WHEEL_EXPANDED),
             KEYBIND_PIE_SETTINGS,
+            //#if MC <= 1.21.1
+            List.of(KEYMAP_SETTINGS_GROUP, KEYMAP_SETTINGS_EXPANDED),
+            KEYMAP_SETTINGS_CHILDREN,
+            //#endif
             List.of(
             CONFIG_GROUPING_GROUP,
             CONFIG_GROUPING_EXPANDED),
             CONFIG_GROUPING_CHILDREN,
-            List.of(KEYMAP_SETTINGS_GROUP, KEYMAP_SETTINGS_EXPANDED),
-            KEYMAP_SETTINGS_CHILDREN,
+            //#if MC > 1.21.1
+            //$$ List.of(KEYMAP_SETTINGS_GROUP, KEYMAP_SETTINGS_EXPANDED),
+            //$$ KEYMAP_SETTINGS_CHILDREN,
+            //#endif
 
             List.of(
             CLICK_AND_SEND,
@@ -809,12 +815,18 @@ public final class Configs implements IConfigHandler
                     KEYBIND_PIE_MENU,
                     KEYBIND_WHEEL_EXPANDED),
             KEYBIND_PIE_SETTINGS,
+            //#if MC <= 1.21.1
+            List.of(KEYMAP_SETTINGS_GROUP, KEYMAP_SETTINGS_EXPANDED),
+            KEYMAP_SETTINGS_CHILDREN,
+            //#endif
             List.of(
                     CONFIG_GROUPING_GROUP,
                     CONFIG_GROUPING_EXPANDED),
             CONFIG_GROUPING_CHILDREN,
-            List.of(KEYMAP_SETTINGS_GROUP, KEYMAP_SETTINGS_EXPANDED),
-            KEYMAP_SETTINGS_CHILDREN,
+            //#if MC > 1.21.1
+            //$$ List.of(KEYMAP_SETTINGS_GROUP, KEYMAP_SETTINGS_EXPANDED),
+            //$$ KEYMAP_SETTINGS_CHILDREN,
+            //#endif
 
             List.of(
                     CLICK_AND_SEND,

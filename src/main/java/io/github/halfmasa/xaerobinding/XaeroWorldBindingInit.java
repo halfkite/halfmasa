@@ -154,9 +154,13 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         Configs.KEEP_MOD_MENU_SCROLL.setValueChangeCallback(config -> {
             if (!Configs.KEEP_MOD_MENU_SCROLL.getBooleanValue()) ConfigScrollMemory.clear();
         });
-        Configs.CJK_LATIN_SPACING.setValueChangeCallback(config -> Minecraft.getInstance().reloadResourcePacks());
+        Configs.CJK_LATIN_SPACING.setValueChangeCallback(config -> {
+            if (Configs.isConfigLoaded()) Minecraft.getInstance().reloadResourcePacks();
+        });
         Configs.CJK_LATIN_SPACING_TRANSLATIONS.setValueChangeCallback(
-                config -> Minecraft.getInstance().reloadResourcePacks());
+                config -> {
+                    if (Configs.isConfigLoaded()) Minecraft.getInstance().reloadResourcePacks();
+                });
         Configs.ENABLE_WORLD_BINDING.setValueChangeCallback(config -> WorldBindingStore.ensureCurrentWorldBinding());
         Configs.DISABLE_FLUID_RENDERING.setValueChangeCallback(config -> refreshWorldRendering());
         Configs.DISABLE_NON_SOURCE_FLUID_RENDERING.setValueChangeCallback(config -> refreshWorldRendering());

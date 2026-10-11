@@ -40,7 +40,11 @@ public abstract class SpawnerItemModelMixin
             target = "Lnet/minecraft/client/renderer/item/ItemModelResolver;getItemModel(Lnet/minecraft/resources/Identifier;)Lnet/minecraft/client/renderer/item/ItemModel;"))
     private ItemModel halfmasa_statefulSpawnerModel(ItemModelResolver resolver, Identifier original,
     //#else
+    //#if MC >= 1.21.8
+    //$$ @Redirect(method = "appendItemLayers", at = @At(value = "INVOKE", target = "Ljava/util/function/Function;apply(Ljava/lang/Object;)Ljava/lang/Object;", ordinal = 1))
+    //#else
     //$$ @Redirect(method = "appendItemLayers", at = @At(value = "INVOKE", target = "Ljava/util/function/Function;apply(Ljava/lang/Object;)Ljava/lang/Object;"))
+    //#endif
     //$$ private Object halfmasa_statefulSpawnerModel(java.util.function.Function<Identifier, ItemModel> getter, Object modelKey,
     //#endif
             ItemStackRenderState renderState, ItemStack stack, ItemDisplayContext context,

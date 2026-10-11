@@ -341,7 +341,7 @@ public final class KeymapBrowserScreen extends GuiBase
         //$$ this.keyCells.addAll(KeymapKeyboardLayout.keys(10, this.keyboardTop(), this.getScreenWidth() - 20));
         //#endif
 
-        //#if MC < 1.21.3
+        //#if MC < 1.21.1
         //$$         int controlsY = 26;
         //$$         int rightMargin = 10;
         //$$         int keyboardButtonWidth = 86;
@@ -438,7 +438,7 @@ public final class KeymapBrowserScreen extends GuiBase
         //$$
         //#endif
 
-        //#if MC < 1.21.3
+        //#if MC < 1.21.1
         //$$ int bottom = this.getScreenHeight() - 28;
         //$$ this.addButton(this.browserButton(10, bottom, 110, 20,
         //$$         StringUtils.translate("halfmasa.gui.keymap_browser.open_editor")),

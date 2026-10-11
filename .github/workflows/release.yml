@@ -204,6 +204,59 @@ jobs:
           overwrite: true
           retention-days: 14
 
+  upload-123pan:
+    name: Upload validated Release JARs to 123pan
+    needs: [inspect, package-release]
+    if: ${{ github.event_name == 'release' && needs.inspect.outputs.prerelease != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download validated Release package
+        uses: actions/download-artifact@v4
+        with:
+          name: release-package
+          path: release-package
+
+      - name: Install rclone
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes rclone
+
+      - name: Copy and verify JARs in the version folder
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.inspect.outputs.tag }}
+          WEBDAV_USER: ${{ secrets.PAN123_WEBDAV_USERNAME }}
+          WEBDAV_PASSWORD: ${{ secrets.PAN123_WEBDAV_PASSWORD }}
+          RCLONE_CONFIG_WEBDAV123_TYPE: webdav
+          RCLONE_CONFIG_WEBDAV123_URL: https://webdav.123pan.cn/webdav
+          RCLONE_CONFIG_WEBDAV123_VENDOR: other
+        run: |
+          set -euo pipefail
+          if [[ -z "$WEBDAV_USER" || -z "$WEBDAV_PASSWORD" ]]; then
+            echo 'Configure PAN123_WEBDAV_USERNAME and PAN123_WEBDAV_PASSWORD repository secrets.' >&2
+            exit 1
+          fi
+
+          shopt -s nullglob
+          jars=(release-package/dist/*.jar)
+          if [[ ${#jars[@]} -eq 0 ]]; then
+            echo 'The validated Release package contains no JAR files.' >&2
+            exit 1
+          fi
+
+          export RCLONE_CONFIG_WEBDAV123_USER="$WEBDAV_USER"
+          export RCLONE_CONFIG_WEBDAV123_PASS="$(rclone obscure "$WEBDAV_PASSWORD")"
+          unset WEBDAV_PASSWORD
+
+          # The WebDAV credential is scoped to the user's authorized folder;
+          # put this release's JARs in a child folder named after the Release tag.
+          rclone copy release-package/dist "webdav123:$RELEASE_TAG" \
+            --include '*.jar' \
+            --ignore-times
+          rclone check release-package/dist "webdav123:$RELEASE_TAG" \
+            --include '*.jar' \
+            --one-way
+
   package-dispatch:
     name: Collect existing GitHub Release Assets
     needs: inspect

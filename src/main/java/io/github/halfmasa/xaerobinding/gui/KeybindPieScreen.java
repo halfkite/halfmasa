@@ -100,7 +100,7 @@ public final class KeybindPieScreen extends GuiBase
     //$$ protected void drawScreenBackground(GuiGraphics graphics, int mouseX, int mouseY)
     //#endif
     {
-        //#if MC < 1.21.3
+        //#if MC < 1.21.1
         //$$ if (Configs.KEYBIND_BLUR_BACKGROUND.getBooleanValue() ||
         //$$     Configs.KEYBIND_DARKEN_BACKGROUND.getBooleanValue())
         //$$ {

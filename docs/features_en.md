@@ -2,7 +2,7 @@
 
 # halfmasa Features and Configuration
 
-> Documentation version `1.6.1` | Open the configuration screen with `X + H` (or from Mod Menu) | Disabled by default unless noted; an empty hotkey means unbound
+> Documentation version `1.6.2` | Open the configuration screen with `X + H` (or from Mod Menu) | Disabled by default unless noted; an empty hotkey means unbound
 
 ## Schematic Features
 

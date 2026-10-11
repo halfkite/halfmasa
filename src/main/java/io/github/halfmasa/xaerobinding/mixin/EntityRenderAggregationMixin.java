@@ -79,10 +79,22 @@ public abstract class EntityRenderAggregationMixin
     //#if MC >= 26.0
     // Check the visibility boundary as well: renderer replacements may bypass
     // the entitiesForRendering redirect while still calling isEntityVisible.
-    @Inject(method = "isEntityVisible", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "isEntityVisible", at = @At("HEAD"), cancellable = true, require = 0)
+    //#if MC >= 26.3
     private void halfmasa_hideGroupedVisibleEntity(Entity entity, Frustum frustum,
             double cameraX, double cameraY, double cameraZ, float partialTick, long fadeTime,
             CallbackInfoReturnable<Boolean> cir)
+    //#else
+    //#if MC >= 26.2
+    //$$ private void halfmasa_hideGroupedVisibleEntity(Entity entity, Frustum frustum,
+    //$$         double cameraX, double cameraY, double cameraZ,
+    //$$         CallbackInfoReturnable<Boolean> cir)
+    //#else
+    //$$ private void halfmasa_hideGroupedVisibleEntity(Entity entity, Frustum frustum,
+    //$$         double cameraX, double cameraY, double cameraZ, float partialTick, long fadeTime,
+    //$$         CallbackInfoReturnable<Boolean> cir)
+    //#endif
+    //#endif
     {
         if (EntityRenderAggregation.getInstance().shouldHide(entity))
         {

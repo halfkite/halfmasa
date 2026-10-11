@@ -19,12 +19,19 @@ public abstract class MaLiLibKeybindPieMixin
 {
     @Inject(method = "onMouseClick", at = @At(value = "INVOKE",
             target = "Lfi/dy/masa/malilib/event/InputEventHandler;checkKeyBindsForChanges(I)Z"))
-    //#if MC >= 1.21.10
+    //#if MC >= 26.3
     private void halfmasa_trackMasaMouse(MouseButtonEvent event, int action,
+            CallbackInfoReturnable<Boolean> cir)
+    //#else
+    //#if MC >= 1.21.10
+    //$$ private void halfmasa_trackMasaMouse(MouseButtonEvent event, int action,
+    //$$         net.minecraft.client.Minecraft client,
+    //$$         CallbackInfoReturnable<Boolean> cir)
     //#else
     //$$ private void halfmasa_trackMasaMouse(int mouseX, int mouseY, int button, int action, net.minecraft.client.Minecraft client,
+    //$$         CallbackInfoReturnable<Boolean> cir)
     //#endif
-            CallbackInfoReturnable<Boolean> cir)
+    //#endif
     {
         if (action == InputConstants.PRESS || action == InputConstants.RELEASE)
         {

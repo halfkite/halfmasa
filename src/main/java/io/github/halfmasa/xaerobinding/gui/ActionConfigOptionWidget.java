@@ -36,6 +36,7 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
     private static final int EXPAND_BUTTON_LEFT_OFFSET = -6;
     private static final int CHILD_INDENT = 28;
     private static final int RESET_BUTTON_GAP = 5;
+    private static final int MALILIB_RESET_BUTTON_GAP = 2;
     private static final int INLINE_RESET_WIDTH = 58;
     private static final int INLINE_CONTROL_GAP = 4;
     private static final int GROUP_BUTTON_WIDTH = 18;
@@ -234,7 +235,7 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         this.addButton(new IgnoredKeysValueButton(controlsX, y + 1, valueWidth), (button, mouseButton) -> open.run());
         this.addButton(new ButtonGeneric(controlsX + valueWidth + 4, y + 1, keyboardWidth, 20,
                 StringUtils.translate("halfmasa.gui.ignored_keys.open")), (button, mouseButton) -> open.run());
-        this.addButton(this.createResetButton(controlsX + configWidth + RESET_BUTTON_GAP, y + 1, Configs.KEYBIND_IGNORED_KEYS),
+        this.addButton(this.createResetButton(controlsX + configWidth + MALILIB_RESET_BUTTON_GAP, y + 1, Configs.KEYBIND_IGNORED_KEYS),
                 (button, mouseButton) -> {
                     Configs.KEYBIND_IGNORED_KEYS.resetToDefault();
                     new Configs().save();

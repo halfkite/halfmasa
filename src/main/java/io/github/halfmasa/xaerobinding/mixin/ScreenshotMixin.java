@@ -41,9 +41,13 @@ public abstract class ScreenshotMixin
     }
     //#endif
 
-    //#if MC >= 1.21.8
+    //#if MC >= 1.21.5
     @ModifyVariable(
+            //#if MC >= 1.21.8
             method = "takeScreenshot(Lcom/mojang/blaze3d/pipeline/RenderTarget;ILjava/util/function/Consumer;)V",
+            //#else
+            //$$ method = "takeScreenshot(Lcom/mojang/blaze3d/pipeline/RenderTarget;Ljava/util/function/Consumer;)V",
+            //#endif
             at = @At("HEAD"),
             argsOnly = true,
             ordinal = 0,
