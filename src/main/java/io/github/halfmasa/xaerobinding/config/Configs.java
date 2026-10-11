@@ -750,18 +750,12 @@ public final class Configs implements IConfigHandler
             KEYBIND_PIE_MENU,
             KEYBIND_WHEEL_EXPANDED),
             KEYBIND_PIE_SETTINGS,
-            //#if MC <= 1.21.1
             List.of(KEYMAP_SETTINGS_GROUP, KEYMAP_SETTINGS_EXPANDED),
             KEYMAP_SETTINGS_CHILDREN,
-            //#endif
             List.of(
             CONFIG_GROUPING_GROUP,
             CONFIG_GROUPING_EXPANDED),
             CONFIG_GROUPING_CHILDREN,
-            //#if MC > 1.21.1
-            //$$ List.of(KEYMAP_SETTINGS_GROUP, KEYMAP_SETTINGS_EXPANDED),
-            //$$ KEYMAP_SETTINGS_CHILDREN,
-            //#endif
 
             List.of(
             CLICK_AND_SEND,
@@ -815,18 +809,12 @@ public final class Configs implements IConfigHandler
                     KEYBIND_PIE_MENU,
                     KEYBIND_WHEEL_EXPANDED),
             KEYBIND_PIE_SETTINGS,
-            //#if MC <= 1.21.1
             List.of(KEYMAP_SETTINGS_GROUP, KEYMAP_SETTINGS_EXPANDED),
             KEYMAP_SETTINGS_CHILDREN,
-            //#endif
             List.of(
                     CONFIG_GROUPING_GROUP,
                     CONFIG_GROUPING_EXPANDED),
             CONFIG_GROUPING_CHILDREN,
-            //#if MC > 1.21.1
-            //$$ List.of(KEYMAP_SETTINGS_GROUP, KEYMAP_SETTINGS_EXPANDED),
-            //$$ KEYMAP_SETTINGS_CHILDREN,
-            //#endif
 
             List.of(
                     CLICK_AND_SEND,

@@ -16,15 +16,15 @@
 | 打印机允许从假人库存取货<br>`printerRefillAllowFake` | 布尔值 | `false` | 允许打印机补货从假人库存取货 |
 | 打印机取货数量<br>`printerRefillAmount` | 整数 | `32` | 打印机每次取货数量，0=半组 |
 | 打印机静默取物<br>`printerRefillSilent` | 布尔值 | `false` | 打印机静默取物，直接扣减离线来源库存 |
-| 投影保存黑白名单<br>`litematicaSaveFilter` | 布尔值 | `false` | 投影保存时按方块ID筛选（26.3），展开后可设白/黑名单 |
-| 投影保存方块白名单<br>`litematicaSaveWhitelist` | 字符串列表 | `[]` | 投影保存白名单，按方块ID筛选（26.3） |
-| 投影保存方块黑名单<br>`litematicaSaveBlacklist` | 字符串列表 | `[]` | 投影保存黑名单，按方块ID筛选（26.3） |
-| 投影删除黑白名单<br>`litematicaDeleteFilter` | 布尔值 | `false` | 投影删除时按方块ID筛选（26.3） |
-| 投影删除方块白名单<br>`litematicaDeleteWhitelist` | 字符串列表 | `[]` | 投影删除白名单（26.3） |
-| 投影删除方块黑名单<br>`litematicaDeleteBlacklist` | 字符串列表 | `[]` | 投影删除黑名单（26.3） |
-| 投影粘贴黑白名单<br>`litematicaPasteFilter` | 布尔值 | `false` | 投影粘贴时按方块ID筛选（26.3），详见本节配置说明。 |
-| 投影粘贴方块白名单<br>`litematicaPasteWhitelist` | 字符串列表 | `[]` | 投影粘贴白名单（26.3） |
-| 投影粘贴方块黑名单<br>`litematicaPasteBlacklist` | 字符串列表 | `[]` | 投影粘贴黑名单（26.3） |
+| 投影保存黑白名单<br>`litematicaSaveFilter` | 布尔值 | `false` | 投影保存时按方块ID筛选，展开后可设白/黑名单 |
+| 投影保存方块白名单<br>`litematicaSaveWhitelist` | 字符串列表 | `[]` | 投影保存白名单，按方块ID筛选 |
+| 投影保存方块黑名单<br>`litematicaSaveBlacklist` | 字符串列表 | `[]` | 投影保存黑名单，按方块ID筛选 |
+| 投影删除黑白名单<br>`litematicaDeleteFilter` | 布尔值 | `false` | 投影删除时按方块ID筛选 |
+| 投影删除方块白名单<br>`litematicaDeleteWhitelist` | 字符串列表 | `[]` | 投影删除白名单 |
+| 投影删除方块黑名单<br>`litematicaDeleteBlacklist` | 字符串列表 | `[]` | 投影删除黑名单 |
+| 投影粘贴黑白名单<br>`litematicaPasteFilter` | 布尔值 | `false` | 投影粘贴时按方块ID筛选，详见本节配置说明。 |
+| 投影粘贴方块白名单<br>`litematicaPasteWhitelist` | 字符串列表 | `[]` | 投影粘贴白名单 |
+| 投影粘贴方块黑名单<br>`litematicaPasteBlacklist` | 字符串列表 | `[]` | 投影粘贴黑名单 |
 
 ## Xaero 路径点与 Conflux Map
 
@@ -63,7 +63,7 @@
 | 历史记录行数<br>`itemSearchHistoryRows` | 整数 | `3` | 历史最大行数。范围 1–9 |
 | 搜索时显示历史记录<br>`itemSearchHistoryDuringSearch` | 布尔值 | `false` | 输入搜索文字时仍显示历史栏；关闭则仅清空搜索栏后显示 |
 | 创造物品栏合并条目<br>`condensedCreative` | 布尔值 | `false` | 附魔书/药水/药箭/方块变体合并为可展开条目 |
-| 试炼栏<br>`trialCreativeTab` | 布尔值 | `false` | 创造栏末尾新增「试炼栏」，仅本模组客户端可见。26.3装Fabric创造栏API时正常注册显示，未装时用右侧按钮打开。收录42个试炼刷怪笼（14配置×3状态：普通/不祥/冷却，携带方块实体数据）+2个试炼宝库。物品按方块状态显示原版材质+内部生物；悬停显示笼子类型/生物/状态/冷却；Ctrl+中键复制保留状态属性。图标用原版笼子材质不叠加色条，生物模型直立面向玩家（史莱姆原尺寸、其他放大20%），前景居中防裁剪。覆盖配置：`trial_chamber/breeze`、`melee/{husk,spider,zombie}`、`ranged/{poison_skeleton,skeleton,stray}`、`slow_ranged/{poison_skeleton,skeleton,stray}`、`small_melee/{baby_zombie,cave_spider,silverfish,slime}`。1.21.1改用等价内联配置对象 |
+| 试炼栏<br>`trialCreativeTab` | 布尔值 | `false` | 创造栏末尾新增「试炼栏」收录42个试炼刷怪笼（14配置×3状态：普通/不祥/冷却，携带方块实体数据）+2个试炼宝库 |
 
 ## 客户端与界面功能
 
@@ -93,9 +93,9 @@
 | 取消资源包兼容性检查<br>`skipResourcePackCompatibilityCheck` | 布尔值 | `false` | 添加的资源包视为兼容，跳过版本不匹配确认 |
 | 禁用暂停时客户端掉落物轨迹预测<br>`disablePausedItemTrajectoryPrediction` | 布尔值 | `false` | Carpet或 `/tick freeze` 暂停时停止客户端预测掉落物轨迹 |
 | 保持配置界面位置<br>`keepModMenuScroll` | 布尔值 | `false` | 分别记忆 Mod Menu 和每个 MaLiLib 配置分类的滚动位置 |
-| 保持搜索内容和位置<br>`keepConfigSearchPosition` | 布尔值 | `true` | 按分类恢复搜索文字/按键搜索/搜索栏开合/列表滚动，仅本次游戏内记忆（26.3） |
-| 保持选中的栏位<br>`keepConfigSelectedTab` | 布尔值 | `true` | 重开配置恢复上次选中栏位（26.3） |
-| 经典暂停菜单<br>`classicPauseMenu` | 布尔值 | `false` | 经典暂停菜单：主区恢复原版按钮排列，附加按钮移右侧，小窗口分列排列（26.3） |
+| 保持搜索内容和位置<br>`keepConfigSearchPosition` | 布尔值 | `true` | 按分类恢复搜索文字/按键搜索/搜索栏开合/列表滚动，仅本次游戏内记忆 |
+| 保持选中的栏位<br>`keepConfigSelectedTab` | 布尔值 | `true` | 重开配置恢复上次选中栏位 |
+| 经典暂停菜单<br>`classicPauseMenu` | 布尔值 | `false` | 经典暂停菜单：主区恢复原版按钮排列，附加按钮移右侧，小窗口分列排列 |
 
 ## 虚空交易
 
@@ -118,7 +118,7 @@
 
 ## 输入与按键设置
 
-### 更好的按键设置（26.3，默认开启）
+### 更好的按键设置（默认开启）
 
 | 名称 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
@@ -160,7 +160,7 @@
 | 打开冲突按键逐项配置<br>`openKeybindPieEditor` | 操作按钮 | — | 编辑每个原版按键 ID 的名称、分类显示和扇区颜色 |
 | 重新加载冲突按键配置<br>`reloadKeybindPieData` | 操作按钮 | — | 重新加载 `config/halfmasa/keybind-pie/bindings.json` |
 
-> 26.3 已移除标签内缩/外边距/文字阴影/模糊背景/颜色混合开关；浅色自动用深色文字；JSON 字段名保持兼容。
+
 
 ### 其他输入与实用功能
 

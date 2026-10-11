@@ -16,15 +16,15 @@
 | Allow printer refill from fake-player stock<br>`printerRefillAllowFake` | Boolean | `false` | Allow printer refill to take items from fake-player stock. |
 | Printer refill amount<br>`printerRefillAmount` | Integer | `32` | Amount to take per printer request; 0 means half a stack. |
 | Silent printer refill<br>`printerRefillSilent` | Boolean | `false` | Take printer materials directly from offline stock. |
-| Schematic save block filter<br>`litematicaSaveFilter` | Boolean | `false` | Filter blocks by block ID when saving a schematic (26.3); expand to configure a whitelist or blacklist. |
-| Schematic save block whitelist<br>`litematicaSaveWhitelist` | String list | `[]` | Block IDs allowed by the schematic save whitelist (26.3). |
-| Schematic save block blacklist<br>`litematicaSaveBlacklist` | String list | `[]` | Block IDs excluded by the schematic save blacklist (26.3). |
-| Schematic deletion block filter<br>`litematicaDeleteFilter` | Boolean | `false` | Filter blocks by block ID when deleting from a schematic (26.3). |
-| Schematic deletion block whitelist<br>`litematicaDeleteWhitelist` | String list | `[]` | Block IDs allowed by the schematic deletion whitelist (26.3). |
-| Schematic deletion block blacklist<br>`litematicaDeleteBlacklist` | String list | `[]` | Block IDs excluded by the schematic deletion blacklist (26.3). |
-| Schematic paste block filter<br>`litematicaPasteFilter` | Boolean | `false` | Filter blocks by block ID when pasting a schematic (26.3); see the configuration details in this section. |
-| Schematic paste block whitelist<br>`litematicaPasteWhitelist` | String list | `[]` | Block IDs allowed by the schematic paste whitelist (26.3). |
-| Schematic paste block blacklist<br>`litematicaPasteBlacklist` | String list | `[]` | Block IDs excluded by the schematic paste blacklist (26.3). |
+| Schematic save block filter<br>`litematicaSaveFilter` | Boolean | `false` | Filter blocks by block ID when saving a schematic; expand to configure a whitelist or blacklist. |
+| Schematic save block whitelist<br>`litematicaSaveWhitelist` | String list | `[]` | Block IDs allowed by the schematic save whitelist. |
+| Schematic save block blacklist<br>`litematicaSaveBlacklist` | String list | `[]` | Block IDs excluded by the schematic save blacklist. |
+| Schematic deletion block filter<br>`litematicaDeleteFilter` | Boolean | `false` | Filter blocks by block ID when deleting from a schematic. |
+| Schematic deletion block whitelist<br>`litematicaDeleteWhitelist` | String list | `[]` | Block IDs allowed by the schematic deletion whitelist. |
+| Schematic deletion block blacklist<br>`litematicaDeleteBlacklist` | String list | `[]` | Block IDs excluded by the schematic deletion blacklist. |
+| Schematic paste block filter<br>`litematicaPasteFilter` | Boolean | `false` | Filter blocks by block ID when pasting a schematic; see the configuration details in this section. |
+| Schematic paste block whitelist<br>`litematicaPasteWhitelist` | String list | `[]` | Block IDs allowed by the schematic paste whitelist. |
+| Schematic paste block blacklist<br>`litematicaPasteBlacklist` | String list | `[]` | Block IDs excluded by the schematic paste blacklist. |
 
 ## Xaero Waypoints and Conflux Map
 
@@ -63,7 +63,7 @@
 | Search history rows<br>`itemSearchHistoryRows` | Integer | `3` | Maximum number of rows in creative search history. Range: 1–9. |
 | Show history while searching<br>`itemSearchHistoryDuringSearch` | Boolean | `false` | Keep the history visible while search text is entered. When disabled, it appears only after the search box is cleared. |
 | Condensed creative items<br>`condensedCreative` | Boolean | `false` | Combine enchanted books, potions, tipped arrows, and block variants into expandable entries. |
-| Trial tab<br>`trialCreativeTab` | Boolean | `false` | Add a “Trial” tab at the end of the creative inventory, visible only on this modded client. On 26.3, it registers normally when the Fabric Creative Tab API is installed; otherwise, open it with the button on the right. Includes 42 trial spawners (14 configurations × normal/ominous/cooldown) and 2 vaults. Items carry block-entity data. Spawner items use vanilla textures and show their contained entity; tooltips describe spawner type, entity, state, and cooldown. Ctrl+middle-click preserves state properties. Models face the player (slimes retain their size; other mobs are enlarged by 20%) and are centered in the foreground. Configurations: `trial_chamber/breeze`, `melee/{husk,spider,zombie}`, `ranged/{poison_skeleton,skeleton,stray}`, `slow_ranged/{poison_skeleton,skeleton,stray}`, `small_melee/{baby_zombie,cave_spider,silverfish,slime}`. Version 1.21.1 uses an equivalent inline configuration object. |
+| Trial tab<br>`trialCreativeTab` | Boolean | `false` | Add a “Trial” tab at the end of the creative inventory containing 42 trial spawners (14 configurations × 3 states: normal/ominous/cooldown, with block-entity data) and 2 Trial Vaults. |
 
 ## Client and Interface Features
 
@@ -93,9 +93,9 @@
 | Skip resource-pack compatibility check<br>`skipResourcePackCompatibilityCheck` | Boolean | `false` | Treat added resource packs as compatible and skip the version-mismatch confirmation. |
 | Disable paused item-trajectory prediction<br>`disablePausedItemTrajectoryPrediction` | Boolean | `false` | Stop client-side dropped-item trajectory prediction while Carpet or vanilla `/tick freeze` pauses ticks. |
 | Keep configuration-screen position<br>`keepModMenuScroll` | Boolean | `false` | Remember scroll positions for Mod Menu and each MaLiLib configuration category. |
-| Keep search content and position<br>`keepConfigSearchPosition` | Boolean | `true` | When the main option is enabled, restore search text, key search, search-bar state, and list position per MaLiLib category. Session-only (26.3). |
-| Keep selected tab<br>`keepConfigSelectedTab` | Boolean | `true` | Restore the previously selected tab when reopening configuration (26.3). |
-| Classic pause menu<br>`classicPauseMenu` | Boolean | `false` | Restore the classic pause-menu button arrangement; move extra buttons to the right and use columns in small windows (26.3). |
+| Keep search content and position<br>`keepConfigSearchPosition` | Boolean | `true` | When the main option is enabled, restore search text, key search, search-bar state, and list position per MaLiLib category. Session-only. |
+| Keep selected tab<br>`keepConfigSelectedTab` | Boolean | `true` | Restore the previously selected tab when reopening configuration. |
+| Classic pause menu<br>`classicPauseMenu` | Boolean | `false` | Restore the classic pause-menu button arrangement; move extra buttons to the right and use columns in small windows. |
 
 ## Void Trading
 
@@ -118,7 +118,7 @@
 
 ## Input and Key Settings
 
-### Better Key Settings (26.3; enabled by default)
+### Better Key Settings (enabled by default)
 
 | Name | Type | Default | Description |
 |---|---|---|---|
@@ -159,8 +159,6 @@
 | Selector opening animation<br>`keybindPieAnimate` | Boolean | — | Play an opening animation. |
 | Open per-key conflict settings<br>`openKeybindPieEditor` | Action button | — | Edit the name, category visibility, and sector color for each vanilla key ID. |
 | Reload conflict-key settings<br>`reloadKeybindPieData` | Action button | — | Reload `config/halfmasa/keybind-pie/bindings.json`. |
-
-> In 26.3, label inset, margins, text shadow, background blur, and color blending were removed. Light colors automatically use dark text; JSON field names remain compatible.
 
 ### Other Input and Utility Features
 
