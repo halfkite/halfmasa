@@ -21,7 +21,6 @@ public final class ImeService implements IClientTickHandler
     private Object focusedTarget;
     private Mode mode = Mode.DISABLED;
     private boolean nativeActive;
-    private boolean previousMaster;
     private boolean previousFullscreen;
     private long pendingSingleClickAt;
     private long lastHotkeyAt;
@@ -123,8 +122,10 @@ public final class ImeService implements IClientTickHandler
 
     public void commit(String value)
     {
+        if (!Configs.CONTINGAME_IME.getBooleanValue()) return;
         Minecraft client = Minecraft.getInstance();
         client.execute(() -> {
+            if (!Configs.CONTINGAME_IME.getBooleanValue()) return;
             Object target = this.focusedTarget;
             EditBox edit = this.focusedEdit;
             if (target == null || edit != null && !edit.isFocused())
@@ -184,16 +185,18 @@ public final class ImeService implements IClientTickHandler
         Ime261Compat.onClientTick(client);
 
         boolean master = Configs.CONTINGAME_IME.getBooleanValue();
-        if (master != this.previousMaster)
+        if (!master)
         {
-            this.previousMaster = master;
-            if (!master)
-            {
-                this.mode = Mode.DISABLED;
-                this.focusedEdit = null;
-                this.focusedTarget = null;
-                ImeOverlay.clear();
-            }
+            this.mode = Mode.DISABLED;
+            // Focus tracking also protects typing from the keybind wheel.
+            // Keep it independent of the IME master switch.
+            this.pendingSingleClickAt = 0L;
+            this.lastHotkeyAt = 0L;
+            this.temporaryCommitted = false;
+            ImeOverlay.clear();
+            ExternalBaseIME.getInstance().uninitialize();
+            this.nativeActive = false;
+            return;
         }
 
         if (master && this.pendingSingleClickAt != 0L &&

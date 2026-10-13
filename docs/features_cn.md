@@ -2,7 +2,7 @@
 
 # halfmasa 功能与配置
 
-> 文档版本 `1.6.2` ｜ 按 `X+H` 打开配置（也可从 Mod Menu 进入）｜ 除特别说明外默认关闭，热键空表示不绑定
+> 文档版本 `1.6.3` ｜ 按 `X+H` 打开配置（也可从 Mod Menu 进入）｜ 除特别说明外默认关闭，热键空表示不绑定
 
 ## 投影相关功能
 
@@ -175,7 +175,7 @@
 | 服务器地图缓存<br>`serverIconCache` | 布尔值 | `true` | 缓存服务器图标，按名称/地址/两者匹配，可设上限；清空前二次确认 |
 | 禁用提示弹窗<br>`toastKiller` | 布尔值 | `false` | 清除当前提示并在启用期间拒绝新提示 |
 | 服务器ping刷新修复<br>`serverPingerFix` | 布尔值 | `false` | 扩展服务器刷新线程池并清理过期排队任务 |
-| 游戏内输入法<br>`contingameIme` | 布尔值 | `false` | Windows JNI 游戏内输入法，支持组合文本/候选框/临时模式/持续模式 |
+| 游戏内输入法<br>`contingameIme` | 布尔值 | `false` | 旧版使用 Windows JNI；26.1+ 使用原版输入法并可定制显示；关闭总开关后保持原版输入及界面，旧版同时释放 JNI 钩子 |
 
 ## 单人存档路径
 
@@ -184,22 +184,45 @@
 | 自定义存档路径<br>`customSavesPaths` | 字符串列表 | `[]` | 自定义存档路径列表，支持绝对路径和相对游戏目录路径；"选择世界"界面左上角点当前路径即时切换，原版 `saves` 始终可选 |
 | 无存档时保留世界选择界面<br>`keepWorldSelectionOnEmpty` | 布尔值 | `false` | 当前路径无世界时点"单人游戏"仍显示世界选择界面，不自动跳创建世界 |
 
+## 实体与方块高亮
+
+| 名称 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| 实体与方块高亮<br>`entityGlowHighlight` | 带热键布尔值 | `false` | 开启实体、掉落物发光轮廓及列表中的穿墙方块轮廓；仅客户端生效 |
+| 实体高亮模式<br>`entityGlowMode` | 选项列表 | 全部 | 全部实体和掉落物，或只高亮详细设置中启用的规则；方块始终按规则高亮 |
+| 切换实体高亮模式<br>`entityGlowModeHotkey` | 热键 | 空 | 在全部与单独模式间切换，不会开启主开关 |
+| 全部高亮颜色<br>`entityGlowAllColor` | 颜色 | 白色 | 全部模式的轮廓颜色 |
+| 高亮详细设置<br>`entityGlowRuleEditor` | 操作 | — | 按实体、掉落物或方块 ID 设置颜色、启停和规则快捷键；保存后生效 |
+
 ## 实体合并渲染
+
+实体与掉落物是两个独立的可展开配置组，各自刷新、过滤并设置标签位置。合并数表示“至少达到多少个实体”；旧配置自动换算以保留原来的触发数量。
 
 | 名称 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
 | 禁用流体渲染<br>`disableFluidRendering` | 布尔值 | `false` | 禁用流体渲染，可能显著改变画面 |
 | 禁用非主流体渲染<br>`disableNonSourceFluidRendering` | 布尔值 | `false` | 仅禁用非源头流体渲染 |
 | 同类实体渲染聚合<br>`entityRenderAggregation` | 布尔值 | `false` | 同类实体渲染聚合，可能显著改变画面或兼容性 |
-| 掉落物渲染合并<br>`itemRenderAggregation` | 布尔值 | `false` | 掉落物渲染合并 |
-| 禁用渲染仅统计数量<br>`entityAggregationCountOnly` | 布尔值 | `false` | 聚合时仅统计数量不渲染模型 |
-| 实体聚合半径<br>`entityAggregationRadius` | 实数 | — | 实体聚合的半径范围 |
-| 实体聚合阈值<br>`entityAggregationThreshold` | 整数 | — | 触发聚合的实体数量阈值 |
-| 实体聚合统计刷新间隔<br>`entityAggregationScanInterval` | 整数 | — | 聚合统计的刷新间隔（tick） |
-| 实体聚合标签位置<br>`entityAggregationLabelPosition` | 选项列表 | — | 聚合标签显示位置 |
+| 按年龄和体型分组<br>`entityAggregationSeparateSizes` | 布尔值 | `true` | 幼年、成年及不同体型分别计数并显示标签 |
+| 禁用渲染仅统计数量<br>`entityAggregationCountOnly` | 布尔值 | `false` | 生物聚合时仅显示数量，不影响掉落物 |
+| 实体聚合半径<br>`entityAggregationRadius` | 实数 | `1` | 相邻生物按三维距离连锁合并的范围 |
+| 实体合并数<br>`entityAggregationThreshold` | 整数 | `11` | 每组生物至少达到此数量才合并 |
+| 实体聚合统计刷新间隔<br>`entityAggregationScanInterval` | 整数 | `10` | 聚合统计的刷新间隔（tick，10 tick 约半秒） |
+| 实体聚合标签位置<br>`entityAggregationLabelPosition` | 选项列表 | 头顶 | 头顶或侧边 |
 | 实体聚合名单模式<br>`entityAggregationListMode` | 选项列表 | — | 白名单/黑名单/关闭 |
 | 实体聚合白名单<br>`entityAggregationWhitelist` | 字符串列表 | `[]` | 聚合白名单 |
 | 实体聚合黑名单<br>`entityAggregationBlacklist` | 字符串列表 | `[]` | 聚合黑名单 |
+
+| 掉落物独立配置 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| 掉落物渲染合并<br>`itemRenderAggregation` | 布尔值 | `true` | 每堆只渲染一个模型，附近同物品及组件的掉落实体合并并显示物品总件数 |
+| 掉落物合并数<br>`itemAggregationThreshold` | 整数 | `2` | 至少达到此数量的掉落实体堆才合并 |
+| 掉落物合并范围<br>`itemAggregationRadius` | 实数 | `1` | 相邻掉落实体按三维距离连锁合并的范围 |
+| 掉落物名单模式<br>`itemAggregationListMode` | 选项列表 | 无名单 | 白名单仅处理列出物品，黑名单排除列出物品 |
+| 掉落物白名单<br>`itemAggregationWhitelist` | 字符串列表 | `[]` | 物品 ID，例如 `minecraft:stone`；空白名单不处理任何物品 |
+| 掉落物黑名单<br>`itemAggregationBlacklist` | 字符串列表 | `[]` | 排除的物品 ID |
+| 掉落物标签位置<br>`itemAggregationLabelPosition` | 选项列表 | 头顶 | 头顶或侧边 |
+| 掉落物刷新时间<br>`itemAggregationScanInterval` | 整数 | `10` | 独立刷新间隔（tick） |
 
 > 以上功能位于"已停用功能"分类，不进入推荐页，应在理解影响后单独启用。
 

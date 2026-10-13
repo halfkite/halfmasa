@@ -1,0 +1,10 @@
+gradle.projectsEvaluated {
+    def version = rootProject.findProperty('startup_smoke_version')
+    if (version == null) throw new GradleException('startup_smoke_version is required')
+    def target = rootProject.project(":${version}")
+    def run = target.loom.runs.getByName('client')
+    run.runDir(rootProject.property('startup_smoke_run_dir').toString())
+    run.vmArg("-Dfabric.addMods=${rootProject.property('startup_smoke_mod')}")
+    run.vmArg('-Xmx2G')
+    run.vmArg('--enable-native-access=ALL-UNNAMED')
+}

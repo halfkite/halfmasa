@@ -44,12 +44,13 @@ public final class Ime261Compat
 
     public static boolean isModStyle()
     {
-        return Configs.IME_RENDER_STYLE.getOptionListValue() == ImeStyle.MOD;
+        return Configs.CONTINGAME_IME.getBooleanValue()
+                && Configs.IME_RENDER_STYLE.getOptionListValue() == ImeStyle.MOD;
     }
 
     public static boolean shouldRenderOverlayLayer()
     {
-        if (!typing)
+        if (!Configs.CONTINGAME_IME.getBooleanValue() || !typing)
         {
             return false;
         }
@@ -61,7 +62,8 @@ public final class Ime261Compat
      */
     public static String getBadgeText()
     {
-        if (!Configs.IME_STATUS_INDICATOR.getBooleanValue() || !typing)
+        if (!Configs.CONTINGAME_IME.getBooleanValue()
+                || !Configs.IME_STATUS_INDICATOR.getBooleanValue() || !typing)
         {
             return null;
         }
@@ -75,7 +77,8 @@ public final class Ime261Compat
 
     public static void onClientTick(Minecraft client)
     {
-        typing = ImeService.getInstance().hasFocusTarget();
+        typing = Configs.CONTINGAME_IME.getBooleanValue()
+                && ImeService.getInstance().hasFocusTarget();
         if (!typing)
         {
             conversionMode = -1;
@@ -99,6 +102,7 @@ public final class Ime261Compat
      */
     public static void onPreedit(String fullText, int caret, List<String> blocks, int focused)
     {
+        if (!Configs.CONTINGAME_IME.getBooleanValue()) return;
         if (!capturedPreeditOnce)
         {
             capturedPreeditOnce = true;
@@ -125,7 +129,8 @@ public final class Ime261Compat
 
     public static boolean cancelVanillaPreeditRender()
     {
-        return isModStyle() || Configs.IME_HIDE_VANILLA_PREEDIT.getBooleanValue();
+        return Configs.CONTINGAME_IME.getBooleanValue()
+                && (isModStyle() || Configs.IME_HIDE_VANILLA_PREEDIT.getBooleanValue());
     }
 
     private static Integer queryConversionMode(Minecraft client)

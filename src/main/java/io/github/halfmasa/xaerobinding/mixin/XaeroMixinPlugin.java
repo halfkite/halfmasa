@@ -14,6 +14,19 @@ public final class XaeroMixinPlugin implements IMixinConfigPlugin
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName)
     {
+        if (mixinClassName.endsWith("EntityGlowColorMixin") ||
+                mixinClassName.endsWith("MinecraftEntityGlowMixin"))
+        {
+            //#if MC < 1.21.10
+            return true;
+            //#else
+            //$$ return false;
+            //#endif
+        }
+        if (mixinClassName.endsWith("BlockGlowLevelRendererMixin"))
+        {
+            return true;
+        }
         if (mixinClassName.endsWith("PrinterZxyInventoryRefillMixin"))
         {
             return !hasPrinterCoordinator() && !hasPrinterInventoryCheck() && hasPrinterZxyInventoryCheck();

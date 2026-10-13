@@ -4,7 +4,6 @@ package io.github.halfmasa.xaerobinding.mixin;
 import io.github.halfmasa.xaerobinding.config.Configs;
 import io.github.halfmasa.xaerobinding.feature.LitematicaBlockFilters;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.*;
@@ -21,12 +20,10 @@ public abstract class LitematicaSaveBlockFilterMixin
     @Shadow @Final private Map<String, Map<BlockPos, Object>> pendingBlockTicks;
     @Shadow @Final private Map<String, Map<BlockPos, Object>> pendingFluidTicks;
 
-    // Substitute before Litematica counts blocks or reads block entity data.
-    @Redirect(method = {"takeBlocksFromWorld", "takeBlocksFromWorldWithinChunk"},
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;getBlockState(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/state/BlockState;", remap = true))
-    private BlockState halfmasa$filterSavedBlock(Level world, BlockPos position)
+    // Filter the state after other mods supply it, before Litematica counts or stores it.
+    @ModifyVariable(method = {"takeBlocksFromWorld", "takeBlocksFromWorldWithinChunk"}, at = @At("STORE"), ordinal = 0)
+    private BlockState halfmasa$filterSavedBlock(BlockState state)
     {
-        BlockState state = world.getBlockState(position);
         return LitematicaBlockFilters.allowsSave(state) ? state : Blocks.AIR.defaultBlockState();
     }
 

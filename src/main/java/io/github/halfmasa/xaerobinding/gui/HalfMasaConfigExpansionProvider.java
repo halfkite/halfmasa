@@ -79,6 +79,29 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
     }
 
     @Override
+    public IConfigBase getInlineCompanion(IConfigBase config)
+    {
+        //#if MC >= 1.21.1
+        if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.ENTITY_GLOW_MODE)
+        {
+            return Configs.ENTITY_GLOW_MODE_HOTKEY;
+        }
+        //#endif
+        return null;
+    }
+
+    @Override
+    public boolean isInlineCompanion(IConfigBase config)
+    {
+        //#if MC >= 1.21.1
+        return CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source)
+                && config == Configs.ENTITY_GLOW_MODE_HOTKEY;
+        //#else
+        //$$ return false;
+        //#endif
+    }
+
+    @Override
     public Collection<ConfigOptionWrapper> prepareEntries(
             Collection<ConfigOptionWrapper> entries,
             boolean searchActive)

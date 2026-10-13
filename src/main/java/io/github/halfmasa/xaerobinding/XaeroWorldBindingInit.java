@@ -34,6 +34,13 @@ import io.github.halfmasa.xaerobinding.gui.HalfMasaConfigScreen;
 import io.github.halfmasa.xaerobinding.gui.CustomConfigGroupScreen;
 import io.github.halfmasa.xaerobinding.gui.KeybindCustomizationScreen;
 import io.github.halfmasa.xaerobinding.gui.KeymapBrowserScreen;
+//#if MC >= 1.21.1
+import io.github.halfmasa.xaerobinding.config.EntityGlowMode;
+import io.github.halfmasa.xaerobinding.feature.EntityGlowService;
+import io.github.halfmasa.xaerobinding.feature.BlockGlowService;
+import io.github.halfmasa.xaerobinding.feature.GlowRuleHotkeys;
+import io.github.halfmasa.xaerobinding.gui.EntityGlowRulesScreen;
+//#endif
 
 import io.github.halfmasa.xaerobinding.waypoint.WaypointClientActions;
 import io.github.halfmasa.xaerobinding.waypoint.WaypointBundleService.ExportScope;
@@ -65,6 +72,32 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
             GuiBase.openGui(new HalfMasaConfigScreen());
             return true;
         });
+        //#if MC >= 1.21.1
+        Configs.ENTITY_GLOW_MODE_HOTKEY.getKeybind().setCallback((action, key) -> {
+            EntityGlowMode current = (EntityGlowMode) Configs.ENTITY_GLOW_MODE.getOptionListValue();
+            Configs.ENTITY_GLOW_MODE.setOptionListValue(current.cycle(true));
+            return true;
+        });
+        Configs.ENTITY_GLOW_RULE_EDITOR.setAction(0, () -> {
+            MinecraftClientCompat.setScreen(Minecraft.getInstance(),
+                    new EntityGlowRulesScreen(MinecraftClientCompat.getScreen(Minecraft.getInstance())));
+            return true;
+        });
+        Configs.ENTITY_GLOW_RULES.setValueChangeCallback(config -> {
+            EntityGlowService.reload();
+            BlockGlowService.getInstance().reload();
+        });
+        Configs.BLOCK_GLOW_RULE_EDITOR.setAction(0, () -> {
+            MinecraftClientCompat.setScreen(Minecraft.getInstance(),
+                    new EntityGlowRulesScreen(MinecraftClientCompat.getScreen(Minecraft.getInstance())));
+            return true;
+        });
+        Configs.BLOCK_GLOW_RULES.setValueChangeCallback(config -> {
+            EntityGlowService.reload();
+            BlockGlowService.getInstance().reload();
+        });
+        BlockGlowService.getInstance().reload();
+        //#endif
         //#if MC >= 1.21.1
         Configs.KEEP_CONFIG_SEARCH_POSITION.setValueChangeCallback(config -> {
             if (!Configs.KEEP_CONFIG_SEARCH_POSITION.getBooleanValue()) ConfigScrollMemory.clearConfigState();
@@ -164,19 +197,27 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         Configs.ENABLE_WORLD_BINDING.setValueChangeCallback(config -> WorldBindingStore.ensureCurrentWorldBinding());
         Configs.DISABLE_FLUID_RENDERING.setValueChangeCallback(config -> refreshWorldRendering());
         Configs.DISABLE_NON_SOURCE_FLUID_RENDERING.setValueChangeCallback(config -> refreshWorldRendering());
-        Configs.ENTITY_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
+        Configs.ENTITY_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearEntities());
         //#if MC >= 1.21.1
-        Configs.ITEM_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
-        Configs.ENTITY_AGGREGATION_SEPARATE_SIZES.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
+        Configs.ITEM_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearItems());
+        Configs.ENTITY_AGGREGATION_SEPARATE_SIZES.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearEntities());
+        Configs.ITEM_AGGREGATION_RADIUS.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearItems());
+        Configs.ITEM_AGGREGATION_THRESHOLD.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearItems());
+        Configs.ITEM_AGGREGATION_SCAN_INTERVAL.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearItems());
+        Configs.ITEM_AGGREGATION_LABEL_POSITION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearItems());
+        Configs.ITEM_AGGREGATION_LIST_MODE.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearItems());
+        Configs.ITEM_AGGREGATION_WHITELIST.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearItems());
+        Configs.ITEM_AGGREGATION_BLACKLIST.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearItems());
         Configs.ENTITY_RENDER_AGGREGATION.setComment("halfmasa.config.disabled.comment.entityRenderAggregation.mc263");
         Configs.ENTITY_AGGREGATION_THRESHOLD.setComment("halfmasa.config.disabled.comment.entityAggregationThreshold.mc263");
         //#endif
-        Configs.ENTITY_AGGREGATION_RADIUS.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
-        Configs.ENTITY_AGGREGATION_THRESHOLD.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
-        Configs.ENTITY_AGGREGATION_SCAN_INTERVAL.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
-        Configs.ENTITY_AGGREGATION_LIST_MODE.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
-        Configs.ENTITY_AGGREGATION_WHITELIST.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
-        Configs.ENTITY_AGGREGATION_BLACKLIST.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clear());
+        Configs.ENTITY_AGGREGATION_RADIUS.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearEntities());
+        Configs.ENTITY_AGGREGATION_THRESHOLD.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearEntities());
+        Configs.ENTITY_AGGREGATION_SCAN_INTERVAL.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearEntities());
+        Configs.ENTITY_AGGREGATION_LABEL_POSITION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearEntities());
+        Configs.ENTITY_AGGREGATION_LIST_MODE.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearEntities());
+        Configs.ENTITY_AGGREGATION_WHITELIST.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearEntities());
+        Configs.ENTITY_AGGREGATION_BLACKLIST.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearEntities());
         Configs.ITEM_SEARCH_HISTORY.setValueChangeCallback(config -> {
             ItemSearchHistoryService.getInstance().flush();
         });
@@ -187,10 +228,16 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         Configs.ITEM_MANAGER_RECIPE_HISTORY_ROWS.setValueChangeCallback(config -> ItemManagerHistoryOverlay.resetBounds());
         Configs.ITEM_MANAGER_RECIPE_HISTORY_POSITION.setValueChangeCallback(config -> ItemManagerHistoryOverlay.resetBounds());
         InputEventHandler.getKeybindManager().registerKeybindProvider(this);
+        //#if MC >= 1.21.1
+        GlowRuleHotkeys.reload();
+        //#endif
         TickHandler.getInstance().registerClientTickHandler(KeybindPieManager.getInstance());
         TickHandler.getInstance().registerClientTickHandler(ImeService.getInstance());
         TickHandler.getInstance().registerClientTickHandler(CooldownAutoAttack.getInstance());
         TickHandler.getInstance().registerClientTickHandler(BridgingAssist.getInstance());
+        //#if MC >= 1.21.1
+        TickHandler.getInstance().registerClientTickHandler(BlockGlowService.getInstance());
+        //#endif
         TickHandler.getInstance().registerClientTickHandler(FastLoadingController.getInstance());
         TickHandler.getInstance().registerClientTickHandler(EntityRenderAggregation.getInstance());
         //#if MC >= 1.21.1
@@ -208,12 +255,21 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         {
             manager.addKeybindToMap(hotkey.getKeybind());
         }
+        //#if MC >= 1.21.1
+        for (var hotkey : GlowRuleHotkeys.getHotkeys())
+        {
+            manager.addKeybindToMap(hotkey.getKeybind());
+        }
+        //#endif
     }
 
     @Override
     public void addHotkeys(IKeybindManager manager)
     {
         manager.addHotkeysForCategory(XaeroWorldBinding.MOD_NAME, "halfmasa.hotkeys.category", Configs.HOTKEYS);
+        //#if MC >= 1.21.1
+        manager.addHotkeysForCategory(XaeroWorldBinding.MOD_NAME, "halfmasa.hotkeys.glow_rules", GlowRuleHotkeys.getHotkeys());
+        //#endif
     }
 
     private static void registerTrigger(ActionHotkey config, BooleanSupplier action)

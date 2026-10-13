@@ -4,6 +4,7 @@ package io.github.halfmasa.xaerobinding.feature;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 /** Packs projected nameplate rectangles without depending on world axes or entity type. */
 public final class AggregationLabelLayout
@@ -15,8 +16,15 @@ public final class AggregationLabelLayout
 
     public static List<Placement> arrange(List<Label> labels, double gap)
     {
+        return arrange(labels, gap, Map.of());
+    }
+
+    public static List<Placement> arrange(List<Label> labels, double gap, Map<Integer, Double> previousOffsets)
+    {
         var ordered = new ArrayList<>(labels);
-        ordered.sort(Comparator.comparingDouble(Label::distance).thenComparingInt(Label::id));
+        // A distance-based order changes when nearby groups trade places relative
+        // to the camera, making overlapping count labels swap slots each frame.
+        ordered.sort(Comparator.comparingInt(Label::id));
         var placed = new ArrayList<Label>();
         var result = new ArrayList<Placement>();
         for (Label label : ordered)
@@ -43,7 +51,11 @@ public final class AggregationLabelLayout
             {
                 if (y > range.start() && y < range.end())
                 {
-                    y = y - range.start() <= range.end() - y ? range.start() : range.end();
+                    // Retain the previous side for a continuing collision. Choosing
+                    // the closest edge anew flips at the midpoint on tiny movements.
+                    double previous = previousOffsets.getOrDefault(label.id(), 0.0D);
+                    boolean above = previous < 0 || previous == 0 && y - range.start() <= range.end() - y;
+                    y = above ? range.start() : range.end();
                     break;
                 }
             }

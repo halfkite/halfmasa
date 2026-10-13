@@ -7,6 +7,10 @@ import fi.dy.masa.malilib.config.IConfigResettable;
 import fi.dy.masa.malilib.config.options.ConfigBoolean;
 import fi.dy.masa.malilib.gui.GuiConfigsBase.ConfigOptionWrapper;
 import fi.dy.masa.malilib.gui.button.ButtonGeneric;
+//#if MC >= 1.21.1
+import fi.dy.masa.malilib.gui.button.ConfigButtonKeybind;
+import fi.dy.masa.malilib.gui.button.ConfigButtonOptionList;
+//#endif
 import fi.dy.masa.malilib.gui.interfaces.IConfigInfoProvider;
 import fi.dy.masa.malilib.gui.interfaces.IKeybindConfigGui;
 import fi.dy.masa.malilib.gui.widgets.WidgetConfigOption;
@@ -274,6 +278,13 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
     private void addInlineCompanion(
             int x, int y, int labelWidth, int configWidth, IConfigBase config, IHotkey companion)
     {
+        //#if MC >= 1.21.1
+        if (config == Configs.ENTITY_GLOW_MODE)
+        {
+            this.addEntityGlowModeRow(x, y, labelWidth, configWidth, companion);
+            return;
+        }
+        //#endif
         int hotkeyWidth = Math.min(230, Math.max(120, configWidth / 3));
         int resetAreaWidth = INLINE_RESET_WIDTH + 2 + INLINE_CONTROL_GAP;
         int valueWidth = Math.max(80, configWidth - hotkeyWidth - resetAreaWidth);
@@ -305,6 +316,33 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         this.addHotkeyConfigElements(hotkeyX, y + 1, remainingWidth,
                 companionName(companion), companion);
     }
+
+    //#if MC >= 1.21.1
+    private void addEntityGlowModeRow(int x, int y, int labelWidth, int configWidth, IHotkey companion)
+    {
+        this.addLabel(x, y + 8, labelWidth, 8, 0xFFFFFFFF,
+                Configs.ENTITY_GLOW_MODE.getConfigGuiDisplayName());
+        int controlsX = x + labelWidth + 10;
+        int resetWidth = INLINE_RESET_WIDTH;
+        int available = Math.max(100, configWidth - resetWidth - 8);
+        int modeWidth = Math.max(62, available / 2);
+        int hotkeyWidth = Math.max(36, available - modeWidth - 2);
+        ConfigButtonOptionList modeButton = new ConfigButtonOptionList(controlsX, y + 1,
+                modeWidth, 20, Configs.ENTITY_GLOW_MODE);
+        this.addButton(modeButton, this.host.getButtonPressListener());
+        ConfigButtonKeybind hotkeyButton = new ConfigButtonKeybind(controlsX + modeWidth + 2,
+                y + 1, hotkeyWidth, 20, companion.getKeybind(), this.host);
+        this.addButton(hotkeyButton, this.host.getButtonPressListener());
+        ButtonGeneric reset = new ButtonGeneric(controlsX + modeWidth + hotkeyWidth + 6,
+                y + 1, resetWidth, 20, StringUtils.translate("malilib.gui.button.reset.caps"));
+        this.addButton(reset, (button, mouseButton) -> {
+            Configs.ENTITY_GLOW_MODE.resetToDefault();
+            companion.getKeybind().resetToDefault();
+            modeButton.updateDisplayString();
+            hotkeyButton.updateDisplayString();
+        });
+    }
+    //#endif
 
     private static String companionName(IHotkey companion)
     {

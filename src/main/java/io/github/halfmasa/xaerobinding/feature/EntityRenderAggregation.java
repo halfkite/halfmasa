@@ -45,6 +45,11 @@ import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+//#if MC >= 26.2
+import net.minecraft.world.entity.monster.cubemob.AbstractCubeMob;
+//#else
+//$$ import net.minecraft.world.entity.monster.Slime;
+//#endif
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.decoration.ArmorStand;
@@ -69,10 +74,9 @@ public final class EntityRenderAggregation implements IClientTickHandler
         thread.setDaemon(true);
         return thread;
     });
-    private Future<List<GroupResult>> pending;
-    private Map<Integer, GroupMeta> pendingMetadata;
-    private long generation;
-    private long pendingGeneration;
+    private final ScanChannel entityScan = new ScanChannel();
+    private final ScanChannel itemScan = new ScanChannel();
+    private final Map<Integer, Double> previousLabelOffsets = new HashMap<>();
     //#if MC >= 1.21.10
     private final Map<EntityRenderState, Integer> frameLabels = new IdentityHashMap<>();
     //#endif
@@ -112,31 +116,16 @@ public final class EntityRenderAggregation implements IClientTickHandler
 
         if (this.trackedLevel != client.level)
         {
-            this.groupsByEntityId.clear();
+            clear();
             this.trackedLevel = client.level;
             this.lastRebuildTick = Long.MIN_VALUE;
-//#if MC >= 1.21.1
-            cancelPending();
-//#endif
         }
 
         long gameTime = client.level.getGameTime();
         int interval = Configs.ENTITY_AGGREGATION_SCAN_INTERVAL.getIntegerValue();
 //#if MC >= 1.21.1
-        if (this.pending != null && this.pending.isDone())
-        {
-            publishCompleted();
-        }
-        // Never queue stale worlds or continuously rescan while a worker is busy.
-        if (this.pending == null && (this.lastRebuildTick == Long.MIN_VALUE ||
-                gameTime < this.lastRebuildTick || gameTime - this.lastRebuildTick >= interval))
-        {
-            Snapshot snapshot = capture(client.level, client);
-            this.pendingMetadata = snapshot.metadata();
-            this.pendingGeneration = this.generation;
-            this.pending = COUNT_EXECUTOR.submit(() -> calculate(snapshot));
-            this.lastRebuildTick = gameTime;
-        }
+        tickChannel(client, this.entityScan, false, gameTime, interval);
+        tickChannel(client, this.itemScan, true, gameTime, Configs.ITEM_AGGREGATION_SCAN_INTERVAL.getIntegerValue());
 //#else
         //$$ if (!this.groupsByEntityId.isEmpty())
         //$$ {
@@ -157,14 +146,25 @@ public final class EntityRenderAggregation implements IClientTickHandler
         //#if MC >= 1.21.10
         this.frameLabels.clear();
         //#endif
-        //#if MC < 1.21.10
-        //$$ layoutLegacyLabels();
-        //#endif
 //#endif
         for (Group group : new HashSet<>(this.groupsByEntityId.values()))
         {
-            group.representativeId = -1;
+            // Resolve the anchor once for the frame, independently of which
+            // visibility hook a renderer uses. Recover immediately if it leaves.
+            Entity representative = this.trackedLevel == null ? null
+                    : this.trackedLevel.getEntity(group.representativeId);
+            if (representative == null || representative.isRemoved())
+            {
+                group.representativeId = group.memberIds.stream().sorted()
+                        .filter(id -> {
+                            Entity member = this.trackedLevel == null ? null : this.trackedLevel.getEntity(id);
+                            return member != null && !member.isRemoved();
+                        }).findFirst().orElse(-1);
+            }
         }
+        //#if MC >= 1.21.1 && MC < 1.21.10
+        //$$ layoutLegacyLabels();
+        //#endif
     }
 
     public boolean shouldHide(Entity entity)
@@ -172,18 +172,13 @@ public final class EntityRenderAggregation implements IClientTickHandler
         Group group = this.groupsByEntityId.get(entity.getId());
         if (group == null) return false;
 
-        if (group.preferredRepresentativeId == entity.getId())
-        {
-            group.representativeId = entity.getId();
-            return false;
-        }
-        return true;
+        return group.representativeId != entity.getId();
     }
 
     public boolean shouldHideModel(Entity entity)
     {
-        return Configs.ENTITY_AGGREGATION_COUNT_ONLY.getBooleanValue() &&
-                this.groupsByEntityId.containsKey(entity.getId());
+        Group group = this.groupsByEntityId.get(entity.getId());
+        return Configs.ENTITY_AGGREGATION_COUNT_ONLY.getBooleanValue() && group != null && !group.item;
     }
 
     public Iterable<Entity> filterForRendering(Iterable<Entity> entities)
@@ -204,9 +199,8 @@ public final class EntityRenderAggregation implements IClientTickHandler
         for (Entity entity : entities)
         {
             Group group = this.groupsByEntityId.get(entity.getId());
-            if (group == null || group.preferredRepresentativeId == entity.getId())
+            if (group == null || group.representativeId == entity.getId())
             {
-                if (group != null) group.representativeId = entity.getId();
                 filtered.add(entity);
             }
         }
@@ -243,10 +237,10 @@ public final class EntityRenderAggregation implements IClientTickHandler
     //$$     Matrix4f inverse = new Matrix4f(view).invert();
     //$$     var labels = new ArrayList<AggregationLabelLayout.Label>();
     //$$     var clipDepths = new HashMap<Integer, Float>();
-    //$$     boolean side = Configs.ENTITY_AGGREGATION_LABEL_POSITION.getOptionListValue() == io.github.halfmasa.xaerobinding.config.EntityLabelPosition.SIDE;
     //$$     for (Group group : new HashSet<>(groupsByEntityId.values())) {
-    //$$         Entity entity = client.level.getEntity(group.preferredRepresentativeId);
+    //$$         Entity entity = client.level.getEntity(group.representativeId);
     //$$         if (entity == null || group.label == null) continue;
+    //$$         boolean side = isSideLabel(entity);
     //$$         Vec3 relative = entity.getPosition(partial).subtract(camera.getPosition());
     //$$         Vector4f clip = projection.transform(new Vector4f((float) (relative.x + (side ? entity.getBbWidth() * 0.5D + 0.35D : 0)), (float) (relative.y + (side ? entity.getBbHeight() * 0.5D : entity.getBbHeight() + 0.5D)), (float) relative.z, 1));
     //$$         if (!Float.isFinite(clip.w) || clip.w <= 0 || Math.abs(clip.x) > clip.w || Math.abs(clip.y) > clip.w || Math.abs(clip.z) > clip.w) continue;
@@ -254,8 +248,9 @@ public final class EntityRenderAggregation implements IClientTickHandler
     //$$         labels.add(new AggregationLabelLayout.Label(entity.getId(), (clip.x / clip.w + 1) * width / 2, (1 - clip.y / clip.w) * height / 2, (client.font.width(group.label) + 2) * sx, (client.font.lineHeight + 2) * sy, relative.lengthSqr()));
     //$$         clipDepths.put(entity.getId(), clip.w);
     //$$     }
-    //$$     for (var placement : AggregationLabelLayout.arrange(labels, LABEL_GAP_PIXELS)) {
+    //$$     for (var placement : AggregationLabelLayout.arrange(labels, LABEL_GAP_PIXELS, previousLabelOffsets)) {
     //$$         if (placement.offsetY() == 0) continue;
+    //$$         previousLabelOffsets.put(placement.id(), placement.offsetY());
     //$$         Vector3f offset = inverse.transformDirection(new Vector3f(0, (float) (-2 * placement.offsetY() * clipDepths.get(placement.id()) / (height * focalY)), 0));
     //$$         legacyLabelOffsets.put(placement.id(), new Vec3(offset.x, offset.y, offset.z));
     //$$     }
@@ -265,7 +260,9 @@ public final class EntityRenderAggregation implements IClientTickHandler
     public void clear()
     {
 //#if MC >= 1.21.1
-        cancelPending();
+        this.entityScan.cancel();
+        this.itemScan.cancel();
+        this.previousLabelOffsets.clear();
         //#if MC >= 1.21.10
         this.frameLabels.clear();
         //#endif
@@ -286,7 +283,10 @@ public final class EntityRenderAggregation implements IClientTickHandler
     /** All visible representatives must be extracted before resolving screen-space collisions. */
     public void layoutLabels(LevelRenderState levelState)
     {
-        if (this.frameLabels.size() < 2) return;
+        if (this.frameLabels.size() < 2)
+        {
+            return;
+        }
         var camera = levelState.cameraRenderState;
         Minecraft client = Minecraft.getInstance();
         int width = client.getWindow().getWidth(), height = client.getWindow().getHeight();
@@ -328,9 +328,14 @@ public final class EntityRenderAggregation implements IClientTickHandler
                     textWidth, textHeight, state.distanceToCameraSq));
             projected.put(id, new ProjectedLabel(state, clip.w));
         }
-        for (var placement : AggregationLabelLayout.arrange(labels, LABEL_GAP_PIXELS))
+        List<AggregationLabelLayout.Placement> placements = AggregationLabelLayout.arrange(
+                labels, LABEL_GAP_PIXELS, this.previousLabelOffsets);
+        for (var placement : placements)
         {
             if (placement.offsetY() == 0) continue;
+            // Remember the collision side through a briefly isolated or
+            // off-screen frame without moving a currently isolated label.
+            this.previousLabelOffsets.put(placement.id(), placement.offsetY());
             ProjectedLabel label = projected.get(placement.id());
             float viewY = (float) (-2 * placement.offsetY() * label.clipW() / (height * focalY));
             Vector3f offset = inverseView.transformDirection(new Vector3f(0, viewY, 0));
@@ -343,30 +348,62 @@ public final class EntityRenderAggregation implements IClientTickHandler
     private record ProjectedLabel(EntityRenderState state, float clipW) {}
     //#endif
 
-    private void cancelPending()
+    public void clearEntities()
     {
-        this.generation++;
-        if (this.pending != null)
-        {
-            this.pending.cancel(true);
-            this.pending = null;
-        }
-        this.pendingMetadata = null;
+        clearChannel(this.entityScan, false);
     }
 
-    private void publishCompleted()
+    public void clearItems()
     {
-        Future<List<GroupResult>> completed = this.pending;
-        Map<Integer, GroupMeta> metadata = this.pendingMetadata;
-        long completedGeneration = this.pendingGeneration;
-        this.pending = null;
-        this.pendingMetadata = null;
+        clearChannel(this.itemScan, true);
+    }
+
+    private void clearChannel(ScanChannel channel, boolean item)
+    {
+        channel.cancel();
+        this.groupsByEntityId.entrySet().removeIf(entry -> {
+            if (entry.getValue().item != item) return false;
+            this.previousLabelOffsets.remove(entry.getKey());
+            return true;
+        });
+    }
+
+    private void tickChannel(Minecraft client, ScanChannel channel, boolean item, long gameTime, int interval)
+    {
+        boolean enabled = item ? Configs.ITEM_RENDER_AGGREGATION.getBooleanValue()
+                : Configs.ENTITY_RENDER_AGGREGATION.getBooleanValue();
+        if (!enabled)
+        {
+            clearChannel(channel, item);
+            return;
+        }
+        if (channel.pending != null && channel.pending.isDone()) publishCompleted(channel, item);
+        // Each domain owns its schedule and publication; an item refresh must
+        // not replace mob groups or cancel their unfinished computation.
+        if (channel.pending == null && (channel.lastRebuildTick == Long.MIN_VALUE ||
+                gameTime < channel.lastRebuildTick || gameTime - channel.lastRebuildTick >= interval))
+        {
+            Snapshot snapshot = capture(client.level, client, item);
+            channel.pendingMetadata = snapshot.metadata();
+            channel.pendingGeneration = channel.generation;
+            channel.pending = COUNT_EXECUTOR.submit(() -> calculate(snapshot));
+            channel.lastRebuildTick = gameTime;
+        }
+    }
+
+    private void publishCompleted(ScanChannel channel, boolean item)
+    {
+        Future<List<GroupResult>> completed = channel.pending;
+        Map<Integer, GroupMeta> metadata = channel.pendingMetadata;
+        long completedGeneration = channel.pendingGeneration;
+        channel.pending = null;
+        channel.pendingMetadata = null;
         try
         {
             List<GroupResult> results = completed.get();
-            if (completedGeneration != this.generation || metadata == null) return;
+            if (completedGeneration != channel.generation || metadata == null) return;
 
-            publishResults(results, metadata);
+            publishResults(results, metadata, item);
         }
         catch (CancellationException ignored)
         {
@@ -382,9 +419,9 @@ public final class EntityRenderAggregation implements IClientTickHandler
         }
     }
 
-    private void publishResults(List<GroupResult> results, Map<Integer, GroupMeta> metadata)
+    private void publishResults(List<GroupResult> results, Map<Integer, GroupMeta> metadata, boolean item)
     {
-        this.groupsByEntityId.clear();
+        this.groupsByEntityId.entrySet().removeIf(entry -> entry.getValue().item == item);
         for (GroupResult result : results)
         {
             GroupMeta meta = metadata.get(result.keyId());
@@ -397,29 +434,36 @@ public final class EntityRenderAggregation implements IClientTickHandler
                 this.groupsByEntityId.put(entityId, group);
             }
         }
+        this.previousLabelOffsets.keySet().retainAll(this.groupsByEntityId.keySet());
     }
 
-    private static Snapshot capture(ClientLevel level, Minecraft client)
+    private Snapshot capture(ClientLevel level, Minecraft client, boolean item)
     {
         Map<Object, Integer> keyIds = new HashMap<>();
         Map<Integer, GroupMeta> metadata = new HashMap<>();
+        Map<Integer, Integer> previousRepresentatives = new HashMap<>();
         List<FlatCandidate> candidates = new ArrayList<>();
         for (Entity entity : level.entitiesForRendering())
         {
             Candidate candidate = candidateFor(entity);
-            if (candidate == null) continue;
+            if (candidate == null || candidate.item() != item) continue;
             int keyId = keyIds.computeIfAbsent(candidate.key(), ignored -> keyIds.size());
             metadata.putIfAbsent(keyId,
                     new GroupMeta(candidate.key(), candidate.displayName(), candidate.item()));
+            Group previous = this.groupsByEntityId.get(entity.getId());
+            if (previous != null && previous.key.equals(candidate.key()))
+            {
+                previousRepresentatives.put(entity.getId(), previous.representativeId);
+            }
             Vec3 position = candidate.position();
             candidates.add(new FlatCandidate(entity.getId(), keyId,
                     position.x, position.y, position.z, candidate.itemCount(), candidate.item()));
         }
         Vec3 camera = client.getCameraEntity() != null
                 ? client.getCameraEntity().position() : Vec3.ZERO;
-        double radius = Configs.ENTITY_AGGREGATION_RADIUS.getDoubleValue();
-        int threshold = Configs.ENTITY_AGGREGATION_THRESHOLD.getIntegerValue();
-        return new Snapshot(List.copyOf(candidates), metadata,
+        double radius = item ? Configs.ITEM_AGGREGATION_RADIUS.getDoubleValue() : Configs.ENTITY_AGGREGATION_RADIUS.getDoubleValue();
+        int threshold = item ? Configs.ITEM_AGGREGATION_THRESHOLD.getIntegerValue() : Configs.ENTITY_AGGREGATION_THRESHOLD.getIntegerValue();
+        return new Snapshot(List.copyOf(candidates), metadata, Map.copyOf(previousRepresentatives),
                 camera.x, camera.y, camera.z, radius, threshold);
     }
 
@@ -437,10 +481,8 @@ public final class EntityRenderAggregation implements IClientTickHandler
         for (List<FlatCandidate> candidates : byKey.values())
         {
             if (Thread.currentThread().isInterrupted()) return List.of();
-            // Two matching item entities already save one model draw. The mob
-            // threshold remains configurable and independent of this switch.
-            int threshold = candidates.getFirst().item() ? 1 : snapshot.threshold();
-            if (candidates.size() <= threshold) continue;
+            int threshold = snapshot.threshold();
+            if (candidates.size() < threshold) continue;
 
             UnionFind unionFind = new UnionFind(candidates.size());
             Map<Cell, List<Integer>> buckets = new HashMap<>();
@@ -478,11 +520,25 @@ public final class EntityRenderAggregation implements IClientTickHandler
             }
             for (List<FlatCandidate> component : components.values())
             {
-                if (component.size() <= threshold) continue;
+                if (component.size() < threshold) continue;
                 FlatCandidate representative = component.stream()
-                        .min(Comparator.comparingDouble(candidate -> candidate.distanceSquared(
-                                snapshot.cameraX(), snapshot.cameraY(), snapshot.cameraZ())))
+                        .min(Comparator.comparingDouble((FlatCandidate candidate) -> candidate.distanceSquared(
+                                snapshot.cameraX(), snapshot.cameraY(), snapshot.cameraZ()))
+                                .thenComparingInt(FlatCandidate::entityId))
                         .orElseThrow();
+                // Nearby members can trade "closest to camera" on successive scans.
+                // Keep the previous anchor while it remains in this local cluster.
+                FlatCandidate nearest = representative;
+                FlatCandidate previous = component.stream()
+                        .filter(candidate -> snapshot.previousRepresentatives()
+                                .getOrDefault(candidate.entityId(), -1) == candidate.entityId())
+                        .min(Comparator.comparingDouble((FlatCandidate candidate) -> candidate.distanceSquared(nearest))
+                                .thenComparingInt(FlatCandidate::entityId))
+                        .orElse(null);
+                if (previous != null && previous.distanceSquared(nearest) <= radiusSquared)
+                {
+                    representative = previous;
+                }
                 List<Integer> ids = component.stream().map(FlatCandidate::entityId).toList();
                 int displayCount = component.stream().mapToInt(FlatCandidate::itemCount).sum();
                 results.add(new GroupResult(component.getFirst().keyId(), ids,
@@ -493,7 +549,25 @@ public final class EntityRenderAggregation implements IClientTickHandler
     }
 
     private record Snapshot(List<FlatCandidate> candidates, Map<Integer, GroupMeta> metadata,
+                            Map<Integer, Integer> previousRepresentatives,
                             double cameraX, double cameraY, double cameraZ, double radius, int threshold) {}
+    private static final class ScanChannel
+    {
+        private Future<List<GroupResult>> pending;
+        private Map<Integer, GroupMeta> pendingMetadata;
+        private long generation;
+        private long pendingGeneration;
+        private long lastRebuildTick = Long.MIN_VALUE;
+
+        private void cancel()
+        {
+            this.generation++;
+            if (this.pending != null) this.pending.cancel(true);
+            this.pending = null;
+            this.pendingMetadata = null;
+            this.lastRebuildTick = Long.MIN_VALUE;
+        }
+    }
     private record GroupMeta(Object key, Component displayName, boolean item) {}
     private record GroupResult(int keyId, List<Integer> memberIds, int representativeId, int displayCount) {}
     private record FlatCandidate(int entityId, int keyId, double x, double y, double z,
@@ -680,12 +754,10 @@ public final class EntityRenderAggregation implements IClientTickHandler
             return null;
         }
 
-        if (!matchesList(entity)) return null;
-
         if (entity instanceof ItemEntity itemEntity)
         {
 //#if MC >= 1.21.1
-            if (!Configs.ITEM_RENDER_AGGREGATION.getBooleanValue()) return null;
+            if (!isItemAggregationEnabled(itemEntity)) return null;
 //#endif
             ItemStack stack = itemEntity.getItem();
             if (stack.isEmpty()) return null;
@@ -694,6 +766,7 @@ public final class EntityRenderAggregation implements IClientTickHandler
 
         if (entity instanceof LivingEntity living)
         {
+            if (!matchesList(entity)) return null;
 //#if MC >= 1.21.1
             if (!Configs.ENTITY_RENDER_AGGREGATION.getBooleanValue()) return null;
 //#endif
@@ -704,8 +777,28 @@ public final class EntityRenderAggregation implements IClientTickHandler
                 // Standing dimensions distinguish baby/adult mobs, slime sizes and scale
                 // attributes without splitting a group merely because its pose changes.
                 var dimensions = living.getDimensions(Pose.STANDING);
-                Object key = new MobSizeKey(type, living.isBaby(), dimensions.width(), dimensions.height());
-                return new Candidate(entity, key, type.getDescription(), false, 1);
+                int cubeSize = 0;
+//#if MC >= 26.2
+                if (living instanceof AbstractCubeMob cubeMob) cubeSize = cubeMob.getSize();
+//#else
+                //$$ if (living instanceof Slime slime) cubeSize = slime.getSize();
+//#endif
+                Object key = new MobSizeKey(type, living.isBaby(), dimensions.width(), dimensions.height(), cubeSize);
+                Component displayName = type.getDescription();
+                if (cubeSize > 0)
+                {
+                    String size = cubeSize <= 1 ? "small" : cubeSize < 4 ? "medium" : "large";
+                    displayName = Component.translatable("halfmasa.entity_aggregation.size." + size, displayName);
+                    if (living.isBaby())
+                    {
+                        displayName = Component.translatable("halfmasa.entity_aggregation.baby_cube", displayName);
+                    }
+                }
+                else if (living.isBaby())
+                {
+                    displayName = Component.translatable("halfmasa.entity_aggregation.baby", displayName);
+                }
+                return new Candidate(entity, key, displayName, false, 1);
             }
 //#endif
             return new Candidate(entity, type, type.getDescription(), false, 1);
@@ -729,6 +822,31 @@ public final class EntityRenderAggregation implements IClientTickHandler
         return mode == EntityAggregationListMode.WHITELIST ? listed : !listed;
     }
 
+    public static boolean isItemAggregationEnabled(ItemEntity entity)
+    {
+        return isItemAggregationEnabled(entity.getItem());
+    }
+
+    public static boolean isItemAggregationEnabled(ItemStack stack)
+    {
+        if (!Configs.ITEM_RENDER_AGGREGATION.getBooleanValue()) return false;
+        if (stack.isEmpty()) return false;
+        EntityAggregationListMode mode = (EntityAggregationListMode) Configs.ITEM_AGGREGATION_LIST_MODE.getOptionListValue();
+        if (mode == EntityAggregationListMode.NONE) return true;
+        String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+        List<String> configured = mode == EntityAggregationListMode.WHITELIST
+                ? Configs.ITEM_AGGREGATION_WHITELIST.getStrings() : Configs.ITEM_AGGREGATION_BLACKLIST.getStrings();
+        boolean listed = configured.stream().map(String::trim).anyMatch(itemId::equals);
+        return mode == EntityAggregationListMode.WHITELIST ? listed : !listed;
+    }
+
+    public static boolean isSideLabel(Entity entity)
+    {
+        return (entity instanceof ItemEntity ? Configs.ITEM_AGGREGATION_LABEL_POSITION
+                : Configs.ENTITY_AGGREGATION_LABEL_POSITION).getOptionListValue()
+                == io.github.halfmasa.xaerobinding.config.EntityLabelPosition.SIDE;
+    }
+
     private static final class Group
     {
         private final Object key;
@@ -739,7 +857,7 @@ public final class EntityRenderAggregation implements IClientTickHandler
         private int entityCount;
         private int itemCount;
         private Component label;
-        private int representativeId = -1;
+        private int representativeId;
 
         private Group(Object key, Component displayName, boolean item, int entityCount, int itemCount, int preferredRepresentativeId)
         {
@@ -749,6 +867,7 @@ public final class EntityRenderAggregation implements IClientTickHandler
             this.entityCount = entityCount;
             this.itemCount = itemCount;
             this.preferredRepresentativeId = preferredRepresentativeId;
+            this.representativeId = preferredRepresentativeId;
             this.updateLabel();
         }
 
@@ -778,7 +897,7 @@ public final class EntityRenderAggregation implements IClientTickHandler
     }
 
 //#if MC >= 1.21.1
-    private record MobSizeKey(EntityType<?> type, boolean baby, float width, float height) {}
+    private record MobSizeKey(EntityType<?> type, boolean baby, float width, float height, int cubeSize) {}
 //#endif
 
     private record Cell(int x, int y, int z)

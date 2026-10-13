@@ -43,7 +43,7 @@ public final class Configs implements IConfigHandler
     private static final String CONFIG_DIRECTORY_NAME = "halfmasa";
     private static final String CONFIG_FILE_NAME = "halfmasa.json";
     //#if MC >= 1.21.1
-    private static final int CONFIG_VERSION = 46;
+    private static final int CONFIG_VERSION = 47;
     //#else
     //$$ private static final int CONFIG_VERSION = 39;
     //#endif
@@ -801,9 +801,49 @@ public final class Configs implements IConfigHandler
     private static final String CLIENT_KEY = "halfmasa.config.client";
     public static final ConfigBooleanHotkeyed DISABLE_PAUSED_ITEM_TRAJECTORY_PREDICTION = new ConfigBooleanHotkeyed(
             "disablePausedItemTrajectoryPrediction", false, "").apply(CLIENT_KEY);
+//#if MC >= 1.21.1
+    public static final ConfigBooleanHotkeyed ENTITY_GLOW_HIGHLIGHT = new ConfigBooleanHotkeyed(
+            "entityGlowHighlight", false, "").apply(CLIENT_KEY);
+    public static final ConfigOptionList ENTITY_GLOW_MODE = new ConfigOptionList(
+            "entityGlowMode", EntityGlowMode.ALL).apply(CLIENT_KEY);
+    public static final ConfigHotkey ENTITY_GLOW_MODE_HOTKEY = new ConfigHotkey(
+            "entityGlowModeHotkey", "").apply(CLIENT_KEY);
+    public static final ConfigColor ENTITY_GLOW_ALL_COLOR = new ConfigColor(
+            "entityGlowAllColor", "#FFFFFFFF").apply(CLIENT_KEY);
+    public static final ActionConfig ENTITY_GLOW_RULE_EDITOR = new ActionConfig(
+            "entityGlowRuleEditor", "halfmasa.gui.entity_glow.manage").applyTranslationKey(CLIENT_KEY);
+    public static final ConfigBoolean ENTITY_GLOW_EXPANDED = new ConfigBoolean(
+            "entityGlowExpanded", false).apply(CLIENT_KEY);
+    public static final ConfigStringList ENTITY_GLOW_RULES = new ConfigStringList(
+            "entityGlowRules", ImmutableList.of()).apply(CLIENT_KEY);
+    public static final ConfigBooleanHotkeyed BLOCK_GLOW_HIGHLIGHT = new ConfigBooleanHotkeyed(
+            "blockGlowHighlight", false, "").apply(CLIENT_KEY);
+    public static final ActionConfig BLOCK_GLOW_RULE_EDITOR = new ActionConfig(
+            "blockGlowRuleEditor", "halfmasa.gui.entity_glow.manage").applyTranslationKey(CLIENT_KEY);
+    public static final ConfigBoolean BLOCK_GLOW_EXPANDED = new ConfigBoolean(
+            "blockGlowExpanded", false).apply(CLIENT_KEY);
+    public static final ConfigStringList BLOCK_GLOW_RULES = new ConfigStringList(
+            "blockGlowRules", ImmutableList.of()).apply(CLIENT_KEY);
+    private static final List<IConfigBase> ENTITY_GLOW_CHILDREN = List.of(
+            ENTITY_GLOW_MODE_HOTKEY, ENTITY_GLOW_MODE, ENTITY_GLOW_ALL_COLOR, ENTITY_GLOW_RULE_EDITOR);
+    private static final List<IConfigBase> BLOCK_GLOW_CHILDREN = List.of(BLOCK_GLOW_RULE_EDITOR);
+//#endif
     public static final List<IConfigBase> CLIENT = Stream.of(
             List.of(
                     DISABLE_PAUSED_ITEM_TRAJECTORY_PREDICTION,
+//#if MC >= 1.21.1
+                    ENTITY_GLOW_HIGHLIGHT,
+                    ENTITY_GLOW_EXPANDED,
+                    ENTITY_GLOW_MODE_HOTKEY,
+                    ENTITY_GLOW_MODE,
+                    ENTITY_GLOW_ALL_COLOR,
+                    ENTITY_GLOW_RULE_EDITOR,
+                    ENTITY_GLOW_RULES,
+                    BLOCK_GLOW_HIGHLIGHT,
+                    BLOCK_GLOW_EXPANDED,
+                    BLOCK_GLOW_RULE_EDITOR,
+                    BLOCK_GLOW_RULES,
+//#endif
                     FAST_WORLD_LOADING_SCREEN,
                     FAST_RESOURCE_PACK_LOADING_SCREEN,
                     KEYBIND_PIE_MENU,
@@ -854,6 +894,22 @@ public final class Configs implements IConfigHandler
 //#if MC >= 1.21.1
     public static final ConfigBooleanHotkeyed ITEM_RENDER_AGGREGATION = new ConfigBooleanHotkeyed(
             "itemRenderAggregation", true, "").apply(DISABLED_KEY);
+    public static final ConfigBoolean ITEM_RENDER_AGGREGATION_EXPANDED = new ConfigBoolean(
+            "itemRenderAggregationExpanded", false).apply(DISABLED_KEY);
+    public static final ConfigInteger ITEM_AGGREGATION_THRESHOLD = new ConfigInteger(
+            "itemAggregationThreshold", 2, 1, 10000, true).apply(DISABLED_KEY);
+    public static final ConfigDouble ITEM_AGGREGATION_RADIUS = new ConfigDouble(
+            "itemAggregationRadius", 1.0D, 0.25D, 64.0D, true).apply(DISABLED_KEY);
+    public static final ConfigInteger ITEM_AGGREGATION_SCAN_INTERVAL = new ConfigInteger(
+            "itemAggregationScanInterval", 10, 1, 100, true).apply(DISABLED_KEY);
+    public static final ConfigOptionList ITEM_AGGREGATION_LABEL_POSITION = new ConfigOptionList(
+            "itemAggregationLabelPosition", EntityLabelPosition.TOP).apply(DISABLED_KEY);
+    public static final ConfigOptionList ITEM_AGGREGATION_LIST_MODE = new ConfigOptionList(
+            "itemAggregationListMode", EntityAggregationListMode.NONE).apply(DISABLED_KEY);
+    public static final ConfigStringList ITEM_AGGREGATION_WHITELIST = new ConfigStringList(
+            "itemAggregationWhitelist", ImmutableList.of()).apply(DISABLED_KEY);
+    public static final ConfigStringList ITEM_AGGREGATION_BLACKLIST = new ConfigStringList(
+            "itemAggregationBlacklist", ImmutableList.of()).apply(DISABLED_KEY);
     public static final ConfigBoolean ENTITY_AGGREGATION_SEPARATE_SIZES = new ConfigBoolean(
             "entityAggregationSeparateSizes", true).apply(DISABLED_KEY);
 //#endif
@@ -864,7 +920,7 @@ public final class Configs implements IConfigHandler
     public static final ConfigDouble ENTITY_AGGREGATION_RADIUS = new ConfigDouble(
             "entityAggregationRadius", 1.0D, 0.25D, 64.0D, true).apply(DISABLED_KEY);
     public static final ConfigInteger ENTITY_AGGREGATION_THRESHOLD = new ConfigInteger(
-            "entityAggregationThreshold", 10, 1, 10000, true).apply(DISABLED_KEY);
+            "entityAggregationThreshold", 11, 1, 10001, true).apply(DISABLED_KEY);
     public static final ConfigInteger ENTITY_AGGREGATION_SCAN_INTERVAL = new ConfigInteger(
             "entityAggregationScanInterval", 10, 1, 100, true).apply(DISABLED_KEY);
     public static final ConfigOptionList ENTITY_AGGREGATION_LABEL_POSITION = new ConfigOptionList(
@@ -883,7 +939,6 @@ public final class Configs implements IConfigHandler
             DISABLE_NON_SOURCE_FLUID_RENDERING,
             ENTITY_RENDER_AGGREGATION,
 //#if MC >= 1.21.1
-            ITEM_RENDER_AGGREGATION,
             ENTITY_AGGREGATION_SEPARATE_SIZES,
 //#endif
             ENTITY_AGGREGATION_COUNT_ONLY,
@@ -894,7 +949,19 @@ public final class Configs implements IConfigHandler
             ENTITY_AGGREGATION_LIST_MODE,
             ENTITY_AGGREGATION_WHITELIST,
             ENTITY_AGGREGATION_BLACKLIST,
-            ENTITY_RENDER_AGGREGATION_EXPANDED);
+            ENTITY_RENDER_AGGREGATION_EXPANDED
+//#if MC >= 1.21.1
+            , ITEM_RENDER_AGGREGATION,
+            ITEM_AGGREGATION_THRESHOLD,
+            ITEM_AGGREGATION_RADIUS,
+            ITEM_AGGREGATION_LIST_MODE,
+            ITEM_AGGREGATION_WHITELIST,
+            ITEM_AGGREGATION_BLACKLIST,
+            ITEM_AGGREGATION_LABEL_POSITION,
+            ITEM_AGGREGATION_SCAN_INTERVAL,
+            ITEM_RENDER_AGGREGATION_EXPANDED
+//#endif
+            );
 
     public static final List<IConfigBase> RECOMMENDED = Stream.of(List.of(
             ELYTRA_TIME_TOOLTIP,
@@ -994,6 +1061,11 @@ public final class Configs implements IConfigHandler
 
                     INVENTORY_MOVE,
                     DISABLE_PAUSED_ITEM_TRAJECTORY_PREDICTION,
+//#if MC >= 1.21.1
+                    ENTITY_GLOW_HIGHLIGHT,
+                    ENTITY_GLOW_MODE_HOTKEY,
+                    BLOCK_GLOW_HIGHLIGHT,
+//#endif
                     DISABLE_FLUID_RENDERING,
                     DISABLE_NON_SOURCE_FLUID_RENDERING,
                     ENTITY_RENDER_AGGREGATION,
@@ -1052,6 +1124,20 @@ public final class Configs implements IConfigHandler
         finally
         {
             configLoaded = true;
+            //#if MC >= 1.21.1
+            if (BLOCK_GLOW_HIGHLIGHT.getBooleanValue())
+            {
+                if (!ENTITY_GLOW_HIGHLIGHT.getBooleanValue())
+                {
+                    ENTITY_GLOW_HIGHLIGHT.setBooleanValue(true);
+                    ENTITY_GLOW_MODE.setOptionListValue(EntityGlowMode.SINGLE);
+                }
+                BLOCK_GLOW_HIGHLIGHT.setBooleanValue(false);
+            }
+            io.github.halfmasa.xaerobinding.feature.EntityGlowService.reload();
+            io.github.halfmasa.xaerobinding.feature.BlockGlowService.getInstance().reload();
+            io.github.halfmasa.xaerobinding.feature.GlowRuleHotkeys.reload();
+            //#endif
         }
     }
 
@@ -1128,6 +1214,36 @@ public final class Configs implements IConfigHandler
 
             if (configVersion < CONFIG_VERSION)
             {
+                //#if MC >= 1.21.1
+                if (configVersion < 47)
+                {
+                    JsonObject disabled = root.getAsJsonObject("Disabled");
+                    if (disabled != null)
+                    {
+                        // The old threshold meant "more than N"; preserve the
+                        // trigger count when changing the UI to "at least N".
+                        if (disabled.has(ENTITY_AGGREGATION_THRESHOLD.getName()))
+                            ENTITY_AGGREGATION_THRESHOLD.setIntegerValue(ENTITY_AGGREGATION_THRESHOLD.getIntegerValue() + 1);
+                        if (!disabled.has(ITEM_AGGREGATION_RADIUS.getName()))
+                            ITEM_AGGREGATION_RADIUS.setDoubleValue(ENTITY_AGGREGATION_RADIUS.getDoubleValue());
+                        if (!disabled.has(ITEM_AGGREGATION_SCAN_INTERVAL.getName()))
+                            ITEM_AGGREGATION_SCAN_INTERVAL.setIntegerValue(ENTITY_AGGREGATION_SCAN_INTERVAL.getIntegerValue());
+                        if (!disabled.has(ITEM_AGGREGATION_LABEL_POSITION.getName()))
+                            ITEM_AGGREGATION_LABEL_POSITION.setOptionListValue(ENTITY_AGGREGATION_LABEL_POSITION.getOptionListValue());
+                        if (!disabled.has(ITEM_AGGREGATION_LIST_MODE.getName()))
+                        {
+                            EntityAggregationListMode oldMode = (EntityAggregationListMode) ENTITY_AGGREGATION_LIST_MODE.getOptionListValue();
+                            List<String> oldList = oldMode == EntityAggregationListMode.WHITELIST
+                                    ? ENTITY_AGGREGATION_WHITELIST.getStrings() : ENTITY_AGGREGATION_BLACKLIST.getStrings();
+                            boolean listed = oldList.stream().map(String::trim).anyMatch("minecraft:item"::equals);
+                            boolean allowed = oldMode == EntityAggregationListMode.NONE
+                                    || (oldMode == EntityAggregationListMode.WHITELIST ? listed : !listed);
+                            ITEM_AGGREGATION_LIST_MODE.setOptionListValue(allowed
+                                    ? EntityAggregationListMode.NONE : EntityAggregationListMode.WHITELIST);
+                        }
+                    }
+                }
+                //#endif
                 //#if MC >= 1.21.1
                 if (configVersion < 42)
                 {
@@ -1321,6 +1437,11 @@ public final class Configs implements IConfigHandler
         return ALL.stream()
                 .filter(config -> !(config instanceof ConfigGroupHeader))
                 .filter(config -> !config.getName().endsWith("Expanded"))
+    //#if MC >= 1.21.1
+                .filter(config -> config != ENTITY_GLOW_RULES && config != BLOCK_GLOW_RULES &&
+                        config != BLOCK_GLOW_HIGHLIGHT && config != BLOCK_GLOW_RULE_EDITOR &&
+                        config != BLOCK_GLOW_EXPANDED)
+    //#endif
                 .toList();
     }
 
@@ -1411,6 +1532,10 @@ public final class Configs implements IConfigHandler
     public static ConfigBoolean getExpansionConfig(IConfigBase config)
     {
     //#if MC >= 1.21.1
+        if (config == ENTITY_GLOW_HIGHLIGHT) return ENTITY_GLOW_EXPANDED;
+        if (config == BLOCK_GLOW_HIGHLIGHT) return BLOCK_GLOW_EXPANDED;
+    //#endif
+    //#if MC >= 1.21.1
         if (config == KEEP_MOD_MENU_SCROLL) return KEEP_CONFIG_POSITION_EXPANDED;
     //#endif
         if (config == KEYBIND_PIE_MENU) return KEYBIND_WHEEL_EXPANDED;
@@ -1436,6 +1561,9 @@ public final class Configs implements IConfigHandler
         if (config == MAP_IN_SLOT) return MAP_IN_SLOT_EXPANDED;
         if (config == DRAGGABLE_LISTS) return DRAGGABLE_LISTS_EXPANDED;
         if (config == ENTITY_RENDER_AGGREGATION) return ENTITY_RENDER_AGGREGATION_EXPANDED;
+        //#if MC >= 1.21.1
+        if (config == ITEM_RENDER_AGGREGATION) return ITEM_RENDER_AGGREGATION_EXPANDED;
+        //#endif
         if (config == CONDENSED_CREATIVE) return CONDENSED_CREATIVE_EXPANDED;
         if (config == ITEM_SEARCH_HISTORY) return ITEM_SEARCH_HISTORY_EXPANDED;
         if (config == ITEM_MANAGER_RECIPE_HISTORY) return ITEM_MANAGER_RECIPE_HISTORY_EXPANDED;
@@ -1446,6 +1574,10 @@ public final class Configs implements IConfigHandler
     public static boolean isExpandedChild(IConfigBase config)
     {
         return
+    //#if MC >= 1.21.1
+                ENTITY_GLOW_CHILDREN.contains(config) ||
+                BLOCK_GLOW_CHILDREN.contains(config) ||
+    //#endif
     //#if MC >= 1.21.1
                 KEEP_CONFIG_POSITION_CHILDREN.contains(config) ||
     //#endif
@@ -1468,7 +1600,11 @@ public final class Configs implements IConfigHandler
                 isMapServerChild(config) ||
                 config == GIVE_FULL_INVENTORY || config == BUNDLE_FILL || config == FILL_SAFETY ||
                 isWaypointSharingChild(config) || isDraggableChild(config) ||
-                isEntityAggregationChild(config) || CONDENSED_CREATIVE_CHILDREN.contains(config) ||
+                isEntityAggregationChild(config) ||
+                //#if MC >= 1.21.1
+                isItemAggregationChild(config) ||
+                //#endif
+                CONDENSED_CREATIVE_CHILDREN.contains(config) ||
                 ITEM_SEARCH_HISTORY_CHILDREN.contains(config) ||
                 ITEM_MANAGER_RECIPE_HISTORY_CHILDREN.contains(config) ||
                 PLANT_CENTERING_CHILDREN.contains(config);
@@ -1476,6 +1612,10 @@ public final class Configs implements IConfigHandler
 
     public static IConfigBase getExpansionParent(IConfigBase config)
     {
+    //#if MC >= 1.21.1
+        if (ENTITY_GLOW_CHILDREN.contains(config)) return ENTITY_GLOW_HIGHLIGHT;
+        if (BLOCK_GLOW_CHILDREN.contains(config)) return BLOCK_GLOW_HIGHLIGHT;
+    //#endif
     //#if MC >= 1.21.1
         if (KEEP_CONFIG_POSITION_CHILDREN.contains(config)) return KEEP_MOD_MENU_SCROLL;
     //#endif
@@ -1502,6 +1642,9 @@ public final class Configs implements IConfigHandler
         if (isWaypointSharingChild(config)) return WAYPOINT_SHARING_GROUP;
         if (isDraggableChild(config)) return DRAGGABLE_LISTS;
         if (isEntityAggregationChild(config)) return ENTITY_RENDER_AGGREGATION;
+        //#if MC >= 1.21.1
+        if (isItemAggregationChild(config)) return ITEM_RENDER_AGGREGATION;
+        //#endif
         if (CONDENSED_CREATIVE_CHILDREN.contains(config)) return CONDENSED_CREATIVE;
         if (ITEM_SEARCH_HISTORY_CHILDREN.contains(config)) return ITEM_SEARCH_HISTORY;
         if (ITEM_MANAGER_RECIPE_HISTORY_CHILDREN.contains(config)) return ITEM_MANAGER_RECIPE_HISTORY;
@@ -1523,9 +1666,21 @@ public final class Configs implements IConfigHandler
             return configs.stream()
                     .filter(config -> !(config instanceof ConfigGroupHeader))
                     .filter(config -> !config.getName().endsWith("Expanded"))
+    //#if MC >= 1.21.1
+                    .filter(config -> config != ENTITY_GLOW_RULES && config != BLOCK_GLOW_RULES &&
+                            config != BLOCK_GLOW_HIGHLIGHT && config != BLOCK_GLOW_RULE_EDITOR &&
+                            config != BLOCK_GLOW_EXPANDED)
+    //#endif
                     .toList();
         }
         return configs.stream()
+    //#if MC >= 1.21.1
+                .filter(config -> config != ENTITY_GLOW_RULES && config != BLOCK_GLOW_RULES &&
+                        config != ENTITY_GLOW_EXPANDED && config != BLOCK_GLOW_EXPANDED &&
+                        config != BLOCK_GLOW_HIGHLIGHT && config != BLOCK_GLOW_RULE_EDITOR)
+                .filter(config -> !ENTITY_GLOW_CHILDREN.contains(config) || ENTITY_GLOW_EXPANDED.getBooleanValue())
+                .filter(config -> !BLOCK_GLOW_CHILDREN.contains(config) || BLOCK_GLOW_EXPANDED.getBooleanValue())
+    //#endif
                 .filter(config -> config != IME_SETTINGS_EXPANDED &&
                         config != KEYBIND_WHEEL_EXPANDED &&
                         config != CONFIG_GROUPING_EXPANDED &&
@@ -1575,6 +1730,10 @@ public final class Configs implements IConfigHandler
                 .filter(config -> !isDraggableChild(config) || DRAGGABLE_LISTS_EXPANDED.getBooleanValue())
                 .filter(config -> config != ENTITY_RENDER_AGGREGATION_EXPANDED)
                 .filter(config -> !isEntityAggregationChild(config) || ENTITY_RENDER_AGGREGATION_EXPANDED.getBooleanValue())
+                //#if MC >= 1.21.1
+                .filter(config -> config != ITEM_RENDER_AGGREGATION_EXPANDED)
+                .filter(config -> !isItemAggregationChild(config) || ITEM_RENDER_AGGREGATION_EXPANDED.getBooleanValue())
+                //#endif
                 .filter(config -> !CONDENSED_CREATIVE_CHILDREN.contains(config) || CONDENSED_CREATIVE_EXPANDED.getBooleanValue())
                 .filter(config -> !ITEM_SEARCH_HISTORY_CHILDREN.contains(config) || ITEM_SEARCH_HISTORY_EXPANDED.getBooleanValue())
                 .filter(config -> !ITEM_MANAGER_RECIPE_HISTORY_CHILDREN.contains(config) || ITEM_MANAGER_RECIPE_HISTORY_EXPANDED.getBooleanValue())
@@ -1592,7 +1751,6 @@ public final class Configs implements IConfigHandler
     {
         return config == ENTITY_AGGREGATION_COUNT_ONLY ||
 //#if MC >= 1.21.1
-                config == ITEM_RENDER_AGGREGATION ||
                 config == ENTITY_AGGREGATION_SEPARATE_SIZES ||
 //#endif
                 config == ENTITY_AGGREGATION_RADIUS || config == ENTITY_AGGREGATION_THRESHOLD ||
@@ -1600,6 +1758,16 @@ public final class Configs implements IConfigHandler
                 config == ENTITY_AGGREGATION_LABEL_POSITION || config == ENTITY_AGGREGATION_LIST_MODE ||
                 config == ENTITY_AGGREGATION_WHITELIST || config == ENTITY_AGGREGATION_BLACKLIST;
     }
+
+    //#if MC >= 1.21.1
+    private static boolean isItemAggregationChild(IConfigBase config)
+    {
+        return config == ITEM_AGGREGATION_THRESHOLD || config == ITEM_AGGREGATION_RADIUS ||
+                config == ITEM_AGGREGATION_LIST_MODE || config == ITEM_AGGREGATION_WHITELIST ||
+                config == ITEM_AGGREGATION_BLACKLIST || config == ITEM_AGGREGATION_LABEL_POSITION ||
+                config == ITEM_AGGREGATION_SCAN_INTERVAL;
+    }
+    //#endif
 
     private static boolean isVoidTradingChild(IConfigBase config)
     {
@@ -1760,6 +1928,10 @@ public final class Configs implements IConfigHandler
 
     private static boolean isGenericExpandedChildVisible(IConfigBase config)
     {
+        if (isEntityAggregationChild(config)) return ENTITY_RENDER_AGGREGATION_EXPANDED.getBooleanValue();
+        //#if MC >= 1.21.1
+        if (isItemAggregationChild(config)) return ITEM_RENDER_AGGREGATION_EXPANDED.getBooleanValue();
+        //#endif
     //#if MC >= 1.21.1
         if (KEEP_CONFIG_POSITION_CHILDREN.contains(config)) return KEEP_CONFIG_POSITION_EXPANDED.getBooleanValue();
     //#endif

@@ -3,6 +3,7 @@ package io.github.halfmasa.xaerobinding.feature;
 import java.util.Arrays;
 
 import net.minecraft.client.Minecraft;
+import io.github.halfmasa.xaerobinding.config.Configs;
 //#if MC >= 26.1
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 //#else
@@ -77,7 +78,8 @@ public final class ImeOverlay
     //$$ public static void render(GuiGraphics graphics)
     //#endif
     {
-        if (!ImeService.getInstance().isNativeActive() && !Ime261Compat.shouldRenderOverlayLayer())
+        if (!Configs.CONTINGAME_IME.getBooleanValue()
+                || !ImeService.getInstance().isNativeActive() && !Ime261Compat.shouldRenderOverlayLayer())
         {
             return;
         }

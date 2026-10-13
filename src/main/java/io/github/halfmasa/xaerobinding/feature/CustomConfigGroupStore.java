@@ -23,7 +23,7 @@ public final class CustomConfigGroupStore
 {
     public static final String HALF_MASA_SOURCE = "halfmasa";
     public static final String TWEAKEROO_SOURCE = "tweakeroo";
-    private static final String BUILT_IN_GROUPS_VERSION = "v2";
+    private static final String BUILT_IN_GROUPS_VERSION = "v3";
     private static final String REF_SEPARATOR = "::";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final CustomConfigGroupStore INSTANCE = new CustomConfigGroupStore();
@@ -79,6 +79,18 @@ public final class CustomConfigGroupStore
             return false;
         }
 
+        boolean changed = false;
+        // Release the old built-in item child so it can receive its own group.
+        // User-created groups retain their explicitly assigned configuration.
+        for (Group group : this.groups)
+        {
+            if (HALF_MASA_SOURCE.equals(normalizedSource)
+                    && "builtin_halfmasa_entityRenderAggregation".equals(group.id)
+                    && "entityRenderAggregation".equals(group.mainConfig))
+            {
+                changed |= group.children.remove(reference(normalizedSource, "itemRenderAggregation"));
+            }
+        }
         Set<String> ids = new HashSet<>();
         Set<String> assigned = new HashSet<>();
         for (Group group : this.groups)
@@ -96,7 +108,6 @@ public final class CustomConfigGroupStore
             assigned.addAll(group.children);
         }
 
-        boolean changed = false;
         for (GroupTemplate template : templates)
         {
             if (template == null || ids.contains(clean(template.id)))

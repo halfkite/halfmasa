@@ -124,8 +124,7 @@ public abstract class EntityRenderAggregationMixin
     //$$     Minecraft client = Minecraft.getInstance();
     //$$     Font font = client.font;
     //$$     EntityRenderDispatcher dispatcher = client.getEntityRenderDispatcher();
-    //$$     boolean side = io.github.halfmasa.xaerobinding.config.Configs.ENTITY_AGGREGATION_LABEL_POSITION
-    //$$             .getOptionListValue() == io.github.halfmasa.xaerobinding.config.EntityLabelPosition.SIDE;
+    //$$     boolean side = EntityRenderAggregation.isSideLabel(entity);
     //$$
     //$$     matrices.pushPose();
     //$$     Vec3 offset = EntityRenderAggregation.getInstance().getLabelOffset(entity);

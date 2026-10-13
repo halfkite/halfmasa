@@ -45,13 +45,12 @@ public final class ExternalBaseIME
         }
         this.initializationAttempted = true;
 
-        // The native window hook permanently breaks vanilla IME once installed,
-        // and toggling the feature off cannot undo it. Vanilla handles IME
-        // natively since 26.1, so never load the bridge on those versions.
+        // Vanilla handles IME natively since 26.1. Its window input backend
+        // must not be replaced by the legacy JNI bridge on those versions.
         if (VANILLA_IME_SUPPORTED)
         {
             XaeroWorldBinding.LOGGER.info(
-                    "ContingameIME is disabled on Minecraft 26.1+: the game natively supports input methods");
+                    "Skipping legacy ContingameIME JNI bridge on Minecraft 26.1+: using vanilla input methods");
             return false;
         }
 
@@ -122,6 +121,16 @@ public final class ExternalBaseIME
         return this.initialized;
     }
 
+    public synchronized void uninitialize()
+    {
+        if (!this.initialized) return;
+        // The bridge's Uninitialize releases its window hook and JNI callbacks.
+        // Merely setState(false) would leave the legacy hook installed.
+        this.nUninitialize();
+        this.initialized = false;
+        this.initializationAttempted = false;
+    }
+
     public void setState(boolean state)
     {
         if (this.initialized)
@@ -139,7 +148,7 @@ public final class ExternalBaseIME
     }
 
     private native void nInitialize(long handle);
-    @SuppressWarnings("unused") private native void nUninitialize();
+    private native void nUninitialize();
     private native void nSetState(boolean state);
     private native void nSetFullScreen(boolean fullscreen);
 

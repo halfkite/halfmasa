@@ -25,6 +25,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import io.github.halfmasa.xaerobinding.feature.EntityRenderAggregation;
+//#if MC >= 1.21.10
+import io.github.halfmasa.xaerobinding.feature.EntityGlowService;
+//#endif
 
 /**
  * Uses the same visibility boundary as Tweakeroo's entity rendering disable
@@ -56,8 +59,8 @@ public abstract class EntityRenderDispatcherAggregationMixin
         //#if MC >= 1.21.1
         // Vanilla renders several copies for a single stacked ItemEntity. The
         // item switch should reduce that draw count even without a second entity.
-        if (Configs.ITEM_RENDER_AGGREGATION.getBooleanValue() &&
-                entity instanceof ItemEntity && state instanceof ItemEntityRenderState itemState)
+        if (entity instanceof ItemEntity item && EntityRenderAggregation.isItemAggregationEnabled(item)
+                && state instanceof ItemEntityRenderState itemState)
         {
             itemState.count = 1;
         }
@@ -65,8 +68,7 @@ public abstract class EntityRenderDispatcherAggregationMixin
         Component label = EntityRenderAggregation.getInstance().getLabel(entity);
         if (label != null)
         {
-            boolean side = io.github.halfmasa.xaerobinding.config.Configs.ENTITY_AGGREGATION_LABEL_POSITION
-                    .getOptionListValue() == io.github.halfmasa.xaerobinding.config.EntityLabelPosition.SIDE;
+            boolean side = EntityRenderAggregation.isSideLabel(entity);
             state.nameTag = label;
             state.nameTagAttachment = new Vec3(
                     side ? entity.getBbWidth() * 0.5D + 0.35D : 0.0D,
@@ -81,6 +83,19 @@ public abstract class EntityRenderDispatcherAggregationMixin
         {
             state.isInvisible = true;
         }
+        //#if MC >= 1.21.10
+        if (!state.isInvisible
+                //#if MC >= 26.3
+                && state.outlineColor == EntityRenderState.NO_OUTLINE
+                //#else
+                //$$ && state.outlineColor == 0
+                //#endif
+                && entity != net.minecraft.client.Minecraft.getInstance().player)
+        {
+            Integer color = EntityGlowService.resolve(entity);
+            if (color != null) state.outlineColor = color;
+        }
+        //#endif
     }
 
     /**

@@ -102,6 +102,7 @@ tasks.withType(org.gradle.api.tasks.bundling.AbstractArchiveTask).configureEach 
 loom {
     mixin {
         useLegacyMixinAp = !unobfuscated
+        if (!unobfuscated) defaultRefmapName = 'halfmasa.refmap.json'
     }
 }
 
@@ -132,6 +133,7 @@ processResources {
     filesMatching('fabric.mod.json') { expand properties }
     filesMatching('halfmasa.mixins.json') {
         filter { line ->
+            if (unobfuscated && line.contains('"refmap"')) return null
             if (project.mcVersion >= 26_00_00 && line.contains('"AggregationGameRendererAccessor"')) return null
             if (project.mcVersion >= 1_21_04 && line.contains('"BakedSpawnerItemMixin"')) return null
             if (project.mcVersion >= 1_21_10 && line.contains('"LegacyItemAggregationMixin"')) return null

@@ -2,7 +2,7 @@
 
 # halfmasa Features and Configuration
 
-> Documentation version `1.6.2` | Open the configuration screen with `X + H` (or from Mod Menu) | Disabled by default unless noted; an empty hotkey means unbound
+> Documentation version `1.6.3` | Open the configuration screen with `X + H` (or from Mod Menu) | Disabled by default unless noted; an empty hotkey means unbound
 
 ## Schematic Features
 
@@ -173,7 +173,7 @@
 | Server icon cache<br>`serverIconCache` | Boolean | `true` | Cache server icons; match by name, address, or both; configure the cache limit. Clearing requires confirmation. |
 | Suppress toast notifications<br>`toastKiller` | Boolean | `false` | Clear existing toasts and reject new ones while enabled. |
 | Server ping refresh fix<br>`serverPingerFix` | Boolean | `false` | Expand the server-ping thread pool and clear stale queued tasks. |
-| In-game IME<br>`contingameIme` | Boolean | `false` | Windows JNI input method with composition text, candidate UI, temporary mode, and persistent mode. |
+| In-game IME<br>`contingameIme` | Boolean | `false` | Windows JNI on older versions; custom display options for vanilla IME on 26.1+. Disabling the master switch preserves vanilla input and UI and releases the legacy JNI hook. |
 
 ## Singleplayer Save Paths
 
@@ -182,22 +182,45 @@
 | Custom save paths<br>`customSavesPaths` | String list | `[]` | Custom save directories can be absolute or relative to the game directory. Click the current path in the top-left of world selection to switch immediately; vanilla `saves` remains available. |
 | Keep world selection when empty<br>`keepWorldSelectionOnEmpty` | Boolean | `false` | If the selected directory contains no worlds, clicking “Singleplayer” still opens world selection instead of jumping to world creation. |
 
+## Entity and Block Highlights
+
+| Name | Type | Default | Description |
+|---|---|---|---|
+| Entity and block highlights<br>`entityGlowHighlight` | Boolean with hotkey | `false` | Outline entities and dropped items, plus configured blocks through walls; client side only. |
+| Entity highlight mode<br>`entityGlowMode` | Option list | All | Highlight all entities and dropped items, or only enabled rules; blocks always follow their rules. |
+| Switch entity highlight mode<br>`entityGlowModeHotkey` | Hotkey | Unbound | Switch between all and individual modes without enabling the main switch. |
+| Highlight all color<br>`entityGlowAllColor` | Color | White | Outline color in all mode. |
+| Highlight rule editor<br>`entityGlowRuleEditor` | Action | — | Set colors, enabled states, and hotkeys by entity, item, or block ID; changes apply after saving. |
+
 ## Entity Aggregation Rendering
+
+Mob and dropped-item aggregation have separate expandable settings, refresh schedules, filters and label positions. Merge count means the minimum number of entities; previous settings are converted to preserve their trigger count.
 
 | Name | Type | Default | Description |
 |---|---|---|---|
 | Disable fluid rendering<br>`disableFluidRendering` | Boolean | `false` | Disable fluid rendering; may significantly change the appearance. |
 | Disable non-source fluid rendering<br>`disableNonSourceFluidRendering` | Boolean | `false` | Disable rendering of non-source fluids only. |
 | Aggregate rendering for similar entities<br>`entityRenderAggregation` | Boolean | `false` | Aggregate rendering for similar entities; may significantly affect appearance or compatibility. |
-| Merge dropped-item rendering<br>`itemRenderAggregation` | Boolean | `false` | Merge dropped-item rendering. |
-| Count only; hide entity models<br>`entityAggregationCountOnly` | Boolean | `false` | Show counts without rendering aggregate models. |
-| Entity aggregation radius<br>`entityAggregationRadius` | Decimal | — | Radius used for entity aggregation. |
-| Entity aggregation threshold<br>`entityAggregationThreshold` | Integer | — | Entity-count threshold that triggers aggregation. |
-| Entity aggregation scan interval<br>`entityAggregationScanInterval` | Integer | — | Tick interval between aggregation scans. |
-| Entity aggregation label position<br>`entityAggregationLabelPosition` | Option list | — | Position of the aggregate label. |
+| Separate ages and sizes<br>`entityAggregationSeparateSizes` | Boolean | `true` | Count babies, adults, and different sizes separately and label each group. |
+| Count only; hide entity models<br>`entityAggregationCountOnly` | Boolean | `false` | Hide grouped mob models; dropped items are unaffected. |
+| Entity aggregation radius<br>`entityAggregationRadius` | Decimal | `1` | Maximum neighbor distance for chained mob aggregation. |
+| Entity merge count<br>`entityAggregationThreshold` | Integer | `11` | Minimum matching mob count required to merge. |
+| Entity aggregation scan interval<br>`entityAggregationScanInterval` | Integer | `10` | Tick interval between scans; 10 ticks is about half a second. |
+| Entity aggregation label position<br>`entityAggregationLabelPosition` | Option list | Top | Above or beside the mob. |
 | Entity aggregation list mode<br>`entityAggregationListMode` | Option list | — | Whitelist, blacklist, or disabled. |
 | Entity aggregation whitelist<br>`entityAggregationWhitelist` | String list | `[]` | Entity types included in aggregation. |
 | Entity aggregation blacklist<br>`entityAggregationBlacklist` | String list | `[]` | Entity types excluded from aggregation. |
+
+| Independent dropped-item settings | Type | Default | Description |
+|---|---|---|---|
+| Merge dropped-item rendering<br>`itemRenderAggregation` | Boolean | `true` | Render one model per stack; merge nearby item entities with matching items and components, showing total item quantity. |
+| Dropped item merge count<br>`itemAggregationThreshold` | Integer | `2` | Minimum number of dropped stack entities required to merge. |
+| Dropped item merge radius<br>`itemAggregationRadius` | Decimal | `1` | Maximum neighbor distance for chained item aggregation. |
+| Dropped item list mode<br>`itemAggregationListMode` | Option list | No list | Whitelist handles listed items only; blacklist excludes listed items. |
+| Dropped item whitelist<br>`itemAggregationWhitelist` | String list | `[]` | Item IDs, such as `minecraft:stone`; an empty whitelist handles no items. |
+| Dropped item blacklist<br>`itemAggregationBlacklist` | String list | `[]` | Item IDs excluded from aggregation. |
+| Dropped item label position<br>`itemAggregationLabelPosition` | Option list | Top | Above or beside the item. |
+| Dropped item refresh interval<br>`itemAggregationScanInterval` | Integer | `10` | Independent refresh interval in client ticks. |
 
 > These features are in the “Disabled Features” category and are not included on the recommended page. Enable them only after understanding their effects.
 
