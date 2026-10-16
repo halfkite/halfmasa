@@ -182,6 +182,19 @@ public class AggregationCheck {
    client.level.time=21;aggregation.onClientTick(client);awaitJobs();aggregation.clearEntities();
    check(aggregation.getLabel(a)!=null&&!aggregation.shouldHide(entities.get(1)),"clearing mobs clears items");
   }
+  case "render_filter" -> {
+   Configs.ENTITY_RENDER_AGGREGATION.flag=false;Configs.ITEM_RENDER_AGGREGATION.flag=false;
+   var a=new LivingEntity(1);var b=new LivingEntity(2);var c=new LivingEntity(3);var entities=List.<Entity>of(a,b,c);rebuild(entities);
+   check(aggregation.filterForRendering(entities)==entities,"inactive aggregation and filtering must preserve the native iterable");
+   EntityRenderDisableService.active=true;EntityRenderDisableService.hidden=Set.of(b.getId());
+   var visible=new ArrayList<Entity>();aggregation.filterForRendering(entities).forEach(visible::add);
+   check(visible.equals(List.of(a,c)),"custom filtering is skipped when aggregation is disabled");
+   Configs.ENTITY_RENDER_AGGREGATION.flag=true;Configs.ENTITY_AGGREGATION_THRESHOLD.number=3;rebuild(entities);
+   EntityRenderDisableService.hidden=Set.of(a.getId());visible.clear();aggregation.filterForRendering(entities).forEach(visible::add);
+   check(visible.isEmpty(),"an aggregation representative bypasses the custom rendering filter");
+   EntityRenderDisableService.active=false;visible.clear();aggregation.filterForRendering(entities).forEach(visible::add);
+   check(visible.equals(List.of(a)),"disabling custom filtering does not restore the aggregation representative");
+  }
   case "anchor_removed" -> {
    Configs.ENTITY_RENDER_AGGREGATION.flag=true;Configs.ENTITY_AGGREGATION_THRESHOLD.number=3;
    var a=new LivingEntity(1);var b=new LivingEntity(2);var c=new LivingEntity(3);rebuild(List.of(a,b,c));
@@ -217,6 +230,7 @@ public class AggregationCheck {
 '''
 
 STUBS = {
+ "io/github/halfmasa/xaerobinding/feature/EntityRenderDisableService.java": "package io.github.halfmasa.xaerobinding.feature;import java.util.Set;import net.minecraft.world.entity.Entity;public class EntityRenderDisableService {public static boolean active;public static Set<Integer> hidden=Set.of();public static boolean isFiltering(){return active;}public static boolean shouldHide(Entity entity){return active&&hidden.contains(entity.getId());}}",
  "io/github/halfmasa/xaerobinding/config/Configs.java": '''package io.github.halfmasa.xaerobinding.config; import java.util.*;public class Configs {
  public static class Value {public boolean flag;public int number=10;public double decimal=1;public Object option=EntityAggregationListMode.NONE;public List<String> strings=List.of();public boolean getBooleanValue(){return flag;}public int getIntegerValue(){return number;}public double getDoubleValue(){return decimal;}public Object getOptionListValue(){return option;}public List<String> getStrings(){return strings;}}
  public static final Value ENTITY_RENDER_AGGREGATION=new Value(),ITEM_RENDER_AGGREGATION=new Value(),ENTITY_AGGREGATION_SEPARATE_SIZES=new Value(),ENTITY_AGGREGATION_COUNT_ONLY=new Value(),ENTITY_AGGREGATION_SCAN_INTERVAL=new Value(),ENTITY_AGGREGATION_RADIUS=new Value(),ENTITY_AGGREGATION_THRESHOLD=new Value(),ENTITY_AGGREGATION_LIST_MODE=new Value(),ENTITY_AGGREGATION_WHITELIST=new Value(),ENTITY_AGGREGATION_BLACKLIST=new Value(),ITEM_AGGREGATION_THRESHOLD=new Value(),ITEM_AGGREGATION_RADIUS=new Value(),ITEM_AGGREGATION_SCAN_INTERVAL=new Value(),ITEM_AGGREGATION_LIST_MODE=new Value(),ITEM_AGGREGATION_WHITELIST=new Value(),ITEM_AGGREGATION_BLACKLIST=new Value(),ITEM_AGGREGATION_LABEL_POSITION=new Value(),ENTITY_AGGREGATION_LABEL_POSITION=new Value();static{ITEM_RENDER_AGGREGATION.flag=true;ENTITY_AGGREGATION_SEPARATE_SIZES.flag=true;ITEM_AGGREGATION_THRESHOLD.number=2;ITEM_AGGREGATION_LABEL_POSITION.option=EntityLabelPosition.TOP;ENTITY_AGGREGATION_LABEL_POSITION.option=EntityLabelPosition.TOP;}}''',
@@ -277,5 +291,6 @@ class EntityAggregationTests(unittest.TestCase):
  def test_mob_and_item_threshold_radius_lists_position_and_count_only_are_independent(self):self.scenario("independent_settings")
  def test_mob_and_item_refresh_and_invalidation_are_independent(self):self.scenario("independent_refresh")
  def test_dead_representative_recovers_before_the_next_scan(self):self.scenario("anchor_removed")
+ def test_render_filter_applies_with_or_without_aggregation_and_preserves_native_fast_path(self):self.scenario("render_filter")
 
 if __name__=="__main__":unittest.main()
