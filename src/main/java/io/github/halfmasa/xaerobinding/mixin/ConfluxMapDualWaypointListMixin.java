@@ -1,5 +1,7 @@
 package io.github.halfmasa.xaerobinding.mixin;
 
+//#if MC < 1.21.1
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -21,7 +23,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
-//#if MC >= 1.21.10
+//#if MC >= 1.21.1
 import net.minecraft.client.input.MouseButtonEvent;
 //#endif
 
@@ -110,7 +112,7 @@ public abstract class ConfluxMapDualWaypointListMixin
         }
     }
 
-//#if MC >= 1.21.10
+//#if MC >= 1.21.1
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true, require = 0, remap = false)
     private void halfmasa$captureDualPaneClick(MouseButtonEvent event, boolean doubleClick,
                                                 CallbackInfoReturnable<Boolean> cir)
@@ -531,3 +533,5 @@ public abstract class ConfluxMapDualWaypointListMixin
     {
     }
 }
+
+//#endif

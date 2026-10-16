@@ -27,7 +27,7 @@ public abstract class ConfluxMapWaypointListMixin
     @Unique
     private boolean halfmasa$appliedWaypointListDefaults;
 
-    @Inject(method = "init", at = @At("HEAD"), require = 0, remap = false)
+    @Inject(method = {"init", "method_25426"}, at = @At("HEAD"), require = 0, remap = false)
     private void halfmasa$applyWaypointListDefaults(CallbackInfo ci)
     {
         if (this.halfmasa$appliedWaypointListDefaults)

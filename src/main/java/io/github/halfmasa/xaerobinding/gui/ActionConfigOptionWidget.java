@@ -14,6 +14,9 @@ import fi.dy.masa.malilib.gui.button.ConfigButtonOptionList;
 import fi.dy.masa.malilib.gui.interfaces.IConfigInfoProvider;
 import fi.dy.masa.malilib.gui.interfaces.IKeybindConfigGui;
 import fi.dy.masa.malilib.gui.widgets.WidgetConfigOption;
+//#if MC >= 1.21.1
+import fi.dy.masa.malilib.gui.widgets.WidgetKeybindSettings;
+//#endif
 import fi.dy.masa.malilib.gui.widgets.WidgetListConfigOptionsBase;
 import fi.dy.masa.malilib.hotkeys.IHotkey;
 import fi.dy.masa.malilib.util.StringUtils;
@@ -41,6 +44,9 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
     private static final int CHILD_INDENT = 28;
     private static final int RESET_BUTTON_GAP = 5;
     private static final int MALILIB_RESET_BUTTON_GAP = 2;
+    // Value-column width used by MaLiLib's addBooleanAndHotkeyWidgets.
+    private static final int MALILIB_BOOLEAN_CONTROL_WIDTH = 60;
+    private static final int MALILIB_KEYBIND_SETTINGS_WIDTH = 20;
     private static final int INLINE_RESET_WIDTH = 58;
     private static final int INLINE_CONTROL_GAP = 4;
     private static final int GROUP_BUTTON_WIDTH = 18;
@@ -146,6 +152,13 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         }
 
         ConfigBoolean expansion = provider.getExpansionConfig(config);
+        //#if MC >= 1.21.1
+        if (!Configs.CUSTOM_CONFIG_GROUPS.getBooleanValue() && Configs.getExpansionParent(config) == Configs.BOSS_BAR_MERGE)
+        {
+            x += CHILD_INDENT;
+            labelWidth = Math.max(20, labelWidth - CHILD_INDENT);
+        }
+        //#endif
         int expandButtonX = x + EXPAND_BUTTON_LEFT_OFFSET;
         x += EXPAND_BUTTON_WIDTH;
         labelWidth = Math.max(20, labelWidth - EXPAND_BUTTON_WIDTH);
@@ -178,7 +191,11 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
             IConfigBase inlineCompanion = provider.getInlineCompanion(config);
             if (inlineCompanion instanceof IHotkey inlineHotkey)
             {
-                this.addInlineCompanion(x, y, labelWidth, configWidth, config, inlineHotkey);
+                this.addInlineCompanion(x, y,
+                        //#if MC < 1.21.10
+                        //$$ zLevel,
+                        //#endif
+                        labelWidth, configWidth, config, inlineHotkey);
                 this.addExpandButton(expandButtonX, y, config, expansion);
                 this.addCustomGroupControls(config, y + 1);
                 return;
@@ -276,8 +293,24 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
     //#endif
 
     private void addInlineCompanion(
-            int x, int y, int labelWidth, int configWidth, IConfigBase config, IHotkey companion)
+            int x, int y,
+            //#if MC < 1.21.10
+            //$$ float zLevel,
+            //#endif
+            int labelWidth, int configWidth, IConfigBase config, IHotkey companion)
     {
+        //#if MC >= 1.21.1
+        if (config == Configs.ENTITY_RENDER_DISABLE_MODE)
+        {
+            this.addOptionListHotkeyRow(x, y, labelWidth, configWidth, Configs.ENTITY_RENDER_DISABLE_MODE, companion);
+            return;
+        }
+        if (config == Configs.AUTO_EAT_SOURCE)
+        {
+            this.addOptionListHotkeyRow(x, y, labelWidth, configWidth, Configs.AUTO_EAT_SOURCE, companion);
+            return;
+        }
+        //#endif
         //#if MC >= 1.21.1
         if (config == Configs.ENTITY_GLOW_MODE)
         {
@@ -320,27 +353,90 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
     //#if MC >= 1.21.1
     private void addEntityGlowModeRow(int x, int y, int labelWidth, int configWidth, IHotkey companion)
     {
+        this.addOptionListHotkeyRow(x, y, labelWidth, configWidth, Configs.ENTITY_GLOW_MODE, companion);
+    }
+
+    private void addOptionListHotkeyRow(int x, int y, int labelWidth, int configWidth,
+            fi.dy.masa.malilib.config.options.ConfigOptionList config, IHotkey companion)
+    {
         this.addLabel(x, y + 8, labelWidth, 8, 0xFFFFFFFF,
-                Configs.ENTITY_GLOW_MODE.getConfigGuiDisplayName());
+                config.getConfigGuiDisplayName());
+        if (config == Configs.ENTITY_RENDER_DISABLE_MODE)
+            this.addConfigComment(x, y + 5, labelWidth, 12, config.getComment());
         int controlsX = x + labelWidth + 10;
-        int resetWidth = INLINE_RESET_WIDTH;
-        int available = Math.max(100, configWidth - resetWidth - 8);
-        int modeWidth = Math.max(62, available / 2);
-        int hotkeyWidth = Math.max(36, available - modeWidth - 2);
-        ConfigButtonOptionList modeButton = new ConfigButtonOptionList(controlsX, y + 1,
-                modeWidth, 20, Configs.ENTITY_GLOW_MODE);
+        //#if MC >= 1.21.1
+        int modeWidth = Math.min(MALILIB_BOOLEAN_CONTROL_WIDTH,
+                Math.max(1, (configWidth - MALILIB_RESET_BUTTON_GAP) / 2));
+        int hotkeyWidth = Math.max(1, configWidth - modeWidth - MALILIB_RESET_BUTTON_GAP * 2 - MALILIB_KEYBIND_SETTINGS_WIDTH);
+        //#else
+        //$$ int resetWidth = INLINE_RESET_WIDTH;
+        //$$ int available = Math.max(100, configWidth - resetWidth - 8);
+        //$$ int modeWidth = Math.max(62, available / 2);
+        //$$ int hotkeyWidth = Math.max(36, available - modeWidth - 2);
+        //#endif
+        ButtonGeneric modeButton;
+        //#if MC >= 1.21.1
+        if (config == Configs.AUTO_EAT_SOURCE) modeButton = new FoodSourceButton(controlsX, y + 1, modeWidth);
+        else
+        //#endif
+        modeButton = new ConfigButtonOptionList(controlsX, y + 1, modeWidth, 20, config);
+        if (config == Configs.ENTITY_RENDER_DISABLE_MODE)
+            modeButton.setHoverStrings(wrapComment(config.getComment(), Math.max(1,
+                    this.mc.getWindow().getGuiScaledWidth() - 16)).split("\n"));
         this.addButton(modeButton, this.host.getButtonPressListener());
         ConfigButtonKeybind hotkeyButton = new ConfigButtonKeybind(controlsX + modeWidth + 2,
                 y + 1, hotkeyWidth, 20, companion.getKeybind(), this.host);
         this.addButton(hotkeyButton, this.host.getButtonPressListener());
-        ButtonGeneric reset = new ButtonGeneric(controlsX + modeWidth + hotkeyWidth + 6,
-                y + 1, resetWidth, 20, StringUtils.translate("malilib.gui.button.reset.caps"));
+        //#if MC >= 1.21.1
+        this.addWidget(new WidgetKeybindSettings(controlsX + modeWidth + MALILIB_RESET_BUTTON_GAP + hotkeyWidth + MALILIB_RESET_BUTTON_GAP,
+                y + 1, MALILIB_KEYBIND_SETTINGS_WIDTH, 20, companion.getKeybind(), companionName(companion),
+                this.parent, this.host.getDialogHandler()));
+        this.host.addKeybindChangeListener(hotkeyButton::updateDisplayString);
+        ButtonGeneric reset = this.createResetButton(controlsX + configWidth + MALILIB_RESET_BUTTON_GAP,
+                y + 1, config);
+        reset.setEnabled(true);
+        //#else
+        //$$ ButtonGeneric reset = new ButtonGeneric(controlsX + modeWidth + hotkeyWidth + 6,
+        //$$         y + 1, resetWidth, 20, StringUtils.translate("malilib.gui.button.reset.caps"));
+        //#endif
         this.addButton(reset, (button, mouseButton) -> {
-            Configs.ENTITY_GLOW_MODE.resetToDefault();
+            config.resetToDefault();
             companion.getKeybind().resetToDefault();
             modeButton.updateDisplayString();
             hotkeyButton.updateDisplayString();
         });
+    }
+    //#endif
+
+    //#if MC >= 1.21.1
+    /** Source clicks and its hotkey share the specified forward order, independent of MaLiLib mouse direction. */
+    private static final class FoodSourceButton extends ButtonGeneric
+    {
+        private FoodSourceButton(int x, int y, int width)
+        {
+            super(x, y, width, 20, "");
+            this.updateDisplayString();
+        }
+
+        //#if MC >= 1.21.10
+        @Override protected boolean onMouseClickedImpl(net.minecraft.client.input.MouseButtonEvent event, boolean activeGui)
+        //#else
+        //$$ @Override protected boolean onMouseClickedImpl(int mouseX, int mouseY, int button)
+        //#endif
+        {
+            Configs.AUTO_EAT_SOURCE.setOptionListValue(Configs.AUTO_EAT_SOURCE.getOptionListValue().cycle(true));
+            this.updateDisplayString();
+            //#if MC >= 1.21.10
+            return super.onMouseClickedImpl(event, activeGui);
+            //#else
+            //$$ return super.onMouseClickedImpl(mouseX, mouseY, button);
+            //#endif
+        }
+
+        @Override public void updateDisplayString()
+        {
+            this.displayString = Configs.AUTO_EAT_SOURCE.getOptionListValue().getDisplayName();
+        }
     }
     //#endif
 
@@ -389,7 +485,11 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         }
 
         DisabledResetButton reset = new DisabledResetButton(
-                buttonAreaX + configWidth + RESET_BUTTON_GAP,
+                //#if MC >= 1.21.1
+                buttonAreaX + configWidth + MALILIB_RESET_BUTTON_GAP,
+                //#else
+                //$$ buttonAreaX + configWidth + RESET_BUTTON_GAP,
+                //#endif
                 y);
         this.addButton(reset, (button, mouseButton) -> {});
         this.addCustomGroupControls(action, y);

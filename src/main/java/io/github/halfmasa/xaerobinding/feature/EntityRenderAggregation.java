@@ -175,6 +175,14 @@ public final class EntityRenderAggregation implements IClientTickHandler
         return group.representativeId != entity.getId();
     }
 
+    //#if MC >= 1.21.1
+    public List<Integer> getItemMemberIds(ItemEntity entity)
+    {
+        Group group = this.groupsByEntityId.get(entity.getId());
+        return group == null || !group.item ? List.of(entity.getId()) : List.copyOf(group.memberIds);
+    }
+    //#endif
+
     public boolean shouldHideModel(Entity entity)
     {
         Group group = this.groupsByEntityId.get(entity.getId());
@@ -183,7 +191,7 @@ public final class EntityRenderAggregation implements IClientTickHandler
 
     public Iterable<Entity> filterForRendering(Iterable<Entity> entities)
     {
-        if (
+        if ((
 //#if MC >= 1.21.1
                 (!Configs.ENTITY_RENDER_AGGREGATION.getBooleanValue() &&
                  !Configs.ITEM_RENDER_AGGREGATION.getBooleanValue())
@@ -191,6 +199,10 @@ public final class EntityRenderAggregation implements IClientTickHandler
                 //$$ !Configs.ENTITY_RENDER_AGGREGATION.getBooleanValue()
 //#endif
                 || this.groupsByEntityId.isEmpty())
+//#if MC >= 1.21.1
+                && !EntityRenderDisableService.isFiltering()
+//#endif
+                )
         {
             return entities;
         }
@@ -198,6 +210,11 @@ public final class EntityRenderAggregation implements IClientTickHandler
         List<Entity> filtered = new ArrayList<>();
         for (Entity entity : entities)
         {
+            //#if MC >= 1.21.1
+            if (EntityRenderDisableService.shouldHide(entity)) continue;
+            if (!Configs.ENTITY_RENDER_AGGREGATION.getBooleanValue() && !Configs.ITEM_RENDER_AGGREGATION.getBooleanValue())
+            { filtered.add(entity); continue; }
+            //#endif
             Group group = this.groupsByEntityId.get(entity.getId());
             if (group == null || group.representativeId == entity.getId())
             {

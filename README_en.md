@@ -12,6 +12,8 @@ halfmasa is a Minecraft Fabric client-side utility mod that brings together wayp
 
 Supports the Fabric Loader and Minecraft versions `1.21.1`–`26.3`.
 
+Version `1.7.0` brings range feeding (baby protection, temporary hold activation and adjustable speed), Auto Eat, Better Boss Bar, invisible block markers, animation controls, custom entity rendering filters and the combined Conflux Map list to all ten build targets. Highlight child settings use MaLiLib's native keybind settings widget with aligned reset columns.
+
 ## Documentation
 
 - [中文功能介绍](https://github.com/halfkite/halfmasa/blob/main/docs/features_cn.md)
@@ -23,7 +25,7 @@ Press `X + H` to open the halfmasa configuration screen, or open it through Mod 
 
 | Name | Type | Description |
 |---|---|---|
-| [Fabric Loader](https://fabricmc.net/use/installer/) | Required | Use `0.17.3+` for Minecraft 1.21.x and `0.18.4+` for Minecraft 26.x. |
+| [Fabric Loader](https://fabricmc.net/use/installer/) | Required | Use `0.17.3+` for Minecraft 1.21.x, `0.18.4+` for 26.1–26.2, and `0.19.5+` for 26.3. |
 | [MaLiLib](https://modrinth.com/mod/malilib) | Required | Install the MaLiLib version matching your Minecraft version. |
 | [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) / [World Map](https://modrinth.com/mod/xaeros-world-map) | Optional integration | Provides waypoint binding and map features. |
 | [Mod Menu](https://github.com/TerraformersMC/ModMenu) | Optional integration | Adds an entry for opening the halfmasa configuration screen from the mod list. |
@@ -33,6 +35,8 @@ Press `X + H` to open the halfmasa configuration screen, or open it through Mod 
 | [Conflux Map](https://github.com/Conflux-Union/conflux-map) | Optional integration | Adds waypoint lists, temporary waypoints, and teleport-related extensions. |
 
 The halfmasa mod itself is client-side; ordinary client features do not require halfmasa on the server. Features that depend on a server inventory API or Void Trading extension require the corresponding server component. See the [compatibility and configuration guide](https://github.com/halfkite/halfmasa/blob/main/docs/features_en.md) for details.
+
+Conflux Map 0.1.11-beta.1 integration on 26.x requires Fabric Loader 0.19.0+ (tested with 0.19.5).
 
 ## Downloads
 

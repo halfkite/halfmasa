@@ -133,7 +133,16 @@ processResources {
     filesMatching('fabric.mod.json') { expand properties }
     filesMatching('halfmasa.mixins.json') {
         filter { line ->
+            if (project.mcVersion < 26_03_00 && line.contains('"MiniHudPreview')) return null
             if (unobfuscated && line.contains('"refmap"')) return null
+            if (project.mcVersion >= 1_21_01 && line.contains('"ConfluxMapDualWaypointListMixin"')) return null
+            if (project.mcVersion < 1_21_01 && line.contains('"ConfluxMapCombinedWaypointListMixin"')) return null
+            if (project.mcVersion < 1_21_01 && ['"SilentFoodEffectsMixin"', '"SilentFoodNutritionMixin"', '"WitherBossEventAccessor"', '"DragonFightBossEventAccessor"'].any { line.contains(it) }) return null
+            if (project.mcVersion < 1_21_01 && ['"AutoEatUseMixin"', '"AutoEatInventorySyncMixin"', '"AutoEatInputMixin"'].any { line.contains(it) }) return null
+            if (project.mcVersion < 1_21_01 && ['"BossHealthOverlayMixin"', '"LerpingBossEventAccessor"'].any { line.contains(it) }) return null
+            if (project.mcVersion < 1_21_01 && ['"InvisibleBlockMarkerMixin"','"BlockMarkerStateMixin"','"BlockMarkerVisibilityMixin"','"MinecraftSwingContextMixin"','"LivingEntitySwingTrackingMixin"','"RemoveSwingAnimationMixin"','"RemoveItemCooldownOverlayMixin"'].any { line.contains(it) }) return null
+            if (project.mcVersion < 1_21_03 && line.contains('"ItemDespawnRenderStateMixin"')) return null
+            if (project.mcVersion >= 1_21_11 && line.contains('"ItemDespawnLegacyMiniHudMixin"')) return null
             if (project.mcVersion >= 26_00_00 && line.contains('"AggregationGameRendererAccessor"')) return null
             if (project.mcVersion >= 1_21_04 && line.contains('"BakedSpawnerItemMixin"')) return null
             if (project.mcVersion >= 1_21_10 && line.contains('"LegacyItemAggregationMixin"')) return null
@@ -201,6 +210,12 @@ java {
 sourceSets {
     main {
         java {
+            if (project.mcVersion < 1_21_03) {
+                exclude 'io/github/halfmasa/xaerobinding/mixin/ItemDespawnRenderStateMixin.java'
+            }
+            if (project.mcVersion >= 1_21_11) {
+                exclude 'io/github/halfmasa/xaerobinding/mixin/ItemDespawnLegacyMiniHudMixin.java'
+            }
             if (project.mcVersion >= 26_00_00) {
                 exclude 'io/github/halfmasa/xaerobinding/mixin/AggregationGameRendererAccessor.java'
             }

@@ -8,6 +8,15 @@ public final class MinecraftClientCompat
 {
     private MinecraftClientCompat() {}
 
+    public static void setOverlayMessage(Minecraft client, net.minecraft.network.chat.Component message, boolean animate)
+    {
+        //#if MC >= 26.2
+        client.gui.hud.setOverlayMessage(message, animate);
+        //#else
+        //$$ client.gui.setOverlayMessage(message, animate);
+        //#endif
+    }
+
     public static Screen getScreen(Minecraft client)
     {
         //#if MC >= 26.2

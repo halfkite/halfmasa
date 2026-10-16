@@ -6,10 +6,17 @@ import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(Screen.class)
 public interface ScreenAccessor
 {
     @Invoker("addRenderableWidget")
     <T extends GuiEventListener & Renderable & NarratableEntry> T halfmasa$addRenderableWidget(T widget);
+
+    @Accessor("renderables")
+    java.util.List<Renderable> halfmasa$getRenderables();
+
+    @Invoker("removeWidget")
+    void halfmasa$removeWidget(GuiEventListener widget);
 }

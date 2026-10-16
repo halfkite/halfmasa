@@ -24,8 +24,8 @@
     "C": "2",
     "D": "3,27,29",
     "E": "auto",
-    "F": "30",
-    "G": "25,26"
+    "F": "30,46,47",
+    "G": "25,26,44"
   },
   "features": {
     "1": { "key": "open_tools", "status": "implemented" },
@@ -88,6 +88,15 @@
       "38-A": { "key": "litematica_refill_silent", "status": "implemented" },
       "38-B": { "key": "litematica_refill_quantity", "status": "implemented" },
       "38-C": { "key": "printer_auto_refill", "status": "implemented" },
-      "38-D": { "key": "printer_refill_silent", "status": "implemented" }
+      "38-D": { "key": "printer_refill_silent", "status": "implemented" },
+      "39": { "key": "item_despawn_timer", "status": "implemented", "minecraft": ">=1.21" },
+      "40": { "key": "better_boss_bar", "status": "implemented", "minecraft": ">=1.21.1" },
+      "41": { "key": "auto_eat", "status": "implemented", "minecraft": ">=1.21.1" },
+      "42": { "key": "invisible_blocks", "status": "implemented", "minecraft": ">=1.21.1" },
+    "43": { "key": "remove_cooldown_animations", "status": "implemented", "minecraft": ">=1.21.1" },
+    "44": { "key": "custom_entity_render_disable", "status": "implemented", "minecraft": ">=1.21.1" },
+    "45": { "key": "range_feeding", "status": "implemented", "minecraft": ">=1.21.1" },
+    "46": { "key": "minihud_container_preview_optimization", "status": "implemented", "minecraft": ">=26.3" },
+    "47": { "key": "minihud_preview_independent", "status": "implemented", "minecraft": ">=26.3" }
   }
 }

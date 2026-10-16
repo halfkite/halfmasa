@@ -676,6 +676,9 @@ public final class KeybindPieManager implements IClientTickHandler
         {
             for (IHotkey hotkey : category.getHotkeys())
             {
+                //#if MC >= 1.21.1
+                if (HoldToShow.isPassive(hotkey)) continue;
+                //#endif
                 IKeybind binding = hotkey.getKeybind();
                 if (!(binding instanceof KeybindMulti multi) || multi.getCallback() == null)
                 {

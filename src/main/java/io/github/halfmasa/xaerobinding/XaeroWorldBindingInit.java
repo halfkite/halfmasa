@@ -57,10 +57,62 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
     public void registerModHandlers()
     {
         ConfigManager.getInstance().registerConfigHandler(XaeroWorldBinding.MOD_ID, new Configs());
+        //#if MC >= 1.21.1
+        var feeding = io.github.halfmasa.xaerobinding.feature.RangeFeedingService.getInstance();
+        registerTrigger(Configs.RANGE_FEEDING_ONCE, feeding::requestSingleFeed);
+        Configs.RANGE_FEEDING_HOLD.getKeybind().setCallback((action, key) -> {
+            if (action == fi.dy.masa.malilib.hotkeys.KeyAction.PRESS) feeding.setHoldActive(true);
+            else if (action == fi.dy.masa.malilib.hotkeys.KeyAction.RELEASE) feeding.setHoldActive(false);
+            return true;
+        });
+        Configs.RANGE_FEEDING.setValueChangeCallback(config -> feeding.onMasterChanged());
+        Configs.RANGE_FEEDING_SKIP_BABIES.setValueChangeCallback(config -> feeding.onProtectionChanged());
+        Configs.RANGE_FEEDING_INTERVAL.setValueChangeCallback(config -> feeding.onIntervalChanged());
+        Configs.RANGE_FEEDING_BLACKLIST.setValueChangeCallback(config -> feeding.reloadLists());
+        Configs.RANGE_FEEDING_WHITELIST.setValueChangeCallback(config -> feeding.reloadLists());
+        feeding.reloadLists();
+        Configs.ENTITY_RENDER_DISABLE_MODE_HOTKEY.getKeybind().setCallback((action, key) -> {
+            if (action != fi.dy.masa.malilib.hotkeys.KeyAction.PRESS) return false;
+            var mode = (io.github.halfmasa.xaerobinding.config.EntityRenderDisableMode)Configs.ENTITY_RENDER_DISABLE_MODE.getOptionListValue();
+            var next = mode.cycle(true);
+            Configs.ENTITY_RENDER_DISABLE_MODE.setOptionListValue(next);
+            new Configs().save();
+            var client = Minecraft.getInstance();
+            if (client.player != null) MinecraftClientCompat.setOverlayMessage(client, net.minecraft.network.chat.Component.translatable(
+                    "halfmasa.message.entity_render_disable_mode", next.getDisplayName()), false);
+            return true;
+        });
+        Configs.ENTITY_RENDER_DISABLE_BLACKLIST.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.EntityRenderDisableService.reload());
+        Configs.ENTITY_RENDER_DISABLE_WHITELIST.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.EntityRenderDisableService.reload());
+        io.github.halfmasa.xaerobinding.feature.EntityRenderDisableService.reload();
+        Configs.AUTO_EAT_SOURCE_HOTKEY.getKeybind().setCallback((action, key) -> {
+            var mode = (io.github.halfmasa.xaerobinding.config.AutoEatSourceMode) Configs.AUTO_EAT_SOURCE.getOptionListValue();
+            Configs.AUTO_EAT_SOURCE.setOptionListValue(mode.cycle(true));
+            return true;
+        });
+        Configs.AUTO_EAT.setValueChangeCallback(config -> io.github.halfmasa.xaerobinding.feature.AutoEatService.getInstance().onSettingsChanged());
+        Configs.AUTO_EAT_SOURCE.setValueChangeCallback(config -> io.github.halfmasa.xaerobinding.feature.AutoEatService.getInstance().onSettingsChanged());
+        Configs.AUTO_EAT_FILTER_MODE.setValueChangeCallback(config -> io.github.halfmasa.xaerobinding.feature.AutoEatService.getInstance().onSettingsChanged());
+        Configs.AUTO_EAT_WHITELIST.setValueChangeCallback(config -> io.github.halfmasa.xaerobinding.feature.AutoEatService.getInstance().onSettingsChanged());
+        Configs.AUTO_EAT_BLACKLIST.setValueChangeCallback(config -> io.github.halfmasa.xaerobinding.feature.AutoEatService.getInstance().onSettingsChanged());
+        Configs.AUTO_EAT_SILENT.setValueChangeCallback(config -> io.github.halfmasa.xaerobinding.feature.AutoEatService.getInstance().onSettingsChanged());
+        //#endif
+        //#if MC >= 1.21.1
+        io.github.halfmasa.xaerobinding.feature.ItemDespawnDataBridge.initialize();
+        Configs.ITEM_DESPAWN_TIMER.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.ItemDespawnTimerService.getInstance().clear());
+        Configs.ITEM_DESPAWN_SOURCE.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.ItemDespawnTimerService.getInstance().clear());
+        //#endif
         if (FabricLoader.getInstance().isModLoaded("fabric-api"))
         {
             io.github.halfmasa.xaerobinding.feature.VoidTradingClientNetwork.initialize();
             io.github.halfmasa.xaerobinding.feature.LitematicaRefillNetwork.initialize();
+            //#if MC >= 1.21.1
+            io.github.halfmasa.xaerobinding.feature.HalfMasaSupportNetwork.initialize();
+            //#endif
         }
 
         Registry.CONFIG_SCREEN.registerConfigScreenFactory(new ModInfo(
@@ -160,6 +212,11 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         registerTrigger(Configs.CLEAR_SERVER_ICON_CACHE, ServerIconCache::requestClear);
         registerTrigger(Configs.CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION, ItemManagerHistoryOverlay::cyclePosition);
         registerTrigger(Configs.CONFLUX_MAP_TEMPORARY_WAYPOINT, ConfluxMapTemporaryWaypoint::placeAtPlayer);
+        //#if MC >= 26.3
+        TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.minihud.PreviewCache.getInstance());
+        Configs.MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.minihud.PreviewCache.clear());
+        //#endif
         TickHandler.getInstance().registerClientTickHandler(ConfluxMapTemporaryWaypoint.getInstance());
         TickHandler.getInstance().registerClientTickHandler(
                 io.github.halfmasa.xaerobinding.feature.LitematicaMaterialRefill.getInstance());
@@ -186,7 +243,18 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         //#endif
         Configs.KEEP_MOD_MENU_SCROLL.setValueChangeCallback(config -> {
             if (!Configs.KEEP_MOD_MENU_SCROLL.getBooleanValue()) ConfigScrollMemory.clear();
+            //#if MC >= 26.3
+            if (!Configs.KEEP_SCREEN_POSITION.getBooleanValue())
+                io.github.halfmasa.xaerobinding.feature.CreativeScreenMemory.clear();
+            //#endif
         });
+        //#if MC >= 26.3
+        Configs.KEEP_CONFIG_POSITION_EXPANDED.setComment("halfmasa.config.ported.comment.keepConfigPositionExpanded.screen");
+        Configs.KEEP_CREATIVE_SCREEN_POSITION.setValueChangeCallback(config -> {
+            if (!Configs.KEEP_CREATIVE_SCREEN_POSITION.getBooleanValue())
+                io.github.halfmasa.xaerobinding.feature.CreativeScreenMemory.clear();
+        });
+        //#endif
         Configs.CJK_LATIN_SPACING.setValueChangeCallback(config -> {
             if (Configs.isConfigLoaded()) Minecraft.getInstance().reloadResourcePacks();
         });
@@ -234,12 +302,19 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         TickHandler.getInstance().registerClientTickHandler(KeybindPieManager.getInstance());
         TickHandler.getInstance().registerClientTickHandler(ImeService.getInstance());
         TickHandler.getInstance().registerClientTickHandler(CooldownAutoAttack.getInstance());
+        //#if MC >= 1.21.1
+        TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.AutoEatService.getInstance());
+        TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.RangeFeedingService.getInstance());
+        //#endif
         TickHandler.getInstance().registerClientTickHandler(BridgingAssist.getInstance());
         //#if MC >= 1.21.1
         TickHandler.getInstance().registerClientTickHandler(BlockGlowService.getInstance());
         //#endif
         TickHandler.getInstance().registerClientTickHandler(FastLoadingController.getInstance());
         TickHandler.getInstance().registerClientTickHandler(EntityRenderAggregation.getInstance());
+        //#if MC >= 1.21.1
+        TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.ItemDespawnTimerService.getInstance());
+        //#endif
         //#if MC >= 1.21.1
         TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.SpawnerPickCapture.getInstance());
         //#endif

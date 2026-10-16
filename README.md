@@ -12,6 +12,8 @@ halfmasa是Minecraft Fabric 客户端辅助模组，集中提供路径点管理�
 
 支持`fabric`加载器 支持游戏版本`1.21.1`-`26.3`
 
+`1.7.0` 将范围喂食（幼体保护、长按临时启用、可调速度）、自动进食、更好的 Boss 栏、不可见方块标记、动画控制、自定义禁用实体渲染及 Conflux Map 合并列表适配到全部十个构建目标。高亮子配置使用 MaLiLib 原生按键设置控件并对齐重置列。
+
 ## 文档
 
 - [中文功能与配置说明](https://github.com/halfkite/halfmasa/blob/main/docs/features_cn.md)
@@ -23,7 +25,7 @@ halfmasa是Minecraft Fabric 客户端辅助模组，集中提供路径点管理�
 
 | 名称 | 类型 | 说明 |
 |---|---|---|
-| [Fabric Loader](https://fabricmc.net/use/installer/) | 必需 | Minecraft 1.21.x 使用 `0.17.3+`；Minecraft 26.x 使用 `0.18.4+`。 |
+| [Fabric Loader](https://fabricmc.net/use/installer/) | 必需 | Minecraft 1.21.x 使用 `0.17.3+`；26.1–26.2 使用 `0.18.4+`；26.3 使用 `0.19.5+`。 |
 | [MaLiLib](https://modrinth.com/mod/malilib) | 必需 | 安装与 Minecraft 版本匹配的 MaLiLib。 |
 | [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) / [World Map](https://modrinth.com/mod/xaeros-world-map)| 可选联动 | 提供路径点绑定、地图功能 |
 | [Mod Menu 模组菜单](https://github.com/TerraformersMC/ModMenu) | 可选联动 | 提供从模组列表进入 halfmasa 配置界面的入口。 |
@@ -33,6 +35,8 @@ halfmasa是Minecraft Fabric 客户端辅助模组，集中提供路径点管理�
 | [Conflux Map](https://github.com/Conflux-Union/conflux-map) | 可选联动 | 提供路径点列表、临时路径点和传送相关扩展功能。 |
 
 halfmasa 本体是客户端模组，普通客户端功能不要求服务器安装 halfmasa。依赖服务端库存 API 或虚空交易扩展的功能，需要服务器安装对应组件；详情见[兼容与设置说明](https://github.com/halfkite/halfmasa/blob/main/docs/features_cn.md)。
+
+Conflux Map 0.1.11-beta.1 的 26.x 联动需要 Fabric Loader 0.19.0+（组合测试使用 0.19.5）。
 
 ## 下载
 

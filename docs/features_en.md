@@ -2,7 +2,75 @@
 
 # halfmasa Features and Configuration
 
-> Documentation version `1.6.3` | Open the configuration screen with `X + H` (or from Mod Menu) | Disabled by default unless noted; an empty hotkey means unbound
+Version 1.7.0 backports range feeding, Auto Eat, Better Boss Bar, invisible block markers, animation controls, custom entity rendering filters and the combined Conflux Map list to every project target. Vanilla preedit display settings apply to 26.1+; older targets retain the Windows JNI input method.
+
+Conflux Map 0.1.11-beta.1 requires Fabric Loader 0.19.0+ on 26.x; integration checks use 0.19.5. The standalone HalfMasa minimum remains defined by its mod metadata.
+
+> Documentation version `1.7.0` | Open the configuration screen with `X + H` (or from Mod Menu) | Disabled by default unless noted; an empty hotkey means unbound
+
+## Invisible Block Markers
+
+Disabled by default in client configuration, with an optional hotkey. Its three children, Show Barriers, Show Light Blocks and Show Structure Voids, are enabled by default.
+
+Shows vanilla markers without holding special items or requiring creative mode. Uses vanilla random sampling, particle textures, particle settings and occlusion. Light blocks retain their level-specific vanilla icons without additional number overlays. Visibility fills in through sampling; existing markers expire naturally after disabling the feature or removing a block, with the vanilla 80-tick lifetime of about four seconds at normal speed.
+
+Type switches control added markers while retaining vanilla held-item behavior. A sample that already produced a vanilla marker receives no duplicate. Uses client-received block data and requires no server extension.
+
+## Auto Eat
+
+Independent client feature, disabled by default, with a master hotkey and expandable settings. Starts at 14/20 hunger and continues to a 20/20 target by default. The food-source row has a cycling option, an independent hotkey and a shared reset: Hotbar → Inventory → QuickShulker.
+
+All sources share the filter. Default whitelist: golden carrot, cooked porkchop, bread. Default blacklist: golden apple, enchanted golden apple. Both lists are preserved when switching filters. Smart prefers food that does not overshoot the target, then nutrition and saturation; left-to-right and highest nutrition are also available. Items need valid vanilla food data and positive nutrition. Minecraft 1.21–1.21.1 uses legacy food properties; newer targets also require CONSUMABLE.
+
+QuickShulker mode searches hotbar, inventory, carried shulker boxes, then the ender chest when its item is carried. Primary target: MoRanpcy QuickShulker's 26.3 opening protocol, with matching QuickShulker and Fabric API on both sides. Falls back to inventory without support; no Void Trading server extension is required. No nested-container search. Container screens may appear briefly; no open request is sent with full storage.
+
+Normal container requests use server synchronization rather than local item prediction. Manual input always takes priority; inactive in creative and spectator modes. Conflicting restore slots are left untouched and reported. A remote timeout disables remote retrieval for that connection; rejoin to retry. Empty containers are not repeatedly opened; changing the source, filter or carried container permits a new search.
+
+Bowls, bottles and other use remainders are preserved. Stacked food that needs additional remainder space is skipped when that space is unavailable. Death and leaving the world cancel the flow and clear its state.
+
+With slot restoration enabled, unused food retrieved through QuickShulker is returned to its original container slot before temporary swaps and the selected hotbar slot are restored. Only items withdrawn by this operation are returned. Manual changes to the container or slot stop restoration and retain the items without overwriting or dropping them.
+
+Silent eating is disabled by default. Singleplayer supports it directly. Multiplayer requires a game-version-matched FGA build implementing this protocol, Carpet and Fabric API on the server, with `/carpet silentAutoEat true`; FGA is optional on the client. The server validates the actual stack and invokes vanilla consumption, preserving hunger, saturation, food effects and use remainders without use animations, eating sounds or food particles. Unsupported servers and disabled rules fall back to ordinary eating with a notification. An unresolved request pauses consumption to prevent duplicate transactions.
+
+## Better Boss Bar
+
+The master switch is disabled by default, with an optional hotkey. Its children are Merge Similar Boss Bars (on), Show Boss Health (off), and Compact Boss Bars (off). Each child has an independent, initially unbound hotkey that toggles that child; rendering still requires the master switch. Rows contain a toggle, hotkey and reset; reset restores the default toggle and clears the binding. The merge child expands into the settings below. Previous merge activation, hotkeys and custom group references migrate to the master switch.
+
+| Setting | Default | Description |
+|---|---|---|
+| Matching mode | Name and style | Matches visible text, text styling, bar colors and overlays; excludes hidden hover, click and insertion metadata; name-only mode uses the first bar's style |
+| Merge different health levels | Off | Matches exact server target progress rather than animated progress |
+| Merged health progress | Average | Average, minimum or maximum vanilla animated progress |
+| Show boss count | On | Appends `×N` to merged names; single entries keep their names |
+| Maximum visible bars | `0` | An extra limit while enabled; `0` adds no limit and preserves vanilla height limits |
+
+For `80%, 80%, 40%`, the default produces two bars: `×2` at 80% and a single bar at 40%. Allowing different health gives approximately 66.7% in average mode. Groups are recalculated each frame without changing original events, boss music, sky darkening or fog. Matching uses boss-bar properties, not entity types; custom server bars can also match. Invalid progress stays independent and does not affect merged progress.
+
+Health uses reliable entity associations or server data, such as `240/300`. Groups show totals only when every member has reliable values: two Withers can display `480/600`. Loaded Withers can be identified by entity UUID in hover text when their health ratio agrees with the bar. The integrated server or this FGA build can identify vanilla Wither and Ender Dragon bars by boss UUID. Other bars fall back to percentages without guessed maximum health.
+
+Compact mode uses thin bars with the name, count and health on one row. Long names are shortened while retaining the health suffix. Disabling the master switch restores vanilla rendering.
+
+## Item Despawn Timer
+
+Disabled by default in the client configuration, with an independent optional hotkey and expandable settings. It works with dropped-item aggregation and entity highlighting disabled.
+
+| Setting | Default | Description |
+|---|---|---|
+| `itemDespawnTimer` | `false` | Independent timer switch |
+| `itemDespawnSource` | Auto | Auto / Servux / client estimate |
+| `itemDespawnFormat` | Minutes:seconds | Minutes:seconds / seconds / game ticks |
+| `itemDespawnThroughWalls` | `true` | Show labels behind blocks |
+| `itemDespawnMaxLabels` | `64` | Prefer the nearest 8–256 labels |
+| `itemDespawnSyncInterval` | `20` ticks | Minimum server Age request interval, range 10–200; at most 4 requests submitted per tick |
+| `itemDespawnDistance` | `64` blocks | Range 8–128, limited to loaded client entities |
+
+Auto reads Age on the local server thread in singleplayer. In multiplayer it reuses MiniHUD's Servux queue and server data, or uses its own Servux client when MiniHUD is absent. Versions up to 1.21.10 use v1 vanilla NBT replies; 1.21.11 and 26.x use v2 data, supporting both uncompressed named NBT and length-prefixed GZIP envelopes. Older MiniHUD is integrated through its server-reply handler, since its cache can also contain client-generated Age. The network path needs Fabric networking modules. Disabled MiniHUD synchronization or denied server queries produce estimates in Auto and `--:--` in Servux mode.
+
+`≈` marks estimates from first observation or stale samples; `∞` requires a fresh sample confirming persistence. Aggregated labels use the shortest predicted member lifetime and mark incomplete data as uncertain. Seconds assume 20 TPS and the vanilla 6000-tick lifetime. Custom rules, low TPS and actual item merges can change the prediction. World changes, entity unloading and disabling the feature clear tracking.
+
+Available for every project target: 1.21–1.21.1, 1.21.2–1.21.3, 1.21.4, 1.21.5, 1.21.8, 1.21.10, 1.21.11, 26.1.2, 26.2 and 26.3. Explicit saved toggle values are preserved; new and reset configurations default to disabled.
+
+Ordinary Servux entity replies are implemented. Splitter packets 10/11 are currently reported as unsupported and never interpreted as Age. Large component data works when the upstream server can send an ordinary reply; missing samples follow the selected fallback policy.
 
 ## Schematic Features
 
@@ -62,7 +130,11 @@
 | Creative search history<br>`itemSearchHistory` | Boolean | `false` | Record items obtained from creative search and show a separate history row above the results. |
 | Search history rows<br>`itemSearchHistoryRows` | Integer | `3` | Maximum number of rows in creative search history. Range: 1–9. |
 | Show history while searching<br>`itemSearchHistoryDuringSearch` | Boolean | `false` | Keep the history visible while search text is entered. When disabled, it appears only after the search box is cleared. |
-| Condensed creative items<br>`condensedCreative` | Boolean | `false` | Combine enchanted books, potions, tipped arrows, and block variants into expandable entries. |
+| Condensed creative items<br>`condensedCreative` | Boolean | `false` | Combine enchanted books, potions, tipped arrows, and block variants into expandable entries. Inventory hover tooltips omit source attribution. |
+| Grouping mode (26.3)<br>`condensedCreativeGrouping` | Option list | `default` | Existing categories / Material first. Material first groups block forms of the same material, limited to entries in the current tab or search results. |
+| Keep entries expanded (26.3)<br>`condensedCreativeKeepExpanded` | Boolean | `true` | Remember expanded entries per tab and grouping mode when reopening the inventory during this game session; not written to disk and cleared on restart. |
+| Entry background (26.3)<br>`condensedCreativeBackground` | Boolean | `false` | Translucent group backgrounds; existing preferences are preserved. |
+| Rotating group preview (26.3)<br>`condensedCreativeRotatingPreview` | Boolean | `false` | Cycle collapsed icons once per second. Disabled by default; existing preferences are preserved. |
 | Trial tab<br>`trialCreativeTab` | Boolean | `false` | Add a “Trial” tab at the end of the creative inventory containing 42 trial spawners (14 configurations × 3 states: normal/ominous/cooldown, with block-entity data) and 2 Trial Vaults. |
 
 ## Client and Interface Features
@@ -92,9 +164,10 @@
 | Bridging assist<br>`bridgingAssist` | Boolean with hotkey | unbound, `false` | Provide Bedrock-style wraparound placement when the crosshair is not targeting a block. Expand to set distance, crouching, axes, delay, line of sight, snapping, slab assist, torch filtering, crosshair, and outline. |
 | Skip resource-pack compatibility check<br>`skipResourcePackCompatibilityCheck` | Boolean | `false` | Treat added resource packs as compatible and skip the version-mismatch confirmation. |
 | Disable paused item-trajectory prediction<br>`disablePausedItemTrajectoryPrediction` | Boolean | `false` | Stop client-side dropped-item trajectory prediction while Carpet or vanilla `/tick freeze` pauses ticks. |
-| Keep configuration-screen position<br>`keepModMenuScroll` | Boolean | `false` | Remember scroll positions for Mod Menu and each MaLiLib configuration category. |
+| Keep screen position (26.3)<br>`keepScreenPosition` | Hotkeyed boolean | `false` | Remember Mod Menu scrolling; children control configuration search/scroll, selected category and creative inventory state. Earlier versions retain `keepModMenuScroll`. |
 | Keep search content and position<br>`keepConfigSearchPosition` | Boolean | `true` | When the main option is enabled, restore search text, key search, search-bar state, and list position per MaLiLib category. Session-only. |
 | Keep selected tab<br>`keepConfigSelectedTab` | Boolean | `true` | Restore the previously selected tab when reopening configuration. |
+| Keep creative screen position (26.3)<br>`keepCreativeScreenPosition` | Hotkeyed boolean | `false` | Restore the creative tab, page, search and separate scrolling for each tab while the master is enabled. Session only. |
 | Classic pause menu<br>`classicPauseMenu` | Boolean | `false` | Restore the classic pause-menu button arrangement; move extra buttons to the right and use columns in small windows. |
 
 ## Void Trading
@@ -238,3 +311,41 @@ Main configuration: `config\halfmasa\halfmasa.json`
 | Enhanced saved hotbars | `config\halfmasa\better-saved-hotbars\hotbar.nbt` |
 
 Persistent data related to multiplayer servers is stored under `config\halfmasa\`, not in singleplayer save directories.
+
+## Hold-to-show bindings, boss bar size and animation controls
+
+Better Boss Bars supports 50%–200% scaling shared by normal and compact layouts. Boss bars and invisible blocks have independent hold-only switches (disabled by default) and passive display bindings excluded from conflict selection. Releasing the binding hides markers immediately. Disabling the master restores vanilla behavior.
+
+Related boolean child options support independent hotkeys, including invisible block types, advanced boss merge toggles and auto-eat boolean settings. Remove Attack and Use Cooldown Animations and all its children default to disabled. Only local visuals change; vanilla attacks, mining, item use, cooldowns and third-person animations remain intact.
+
+## Conflux Map combined waypoint list
+
+Enable Conflux Map Extensions and Show Both Local and Shared Waypoints to use one scroll area for both sources. Server waypoints come first by default; change the source order with the top button or child configuration. Preserve native distance ordering within each source.
+
+Conflux Map extension toggles default to off, preserving saved user choices. Compact Waypoints and its independent dimension and distance options default to off and support hotkeys. Compact cards show names and native icons; hovering opens full details and an interactive native action panel with the actions available for that source: selection, visibility, sharing, editing, delete confirmation, locate and teleport. Disabling compact preserves the original native list, selection and actions. Entries fill left to right before wrapping, including personal entries immediately after server entries. Filtering, deletion and synchronization rebuild a contiguous layout and clamp scrolling.
+
+Editing, teleporting and permission checks use the native Conflux Map actions. Resolve targets by source and waypoint ID at click time so a deleted card cannot redirect its action to a neighboring entry. Dropdowns render above the list and receive input first. Disabling the combined view restores the native screen. The bridge targets the Conflux Map 0.1.11-beta.1 UI contract and requires its matching game-version build. An incompatible UI contract restores the native list.
+
+## Range feeding
+
+Range Feeding defaults to off. Enable it to request one batch with Feed Nearby Animals Once, using current main-hand food and stopping when the batch is complete. Hold to Enable Range Feeding temporarily runs continuous batches even with the master switch off, without changing its saved value. Releasing clears only the hold queue. All related keys default to unbound and use MaLiLib binding buttons.
+
+Do Not Feed Babies defaults to on and has an independent toggle key. It checks `Animal.isBaby()` in every list mode and does not affect manual right-click feeding. Before each interaction, recheck baby protection, current lists, food, entity validity, line of sight and distance. Defaults to 3 blocks from the player's eyes to the target hitbox, also capped by actual entity interaction reach. Lists match registered entity type IDs with an optional `minecraft:` namespace; invalid IDs never match a default entity, and an empty whitelist feeds nothing.
+
+Feeding Interval accepts 1–200 ticks and defaults to 4 ticks (about 5 interactions per second at 20 TPS). Lower values are faster. Single, hold, rescans and repeated baby feeding share the configured interval; live changes take effect immediately. Changing baby protection refreshes active queues without repeating processed targets in a single batch. Screens, focus loss, death, disconnects and dimension changes cancel tasks and require a fresh press. Manual attack/use and ongoing item use pause automatic interactions.
+
+## Custom entity rendering disable
+
+The Disabled category gains an off-by-default, collapsible toggle with its binding on the same row. Cycle blacklist, whitelist and no-list modes with the button or independent hotkey. No list hides all unprotected entities; whitelist hides only listed entities (empty hides none); blacklist hides entities outside the list and keeps listed entities visible (the default empty blacklist hides all unprotected entities). Hover the List Mode label or button for the full explanation. Cached rules match registered entity type IDs, accept an omitted minecraft namespace and never fall back to a default entity for invalid IDs.
+
+Hold to Show Entities defaults to off and must be enabled before its temporary display key works. Its passive key is unbound and excluded from conflict selection. Holding bypasses only this feature. Releasing, opening a screen, losing window focus or leaving the world ends the bypass. Protect the local player and camera entity. Existing aggregation and external rendering rules remain independent; collisions, interactions and server simulation are preserved.
+
+
+## MiniHUD container preview optimization
+
+MiniHUD Container Preview Optimization (26.3) defaults to enabled under Other Mod Extensions, with no additional hotkey. It caches data preparation for container, shulker box, bundle and ender chest previews. Following Jade's separation of updates and drawing, held world-container previews validate contents per client tick and reuse preparation within that tick; new data, source replacement, block-state changes and target changes can refresh earlier. Different slot-count requests share content validation. The preview screen and its independent layout are reused. Native target checks, data requests and live drawing still run every frame, preserving complete slots, counts, colors and controls. Generic grids use independent display-stack snapshots validated on ticks and data updates, with immediate count changes, avoiding per-frame copies; special layouts and hover tooltips keep their existing protection. Crafter disabled slots can update immediately. Disconnects, resource reloads and disabling clear caches; disabling restores the original path. Mixins do not apply without MiniHUD. Maps and enchantment effects remain live; frame render states are not cached. Jade is not required.
+
+
+## MiniHUD independent preview
+
+MiniHUD Independent Preview (26.3) defaults to off under Other Mod Extensions, with an unbound toggle hotkey. Enabling it keeps world-container previews available with the original MiniHUD preview key while its main rendering toggle is off. MiniHUD preview controls, background colors and target detection remain in use. When the main toggle is on, MiniHUD handles the preview once through its native path; when off, only the world-container preview is added and info lines remain disabled. Item, bundle, ender chest and map tooltip previews retain their settings. This toggle is independent of preview optimization and does nothing without MiniHUD.

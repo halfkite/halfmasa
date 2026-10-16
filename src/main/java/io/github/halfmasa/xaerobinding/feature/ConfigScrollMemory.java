@@ -169,7 +169,11 @@ public final class ConfigScrollMemory
 
     private static boolean enabled()
     {
-        return Configs.KEEP_MOD_MENU_SCROLL.getBooleanValue();
+        //#if MC >= 26.3
+        return Configs.KEEP_SCREEN_POSITION.getBooleanValue();
+        //#else
+        //$$ return Configs.KEEP_MOD_MENU_SCROLL.getBooleanValue();
+        //#endif
     }
 
     private static void saveCustomGroupPosition(String key, String source, int position)

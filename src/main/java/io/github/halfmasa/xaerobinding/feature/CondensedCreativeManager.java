@@ -24,12 +24,20 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SpawnEggItem;
+//#if MC >= 26.3
+import net.minecraft.world.item.BlockItem;
+import io.github.halfmasa.xaerobinding.config.CondensedCreativeGrouping;
+//#endif
 
 import io.github.halfmasa.xaerobinding.config.Configs;
 
 public final class CondensedCreativeManager
 {
     private static final Map<CreativeModeInventoryScreen, State> STATES = new WeakHashMap<>();
+    //#if MC >= 26.3
+    // Only group identifiers survive screen closure. No screen, item or world data is retained or written to disk.
+    private static final Set<String> SESSION_EXPANDED = new HashSet<>();
+    //#endif
     private static final Set<String> COLORS = Set.of(
             "white", "light_gray", "gray", "black", "brown", "red", "orange", "yellow",
             "lime", "green", "cyan", "light_blue", "blue", "purple", "magenta", "pink");
@@ -58,6 +66,12 @@ public final class CondensedCreativeManager
 
         State oldState = STATES.get(screen);
         Set<String> expanded = oldState != null ? new HashSet<>(oldState.expanded) : new HashSet<>();
+        //#if MC >= 26.3
+        if (Configs.CONDENSED_CREATIVE_KEEP_EXPANDED.getBooleanValue())
+            expanded = new HashSet<>(SESSION_EXPANDED);
+        else
+            SESSION_EXPANDED.clear();
+        //#endif
         State state = new State(copy(items), expanded, tabId(tab));
         STATES.put(screen, state);
         apply(state, items);
@@ -73,6 +87,18 @@ public final class CondensedCreativeManager
                 rebuild(screen, tab, items);
                 return true;
             }
+            //#if MC >= 26.3
+            if (!state.settings.equals(GroupSettings.current()))
+            {
+                // Rebuild from the original entries, never from a list containing group icons or history rows.
+                boolean keepExpanded = Configs.CONDENSED_CREATIVE_KEEP_EXPANDED.getBooleanValue();
+                if (keepExpanded && !state.settings.keepExpanded) SESSION_EXPANDED.addAll(state.expanded);
+                if (!keepExpanded) SESSION_EXPANDED.clear();
+                state.settings = GroupSettings.current();
+                apply(state, items);
+                return true;
+            }
+            //#endif
             return false;
         }
 
@@ -94,7 +120,15 @@ public final class CondensedCreativeManager
         {
             if (ItemStack.isSameItemSameComponents(group.parent, stack))
             {
-                if (!state.expanded.add(group.key)) state.expanded.remove(group.key);
+                String expansionKey = state.expansionKey(group.key);
+                if (!state.expanded.add(expansionKey)) state.expanded.remove(expansionKey);
+                //#if MC >= 26.3
+                if (Configs.CONDENSED_CREATIVE_KEEP_EXPANDED.getBooleanValue())
+                {
+                    if (state.expanded.contains(expansionKey)) SESSION_EXPANDED.add(expansionKey);
+                    else SESSION_EXPANDED.remove(expansionKey);
+                }
+                //#endif
                 apply(state, items);
                 return true;
             }
@@ -130,7 +164,7 @@ public final class CondensedCreativeManager
         {
             if (ItemStack.isSameItemSameComponents(group.parent, stack))
             {
-                String key = state.expanded.contains(group.key)
+                String key = state.expanded.contains(state.expansionKey(group.key))
                         ? "halfmasa.feature.condensed_creative.collapse"
                         : "halfmasa.feature.condensed_creative.expand";
                 return Component.translatable(key, group.children.size());
@@ -145,7 +179,7 @@ public final class CondensedCreativeManager
         if (state == null) return null;
         for (Group group : state.groups.values())
         {
-            boolean expanded = state.expanded.contains(group.key);
+            boolean expanded = state.expanded.contains(state.expansionKey(group.key));
             if (ItemStack.isSameItemSameComponents(group.parent, stack))
                 return new Visual(group.key, true, expanded);
             if (expanded && group.children.stream().anyMatch(child -> ItemStack.isSameItemSameComponents(child, stack)))
@@ -181,7 +215,7 @@ public final class CondensedCreativeManager
             Group group = new Group(key, children, parent);
             state.groups.put(key, group);
             target.add(parent);
-            if (state.expanded.contains(key)) children.forEach(child -> target.add(child.copy()));
+            if (state.expanded.contains(state.expansionKey(key))) children.forEach(child -> target.add(child.copy()));
         }
     }
 
@@ -198,6 +232,7 @@ public final class CondensedCreativeManager
 
     private static String groupKey(ItemStack stack, String tabId)
     {
+        if (stack.isEmpty()) return null;
         //#if MC >= 1.21.11
         Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         //#else
@@ -205,6 +240,12 @@ public final class CondensedCreativeManager
         //#endif
         if (!"minecraft".equals(id.getNamespace())) return null;
         String path = id.getPath();
+
+        //#if MC >= 26.3
+        if (stack.getItem() instanceof BlockItem) return CondensedCreativeRules.blockGroup(stack, path, tabId);
+        String itemGroup = CondensedCreativeRules.itemGroup(path, tabId);
+        if (itemGroup != null) return itemGroup;
+        //#endif
 
         return switch (tabId)
         {
@@ -225,7 +266,11 @@ public final class CondensedCreativeManager
 
     private static Component groupTitle(String key, List<ItemStack> children)
     {
-        if (key.startsWith("wood:") || key.startsWith("material:")) return children.getFirst().getHoverName().copy();
+        //#if MC >= 26.3
+        if (key.startsWith("wood:") || key.startsWith("material:")) return CondensedCreativeRules.materialTitle(key, children);
+        //#else
+        //$$ if (key.startsWith("wood:") || key.startsWith("material:")) return children.getFirst().getHoverName().copy();
+        //#endif
         return Component.translatable("halfmasa.feature.condensed_creative.group." + key.substring(key.indexOf(':') + 1));
     }
 
@@ -348,7 +393,12 @@ public final class CondensedCreativeManager
         result = toolsGroup(stack, path);
         if (result != null) return result;
         result = spawnEggGroup(stack);
-        return result != null ? result : buildingGroup(path);
+        //#if MC >= 26.3
+        // Block materials are resolved above. A copper tool or iron ingot must not join a block group.
+        return result;
+        //#else
+        //$$ return result != null ? result : buildingGroup(path);
+        //#endif
     }
 
     private static String stripPrefix(String path, Set<String> prefixes)
@@ -395,7 +445,11 @@ public final class CondensedCreativeManager
         //#else
         //$$ ResourceLocation id = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab);
         //#endif
-        return id != null ? id.getPath() : "unknown";
+        //#if MC >= 26.3
+        return id != null && "minecraft".equals(id.getNamespace()) ? id.getPath() : "unknown";
+        //#else
+        //$$ return id != null ? id.getPath() : "unknown";
+        //#endif
     }
 
     private static boolean isColoredFamily(String suffix)
@@ -432,6 +486,21 @@ public final class CondensedCreativeManager
 
     public record Visual(String key, boolean parent, boolean expanded) {}
 
+    //#if MC >= 26.3
+    private record GroupSettings(CondensedCreativeGrouping grouping, boolean books, boolean arrows, boolean potions, boolean rotating, boolean keepExpanded)
+    {
+        private static GroupSettings current()
+        {
+            return new GroupSettings((CondensedCreativeGrouping) Configs.CONDENSED_CREATIVE_GROUPING.getOptionListValue(),
+                    Configs.CONDENSED_CREATIVE_ENCHANTED_BOOKS.getBooleanValue(),
+                    Configs.CONDENSED_CREATIVE_TIPPED_ARROWS.getBooleanValue(),
+                    Configs.CONDENSED_CREATIVE_POTIONS.getBooleanValue(),
+                    Configs.CONDENSED_CREATIVE_ROTATING_PREVIEW.getBooleanValue(),
+                    Configs.CONDENSED_CREATIVE_KEEP_EXPANDED.getBooleanValue());
+        }
+    }
+    //#endif
+
     private static final class State
     {
         private final List<ItemStack> source;
@@ -439,6 +508,18 @@ public final class CondensedCreativeManager
         private final String tabId;
         private final Map<String, Group> groups = new LinkedHashMap<>();
         private long lastPreviewStep = Long.MIN_VALUE;
+        //#if MC >= 26.3
+        private GroupSettings settings = GroupSettings.current();
+        //#endif
+
+        private String expansionKey(String key)
+        {
+            //#if MC >= 26.3
+            return this.tabId + ":" + this.settings.grouping.getStringValue() + ":" + key;
+            //#else
+            //$$ return key;
+            //#endif
+        }
 
         private State(List<ItemStack> source, Set<String> expanded, String tabId)
         {

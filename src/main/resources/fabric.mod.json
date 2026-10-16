@@ -19,6 +19,7 @@
     "malilib": "${malilib_dependency}"
   },
   "suggests": {
+    "minihud": "*",
     "xaerominimap": ">=26.4.0",
     "xaeroworldmap": ">=1.44.0",
     "modmenu": "*",

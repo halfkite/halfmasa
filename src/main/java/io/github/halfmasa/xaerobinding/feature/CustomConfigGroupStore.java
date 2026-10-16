@@ -47,6 +47,23 @@ public final class CustomConfigGroupStore
         return this.groups.stream().map(Group::copy).toList();
     }
 
+    //#if MC >= 1.21.1
+    public synchronized void renameConfigReference(String source, String oldName, String newName)
+    {
+        ensureLoaded();
+        boolean changed = false;
+        String oldRef = reference(source, oldName), newRef = reference(source, newName);
+        for (Group group : this.groups)
+        {
+            if (source.equals(group.mainSource) && oldName.equals(group.mainConfig))
+            { group.mainConfig = newName; changed = true; }
+            for (int i = 0; i < group.children.size(); i++)
+                if (oldRef.equals(group.children.get(i))) { group.children.set(i, newRef); changed = true; }
+        }
+        if (changed) save();
+    }
+    //#endif
+
     public synchronized Group create(String name)
     {
         return this.create(HALF_MASA_SOURCE, name);

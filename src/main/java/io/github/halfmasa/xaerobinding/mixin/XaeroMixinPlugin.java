@@ -14,6 +14,45 @@ public final class XaeroMixinPlugin implements IMixinConfigPlugin
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName)
     {
+        if (mixinClassName.contains("MiniHudPreview"))
+        {
+            //#if MC >= 26.3
+            return FabricLoader.getInstance().isModLoaded("minihud");
+            //#else
+            //$$ return false;
+            //#endif
+        }
+        if (mixinClassName.endsWith("CreativeScreenPositionMixin"))
+        {
+            //#if MC >= 26.3
+            return true;
+            //#else
+            //$$ return false;
+            //#endif
+        }
+        if (mixinClassName.endsWith("BossHealthOverlayMixin") ||
+                mixinClassName.endsWith("LerpingBossEventAccessor") ||
+                mixinClassName.endsWith("AutoEatUseMixin") || mixinClassName.endsWith("AutoEatInventorySyncMixin") ||
+                mixinClassName.endsWith("AutoEatInputMixin") || mixinClassName.endsWith("SilentFoodEffectsMixin") ||
+                mixinClassName.endsWith("SilentFoodNutritionMixin") || mixinClassName.endsWith("InvisibleBlockMarkerMixin") ||
+                mixinClassName.endsWith("BlockMarkerStateMixin") ||
+                mixinClassName.endsWith("BlockMarkerVisibilityMixin") ||
+                mixinClassName.endsWith("MinecraftSwingContextMixin") ||
+                mixinClassName.endsWith("LivingEntitySwingTrackingMixin") ||
+                mixinClassName.endsWith("RemoveSwingAnimationMixin") ||
+                mixinClassName.endsWith("RemoveItemCooldownOverlayMixin") ||
+                mixinClassName.endsWith("WitherBossEventAccessor") || mixinClassName.endsWith("DragonFightBossEventAccessor"))
+        {
+            //#if MC >= 1.21.1
+            return true;
+            //#else
+            //$$ return false;
+            //#endif
+        }
+        if (mixinClassName.endsWith("ItemDespawnLegacyMiniHudMixin"))
+        {
+            return FabricLoader.getInstance().isModLoaded("minihud");
+        }
         if (mixinClassName.endsWith("EntityGlowColorMixin") ||
                 mixinClassName.endsWith("MinecraftEntityGlowMixin"))
         {
@@ -71,6 +110,14 @@ public final class XaeroMixinPlugin implements IMixinConfigPlugin
         if (mixinClassName.endsWith("TweakerooConfigListMixin"))
         {
             return FabricLoader.getInstance().isModLoaded("tweakeroo");
+        }
+        if (mixinClassName.endsWith("ConfluxMapCombinedWaypointListMixin"))
+        {
+            //#if MC >= 1.21.1
+            return FabricLoader.getInstance().isModLoaded("confluxmap");
+            //#else
+            //$$ return false;
+            //#endif
         }
         if (mixinClassName.endsWith("ConfluxMapWaypointListMixin") ||
                 mixinClassName.endsWith("ConfluxMapDualWaypointListMixin") ||

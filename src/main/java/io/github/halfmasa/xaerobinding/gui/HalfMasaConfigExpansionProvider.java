@@ -82,6 +82,12 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
     public IConfigBase getInlineCompanion(IConfigBase config)
     {
         //#if MC >= 1.21.1
+        if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.ENTITY_RENDER_DISABLE_MODE)
+            return Configs.ENTITY_RENDER_DISABLE_MODE_HOTKEY;
+        if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.AUTO_EAT_SOURCE)
+            return Configs.AUTO_EAT_SOURCE_HOTKEY;
+        //#endif
+        //#if MC >= 1.21.1
         if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.ENTITY_GLOW_MODE)
         {
             return Configs.ENTITY_GLOW_MODE_HOTKEY;
@@ -93,6 +99,10 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
     @Override
     public boolean isInlineCompanion(IConfigBase config)
     {
+        //#if MC >= 1.21.1
+        if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.ENTITY_RENDER_DISABLE_MODE_HOTKEY) return true;
+        if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.AUTO_EAT_SOURCE_HOTKEY) return true;
+        //#endif
         //#if MC >= 1.21.1
         return CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source)
                 && config == Configs.ENTITY_GLOW_MODE_HOTKEY;

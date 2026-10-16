@@ -96,7 +96,11 @@ public abstract class EntityRenderAggregationMixin
     //#endif
     //#endif
     {
-        if (EntityRenderAggregation.getInstance().shouldHide(entity))
+        if (
+            //#if MC >= 1.21.1
+            io.github.halfmasa.xaerobinding.feature.EntityRenderDisableService.shouldHide(entity) ||
+            //#endif
+            EntityRenderAggregation.getInstance().shouldHide(entity))
         {
             cir.setReturnValue(false);
         }

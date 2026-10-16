@@ -1,0 +1,488 @@
+diff --git a/docs/rules_ch_cn.md b/docs/rules_ch_cn.md
+index e57882702273f0844813992876793dd742e1450b..bb5ba79303e73170f25ecf0d235fde8d16f151ed 100644
+--- a/docs/rules_ch_cn.md
++++ b/docs/rules_ch_cn.md
+@@ -1,11 +1,25 @@
+ # Carpet FGA Addition 规则
+ 
+-> 文档版本：`1.6.3`
++> 文档版本：`1.6.4`
+ 
+ 所有规则通过 `/carpet <规则名> <值>` 管理。未特别说明时，规则默认关闭
+ 
+ 提示：可以使用 `Ctrl+F` 快速查找自己想要的规则
+ 
++### 静默自动进食(silentAutoEat)
++
++允许 halfmasa 客户端请求服务端直接消耗背包中的食物，按原版流程恢复饥饿值和饱和度、应用食物效果并保留碗瓶等余留物，不播放使用动画、进食声音或食物粒子<br>
++服务端重新核验物品、背包状态和食用条件，同一请求不会重复扣除食物<br>
++客户端同时需要开启自动进食及静默进食，规则关闭或服务端缺少支持时客户端回退普通进食
++
++- 类型：`布尔`
++- 默认值：`false`
++- 参考选项：`false`、`true`
++- 分类：`FGA`、`特性`
++- 生效版本：`26.3`（单版本）
++- 安装要求：服务端需要 FGA、Carpet、Fabric API，客户端需要 halfmasa 与 Fabric API，无需客户端 FGA
++- 开启命令：`/carpet silentAutoEat true`
++
+ ### 自定义进服提示(customJoinNotice) · [相关指令](commands.md#cmd-join-notice)
+ 
+ 玩家进服时发送可配置的欢迎语，并可显示开服日期和已开服天数<br>
+diff --git a/docs/rules_en_us.md b/docs/rules_en_us.md
+index 975bc34dc331386265086d7c48c33b9a5a1347e5..efb9503822b8d90937bf95a11264d46523697c4b 100644
+--- a/docs/rules_en_us.md
++++ b/docs/rules_en_us.md
+@@ -1,11 +1,25 @@
+ # Carpet FGA Addition Rules
+ 
+-> Documentation version: `1.6.3`
++> Documentation version: `1.6.4`
+ 
+ All rules are managed with `/carpet <rule> <value>`. Unless stated otherwise, rules are disabled by default
+ 
+ Tip: use `Ctrl+F` to quickly find a rule
+ 
++### silentAutoEat
++
++Allows halfmasa clients to request immediate consumption of inventory food on the server, preserving vanilla hunger, saturation, food effects and use remainders without use animations, eating sounds or food particles<br>
++The server validates the actual stack, inventory state and consumption conditions and prevents duplicate consumption of a request<br>
++Clients must enable both Auto Eat and Silent Eating, and fall back to ordinary eating when the rule is disabled or server support is unavailable
++
++- Type: `Boolean`
++- Default: `false`
++- Options: `false`, `true`
++- Categories: `FGA`, `Feature`
++- Effective versions: `26.3` only
++- Installation: FGA, Carpet and Fabric API on the server, halfmasa and Fabric API on the client, client-side FGA optional
++- Enable command: `/carpet silentAutoEat true`
++
+ ### Custom Join Notice(customJoinNotice) · [Related command](commands_en.md#cmd-join-notice)
+ 
+ Sends a configurable welcome message when a player joins and can show the server opening date and elapsed days<br>
+diff --git a/docs/version_compatibility.md b/docs/version_compatibility.md
+index 527c016c3855d498a4717ae8766791a6f5011be6..cc894db49df85b5134ef26aaea6f0da43bda165a 100644
+--- a/docs/version_compatibility.md
++++ b/docs/version_compatibility.md
+@@ -941,4 +941,19 @@
+ - 已完成代码验证：`PlayerFoodCommandPolicyTest` 4/4 通过；全版本服务端启动、规则值切换和干净停服通过，报告为 `scripts/logs/server-startup-smoke-20260922-211208/summary.json`
+ - 尚未完成验证：真实客户端命令树显示、非 OP 玩家和 OP 玩家在游戏内的实际 `/food clear` 目标限制
+ 
++### halfmasa 静默进食与真实 Boss 血量协议
++
++- 功能 / 规则：`silentAutoEat`，以及基于 Boss 栏 UUID 的凋灵、末影龙生命值查询
++- 源码预处理条件：协议及 Mixin 为 `MC >= 26.3`，规则注册为 `MC == 26.3`，当前构建矩阵最高为 `26.3`
++- 实际适配版本：仅 `26.3`
++- 已完成编译 / 构建版本：`26.3`，`:26.3:build` 通过，现有 76 项测试通过
++- 尚未适配版本：其他版本均未移植本功能
++- 客户端 / 服务端要求：服务端安装此版 FGA、Carpet、Fabric API，客户端安装支持该协议的 halfmasa 与 Fabric API，客户端无需 FGA；原版及其他客户端不受影响
++- 静默进食默认关闭，通过 `/carpet silentAutoEat true` 开启；血量查询仅返回当前维度中实际向该玩家显示的原版凋灵或末影龙 Boss 栏数据，未知栏返回无可靠数据
++- 已完成游戏回归：QuickShulker 3.1.0 的静默取食与原槽位归还；真实数据包验证规则关闭拒绝、重复请求不重扣、重复编号不同物品拒绝、过期快照及编号拒绝、饱和度与无声音；原版凋灵 UUID 查询返回 `240/300`，未知 UUID 返回无可靠血量
++- 独立服务端连接：客户端仅安装 halfmasa、MaLiLib、Fabric API，未安装 FGA 或 Carpet；服务端装 FGA、Carpet、Fabric API；普通回退、开启规则后的静默进食、原工具与槽位保留、真实 Boss 血量查询及干净停服均通过，8 个断言通过
++- 测试环境：Windows、JDK 25，客户端使用 `-Xint` 避开此前出现的 JVM 原生崩溃；隔离测试存档，不修改玩家世界；未验证其他模组的自定义食物或自定义 Boss 血量扩展
++- 回归报告：halfmasa 工作区 `build/auto-eat-tests/20261014-155917-010793/report.json`、`build/support-tests/20261014-160905-634021/report.json`
++- 构建归档：halfmasa 工作区 `mod-builds/20261014-155844`
++
+ 项目中原有的单版本功能仍遵循各自源码门控，例如 `playerLoadDistance`、旧版矿车与展示框功能、`fullShulkerBoxCrafting` 和 `villagerUpgradeWhileTrading`，不应按本次变更的全版本适配范围理解
+diff --git a/src/main/java/carpet/fga/BossServerHealth.java b/src/main/java/carpet/fga/BossServerHealth.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f37c2a38d9f4a6e7a60006c91e7735b23bfaa87e
+--- /dev/null
++++ b/src/main/java/carpet/fga/BossServerHealth.java
+@@ -0,0 +1,30 @@
++package carpet.fga;
++//#if MC >= 26.3
++//$$ import java.util.UUID;
++//$$ import carpet.fga.mixin.WitherBossEventAccessor;
++//$$ import carpet.fga.mixin.DragonFightBossEventAccessor;
++//$$ import net.minecraft.server.level.ServerPlayer;
++//$$ import net.minecraft.world.entity.boss.wither.WitherBoss;
++//$$ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
++//$$ public final class BossServerHealth {
++//$$     private BossServerHealth() {}
++//$$     public static HalfMasaSupportPayloads.HealthResult find(ServerPlayer player, UUID bossId) {
++//$$         if (!player.level().getServer().isSameThread()) throw new IllegalStateException("Boss health requires server thread");
++//$$         for (var entity : player.level().getAllEntities())
++//$$             if (entity instanceof WitherBoss wither) {
++//$$                 var event = ((WitherBossEventAccessor)wither).fga$bossEvent();
++//$$                 if (event.getId().equals(bossId) && event.getPlayers().contains(player))
++//$$                     return new HalfMasaSupportPayloads.HealthResult(bossId, wither.getHealth(), wither.getMaxHealth());
++//$$             }
++//$$         var fight = player.level().getDragonFight();
++//$$         if (fight != null) {
++//$$             var access = (DragonFightBossEventAccessor)fight;
++//$$             if (access.fga$bossEvent().getId().equals(bossId) && access.fga$bossEvent().getPlayers().contains(player))
++//$$                 for (var dragon : player.level().getDragons())
++//$$                     if (dragon.getUUID().equals(access.fga$dragonUUID()))
++//$$                         return new HalfMasaSupportPayloads.HealthResult(bossId, dragon.getHealth(), dragon.getMaxHealth());
++//$$         }
++//$$         return new HalfMasaSupportPayloads.HealthResult(bossId, 0, 0);
++//$$     }
++//$$ }
++//#endif
+diff --git a/src/main/java/carpet/fga/CarpetFGAAddition.java b/src/main/java/carpet/fga/CarpetFGAAddition.java
+index 9b489bd307db8e0a121525ada271c79d26829f1c..ca79489c501bcab2c23911f83c4bff9ea0cd15ec 100644
+--- a/src/main/java/carpet/fga/CarpetFGAAddition.java
++++ b/src/main/java/carpet/fga/CarpetFGAAddition.java
+@@ -22,6 +22,7 @@ public class CarpetFGAAddition implements ModInitializer {
+     public void onInitialize() {
+         //#if MC == 26.3
+         //$$ PlayerSortInventoryApi.register();
++        //$$ HalfMasaSupportServer.register();
+         //#endif
+         //#if MC >= 1.20.5
+         // The handshake also has to live in Fabric's payload registry. Vanilla only finds it through the
+diff --git a/src/main/java/carpet/fga/FGASettings.java b/src/main/java/carpet/fga/FGASettings.java
+index f70323d2da917f5a48a8ca0aa091f8b7ebf19888..d55b8e6ecedc60777d41ad492ed1e7632671ddbb 100644
+--- a/src/main/java/carpet/fga/FGASettings.java
++++ b/src/main/java/carpet/fga/FGASettings.java
+@@ -48,6 +48,11 @@ public class FGASettings {
+     /** FGA 自定义分类，会出现在 /carpet 菜单中作为可点击选项 */
+     public static final String FGA = "FGA";
+ 
++    //#if MC == 26.3
++    //$$ @carpet.api.settings.Rule(categories = {FGA, FEATURE})
++    //$$ public static boolean silentAutoEat = false;
++    //#endif
++
+     //#if MC >= 1.21.1 && MC <= 26.3
+     @carpet.api.settings.Rule(categories = {FGA, FEATURE}, options = {"false", "true", "console"})
+     public static String abnormalDisconnectNotice = "false";
+diff --git a/src/main/java/carpet/fga/HalfMasaSupportPayloads.java b/src/main/java/carpet/fga/HalfMasaSupportPayloads.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..acc1de66479a7b170b026fc98df6c9ad81e642d2
+--- /dev/null
++++ b/src/main/java/carpet/fga/HalfMasaSupportPayloads.java
+@@ -0,0 +1,46 @@
++package carpet.fga;
++
++//#if MC >= 26.3
++//$$ import java.util.UUID;
++//$$ import net.minecraft.network.FriendlyByteBuf;
++//$$ import net.minecraft.network.RegistryFriendlyByteBuf;
++//$$ import net.minecraft.network.codec.StreamCodec;
++//$$ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
++//$$ import net.minecraft.resources.Identifier;
++//$$ import net.minecraft.world.item.ItemStack;
++
++//$$ public final class HalfMasaSupportPayloads
++//$$ {
++//$$     private HalfMasaSupportPayloads() {}
++//$$     private static <T extends CustomPacketPayload> CustomPacketPayload.Type<T> type(String path)
++//$$     { return new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("carpet-fga-addition", "halfmasa/" + path)); }
++//$$     public record Eat(int version, long requestId, int slot, ItemStack expected, int target, boolean pauseCombat) implements CustomPacketPayload {
++//$$         public static final Type<Eat> TYPE = HalfMasaSupportPayloads.type("eat_v1");
++//$$         public static final StreamCodec<RegistryFriendlyByteBuf, Eat> CODEC = CustomPacketPayload.codec(Eat::write, Eat::new);
++//$$         public Eat(RegistryFriendlyByteBuf b) { this(b.readVarInt(), b.readLong(), b.readVarInt(), ItemStack.STREAM_CODEC.decode(b), b.readVarInt(), b.readBoolean()); }
++//$$         private void write(RegistryFriendlyByteBuf b) { b.writeVarInt(version); b.writeLong(requestId); b.writeVarInt(slot); ItemStack.STREAM_CODEC.encode(b, expected); b.writeVarInt(target); b.writeBoolean(pauseCombat); }
++//$$         @Override public Type<Eat> type() { return TYPE; }
++//$$     }
++//$$     public record EatResult(long requestId, String status) implements CustomPacketPayload {
++//$$         public static final Type<EatResult> TYPE = HalfMasaSupportPayloads.type("eat_result_v1");
++//$$         public static final StreamCodec<FriendlyByteBuf, EatResult> CODEC = CustomPacketPayload.codec(EatResult::write, EatResult::new);
++//$$         public EatResult(FriendlyByteBuf b) { this(b.readLong(), b.readUtf(64)); }
++//$$         private void write(FriendlyByteBuf b) { b.writeLong(requestId); b.writeUtf(status, 64); }
++//$$         @Override public Type<EatResult> type() { return TYPE; }
++//$$     }
++//$$     public record HealthQuery(UUID bossId) implements CustomPacketPayload {
++//$$         public static final Type<HealthQuery> TYPE = HalfMasaSupportPayloads.type("boss_health_query_v1");
++//$$         public static final StreamCodec<FriendlyByteBuf, HealthQuery> CODEC = CustomPacketPayload.codec(HealthQuery::write, HealthQuery::new);
++//$$         public HealthQuery(FriendlyByteBuf b) { this(b.readUUID()); }
++//$$         private void write(FriendlyByteBuf b) { b.writeUUID(bossId); }
++//$$         @Override public Type<HealthQuery> type() { return TYPE; }
++//$$     }
++//$$     public record HealthResult(UUID bossId, float current, float maximum) implements CustomPacketPayload {
++//$$         public static final Type<HealthResult> TYPE = HalfMasaSupportPayloads.type("boss_health_result_v1");
++//$$         public static final StreamCodec<FriendlyByteBuf, HealthResult> CODEC = CustomPacketPayload.codec(HealthResult::write, HealthResult::new);
++//$$         public HealthResult(FriendlyByteBuf b) { this(b.readUUID(), b.readFloat(), b.readFloat()); }
++//$$         private void write(FriendlyByteBuf b) { b.writeUUID(bossId); b.writeFloat(current); b.writeFloat(maximum); }
++//$$         @Override public Type<HealthResult> type() { return TYPE; }
++//$$     }
++//$$ }
++//#endif
+diff --git a/src/main/java/carpet/fga/HalfMasaSupportServer.java b/src/main/java/carpet/fga/HalfMasaSupportServer.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ca85764342697147307559e071ae274dc7306972
+--- /dev/null
++++ b/src/main/java/carpet/fga/HalfMasaSupportServer.java
+@@ -0,0 +1,88 @@
++package carpet.fga;
++//#if MC >= 26.3
++//$$ import java.util.*;
++//$$ import java.util.concurrent.ConcurrentHashMap;
++//$$ import java.util.concurrent.atomic.AtomicInteger;
++//$$ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
++//$$ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
++//$$ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
++//$$ import net.minecraft.server.level.ServerPlayer;
++//$$ import net.minecraft.world.item.ItemStack;
++
++//$$ /** Separate from stock withdrawal: only consumes food in the requesting player's live inventory. */
++//$$ public final class HalfMasaSupportServer {
++//$$     private record Cached(HalfMasaSupportPayloads.Eat request, HalfMasaSupportPayloads.EatResult result) {}
++//$$     private static final class Session {
++//$$         final Map<Long,Cached> outcomes = new LinkedHashMap<>();
++//$$         long lastEat = Long.MIN_VALUE;
++//$$         long lastRequestId = -1;
++//$$         long healthSecond = Long.MIN_VALUE;
++//$$         int healthRequests;
++//$$     }
++//$$     private static final Map<ServerPlayer,Session> SESSIONS = new WeakHashMap<>();
++//$$     private static final Map<UUID,AtomicInteger> QUEUED = new ConcurrentHashMap<>();
++//$$     private HalfMasaSupportServer() {}
++//$$     public static void register() {
++//$$         PayloadTypeRegistry.serverboundPlay().register(HalfMasaSupportPayloads.Eat.TYPE,HalfMasaSupportPayloads.Eat.CODEC);
++//$$         PayloadTypeRegistry.clientboundPlay().register(HalfMasaSupportPayloads.EatResult.TYPE,HalfMasaSupportPayloads.EatResult.CODEC);
++//$$         PayloadTypeRegistry.serverboundPlay().register(HalfMasaSupportPayloads.HealthQuery.TYPE,HalfMasaSupportPayloads.HealthQuery.CODEC);
++//$$         PayloadTypeRegistry.clientboundPlay().register(HalfMasaSupportPayloads.HealthResult.TYPE,HalfMasaSupportPayloads.HealthResult.CODEC);
++//$$         ServerPlayNetworking.registerGlobalReceiver(HalfMasaSupportPayloads.Eat.TYPE,(request,context) -> {
++//$$             AtomicInteger queued = QUEUED.computeIfAbsent(context.player().getUUID(),id -> new AtomicInteger());
++//$$             if (queued.incrementAndGet() > 32) { queued.decrementAndGet(); return; }
++//$$             context.server().execute(() -> {
++//$$                 try {
++//$$                     if (context.server().getPlayerList().getPlayer(context.player().getUUID()) != context.player()) return;
++//$$                     var reply = eat(context.player(),request);
++//$$                     if (ServerPlayNetworking.canSend(context.player(),HalfMasaSupportPayloads.EatResult.TYPE)) ServerPlayNetworking.send(context.player(),reply);
++//$$                 } finally { queued.decrementAndGet(); }
++//$$             });
++//$$         });
++//$$         ServerPlayNetworking.registerGlobalReceiver(HalfMasaSupportPayloads.HealthQuery.TYPE,(request,context) -> {
++//$$             AtomicInteger queued = QUEUED.computeIfAbsent(context.player().getUUID(),id -> new AtomicInteger());
++//$$             if (queued.incrementAndGet() > 32) { queued.decrementAndGet(); return; }
++//$$             context.server().execute(() -> {
++//$$                 try {
++//$$                     var player = context.player();
++//$$                     if (context.server().getPlayerList().getPlayer(player.getUUID()) != player) return;
++//$$                     var session = SESSIONS.computeIfAbsent(player,p -> new Session());
++//$$                     long second = player.level().getGameTime() / 20;
++//$$                     if (session.healthSecond != second) { session.healthSecond = second; session.healthRequests = 0; }
++//$$                     if (++session.healthRequests > 32) return;
++//$$                     if (ServerPlayNetworking.canSend(player,HalfMasaSupportPayloads.HealthResult.TYPE))
++//$$                         ServerPlayNetworking.send(player,BossServerHealth.find(player,request.bossId()));
++//$$                 } finally { queued.decrementAndGet(); }
++//$$             });
++//$$         });
++//$$         ServerPlayConnectionEvents.DISCONNECT.register((handler,server) -> {
++//$$             QUEUED.remove(handler.player.getUUID()); server.execute(() -> SESSIONS.remove(handler.player));
++//$$         });
++//$$     }
++//$$     public static HalfMasaSupportPayloads.EatResult eat(ServerPlayer player, HalfMasaSupportPayloads.Eat request) {
++//$$         if (!player.level().getServer().isSameThread()) throw new IllegalStateException("Silent eat API requires server thread");
++//$$         var session = SESSIONS.computeIfAbsent(player,p -> new Session());
++//$$         var cached = session.outcomes.get(request.requestId());
++//$$         if (cached != null) {
++//$$             var old = cached.request;
++//$$             boolean same = old.version() == request.version() && old.slot() == request.slot() && old.target() == request.target()
++//$$                     && old.pauseCombat() == request.pauseCombat() && ItemStack.matches(old.expected(),request.expected());
++//$$             return same ? cached.result : new HalfMasaSupportPayloads.EatResult(request.requestId(),"REQUEST_ID_REUSED");
++//$$         }
++//$$         String status;
++//$$         long tick = player.level().getGameTime();
++//$$         if (request.version() != 1 || request.requestId() < 0) status = "INVALID_REQUEST";
++//$$         else if (request.requestId() <= session.lastRequestId) status = "EXPIRED_REQUEST";
++//$$         else if (!FGASettings.silentAutoEat) status = "DISABLED";
++//$$         else if (session.lastEat == tick) status = "RATE_LIMITED";
++//$$         else {
++//$$             session.lastEat = tick;
++//$$             status = SilentFoodTransaction.consume(player,request.slot(),request.expected(),request.target(),request.pauseCombat());
++//$$         }
++//$$         var result = new HalfMasaSupportPayloads.EatResult(request.requestId(),status);
++//$$         session.lastRequestId = Math.max(session.lastRequestId, request.requestId());
++//$$         session.outcomes.put(request.requestId(),new Cached(request,result));
++//$$         if (session.outcomes.size() > 64) session.outcomes.remove(session.outcomes.keySet().iterator().next());
++//$$         return result;
++//$$     }
++//$$ }
++//#endif
+diff --git a/src/main/java/carpet/fga/SilentFoodTransaction.java b/src/main/java/carpet/fga/SilentFoodTransaction.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9bb87fc8ac1f97b38657f634e923d2a32da4270e
+--- /dev/null
++++ b/src/main/java/carpet/fga/SilentFoodTransaction.java
+@@ -0,0 +1,50 @@
++package carpet.fga;
++
++//#if MC >= 26.3
++//$$ import net.minecraft.core.component.DataComponents;
++//$$ import net.minecraft.server.level.ServerPlayer;
++//$$ import net.minecraft.world.entity.LivingEntity;
++//$$ import net.minecraft.world.item.ItemStack;
++
++//$$ /** Runs only on the authoritative server, using vanilla item completion and its side effects. */
++//$$ public final class SilentFoodTransaction
++//$$ {
++//$$     private static final ThreadLocal<ServerPlayer> ACTIVE = new ThreadLocal<>();
++//$$     private SilentFoodTransaction() {}
++//$$     public static boolean isSilent(LivingEntity entity) { return ACTIVE.get() == entity; }
++//$$     public static String consume(ServerPlayer player, int slot, ItemStack expected, int target, boolean pauseCombat)
++//$$     {
++//$$         if (!player.level().getServer().isSameThread()) throw new IllegalStateException("Silent food requires server thread");
++//$$         if (!player.isAlive() || player.isCreative() || player.isSpectator() || slot < 0 || slot >= 36
++//$$                 || target < 1 || target > 20 || player.containerMenu != player.inventoryMenu
++//$$                 || !player.inventoryMenu.getCarried().isEmpty() || player.isUsingItem()
++//$$                 || pauseCombat && player.hurtTime > 0) return "BUSY";
++//$$         ItemStack food = player.getInventory().getItem(slot);
++//$$         if (!ItemStack.matches(food, expected)) return "STALE";
++//$$         var properties = food.get(DataComponents.FOOD);
++//$$         var consumable = food.get(DataComponents.CONSUMABLE);
++//$$         if (food.isEmpty() || properties == null || properties.nutrition() <= 0 || consumable == null
++//$$                 || !consumable.canConsume(player, food) || player.getFoodData().getFoodLevel() >= target) return "NOT_NEEDED";
++//$$         if (player.getCooldowns().isOnCooldown(food)) return "COOLDOWN";
++//$$         var useRemainder = food.get(DataComponents.USE_REMAINDER);
++//$$         if (food.getCount() > 1 && useRemainder != null)
++//$$         {
++//$$             ItemStack remainder = useRemainder.convertInto().create();
++//$$             int capacity = 0;
++//$$             for (int i = 0; i < 36; i++)
++//$$             {
++//$$                 ItemStack current = player.getInventory().getItem(i);
++//$$                 if (current.isEmpty()) capacity += remainder.getMaxStackSize();
++//$$                 else if (ItemStack.isSameItemSameComponents(current, remainder))
++//$$                     capacity += Math.max(0, current.getMaxStackSize() - current.getCount());
++//$$             }
++//$$             if (capacity < remainder.getCount()) return "NO_SPACE";
++//$$         }
++//$$         ACTIVE.set(player);
++//$$         try { player.getInventory().setItem(slot, food.finishUsingItem(player.level(), player)); }
++//$$         finally { ACTIVE.remove(); }
++//$$         player.inventoryMenu.broadcastChanges();
++//$$         return "OK";
++//$$     }
++//$$ }
++//#endif
+diff --git a/src/main/java/carpet/fga/mixin/DragonFightBossEventAccessor.java b/src/main/java/carpet/fga/mixin/DragonFightBossEventAccessor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2b43a41b99e60676740fe47261bc859d4bccea2d
+--- /dev/null
++++ b/src/main/java/carpet/fga/mixin/DragonFightBossEventAccessor.java
+@@ -0,0 +1,13 @@
++package carpet.fga.mixin;
++//#if MC >= 26.3
++//$$ import java.util.UUID;
++//$$ import net.minecraft.server.level.ServerBossEvent;
++//$$ import net.minecraft.world.level.dimension.end.EnderDragonFight;
++//$$ import org.spongepowered.asm.mixin.Mixin;
++//$$ import org.spongepowered.asm.mixin.gen.Accessor;
++//$$ @Mixin(EnderDragonFight.class)
++//$$ public interface DragonFightBossEventAccessor {
++//$$     @Accessor("dragonEvent") ServerBossEvent fga$bossEvent();
++//$$     @Accessor("dragonUUID") UUID fga$dragonUUID();
++//$$ }
++//#endif
+diff --git a/src/main/java/carpet/fga/mixin/SilentFoodEffectsMixin.java b/src/main/java/carpet/fga/mixin/SilentFoodEffectsMixin.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c93861dfe5358611c062b59119040a1e989f36e1
+--- /dev/null
++++ b/src/main/java/carpet/fga/mixin/SilentFoodEffectsMixin.java
+@@ -0,0 +1,21 @@
++package carpet.fga.mixin;
++
++//#if MC >= 26.3
++//$$ import carpet.fga.SilentFoodTransaction;
++//$$ import net.minecraft.world.item.component.Consumable;
++//$$ import net.minecraft.world.entity.LivingEntity;
++//$$ import net.minecraft.world.item.ItemStack;
++//$$ import net.minecraft.util.RandomSource;
++//$$ import org.spongepowered.asm.mixin.Mixin;
++//$$ import org.spongepowered.asm.mixin.injection.At;
++//$$ import org.spongepowered.asm.mixin.injection.Inject;
++//$$ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
++
++//$$ @Mixin(Consumable.class)
++//$$ public abstract class SilentFoodEffectsMixin
++//$$ {
++//$$     @Inject(method = "emitParticlesAndSounds", at = @At("HEAD"), cancellable = true)
++//$$     private void fga$silentFood(RandomSource random, LivingEntity entity, ItemStack stack, int count, CallbackInfo ci)
++//$$     { if (SilentFoodTransaction.isSilent(entity)) ci.cancel(); }
++//$$ }
++//#endif
+diff --git a/src/main/java/carpet/fga/mixin/SilentFoodNutritionMixin.java b/src/main/java/carpet/fga/mixin/SilentFoodNutritionMixin.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..929c843ff2ad7d979e796193bf8c2dce6210b11c
+--- /dev/null
++++ b/src/main/java/carpet/fga/mixin/SilentFoodNutritionMixin.java
+@@ -0,0 +1,25 @@
++package carpet.fga.mixin;
++//#if MC >= 26.3
++//$$ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
++//$$ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
++//$$ import com.llamalad7.mixinextras.sugar.Local;
++//$$ import carpet.fga.SilentFoodTransaction;
++//$$ import net.minecraft.world.entity.Entity;
++//$$ import net.minecraft.world.entity.LivingEntity;
++//$$ import net.minecraft.world.food.FoodProperties;
++//$$ import net.minecraft.world.level.Level;
++//$$ import net.minecraft.sounds.SoundEvent;
++//$$ import net.minecraft.sounds.SoundSource;
++//$$ import org.spongepowered.asm.mixin.Mixin;
++//$$ import org.spongepowered.asm.mixin.injection.At;
++//$$ @Mixin(FoodProperties.class)
++//$$ public abstract class SilentFoodNutritionMixin {
++//$$     @WrapOperation(method = "onConsume", at = @At(value = "INVOKE", target =
++//$$             "Lnet/minecraft/world/level/Level;playSound(Lnet/minecraft/world/entity/Entity;DDDLnet/minecraft/sounds/SoundEvent;Lnet/minecraft/sounds/SoundSource;FF)V"))
++//$$     private void fga$silentNutrition(Level level, Entity excluded, double x, double y, double z,
++//$$             SoundEvent sound, SoundSource category, float volume, float pitch, Operation<Void> original,
++//$$             @Local(argsOnly = true) LivingEntity consumer) {
++//$$         if (!SilentFoodTransaction.isSilent(consumer)) original.call(level, excluded, x, y, z, sound, category, volume, pitch);
++//$$     }
++//$$ }
++//#endif
+diff --git a/src/main/java/carpet/fga/mixin/WitherBossEventAccessor.java b/src/main/java/carpet/fga/mixin/WitherBossEventAccessor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5a2341b0dec68708824f28a65b9bd595fde265f1
+--- /dev/null
++++ b/src/main/java/carpet/fga/mixin/WitherBossEventAccessor.java
+@@ -0,0 +1,11 @@
++package carpet.fga.mixin;
++//#if MC >= 26.3
++//$$ import net.minecraft.server.level.ServerBossEvent;
++//$$ import net.minecraft.world.entity.boss.wither.WitherBoss;
++//$$ import org.spongepowered.asm.mixin.Mixin;
++//$$ import org.spongepowered.asm.mixin.gen.Accessor;
++//$$ @Mixin(WitherBoss.class)
++//$$ public interface WitherBossEventAccessor {
++//$$     @Accessor("bossEvent") ServerBossEvent fga$bossEvent();
++//$$ }
++//#endif
+diff --git a/src/main/resources/assets/carpet-fga-addition/lang/en_us.json b/src/main/resources/assets/carpet-fga-addition/lang/en_us.json
+index 11c468ac1e40d2f04bc04269997f1493860d4b56..95f15a6a4fd638d8173468a6cca04f441a678963 100644
+--- a/src/main/resources/assets/carpet-fga-addition/lang/en_us.json
++++ b/src/main/resources/assets/carpet-fga-addition/lang/en_us.json
+@@ -493,5 +493,6 @@
+     "carpet.fga.fake_player_item_sort.stock_line": "%s: %s items, about %s boxes; sorter players: %s",
+     "carpet.fga.fake_player_item_sort.help_whitelist_status": "Show the active filter mode and built-in list count, or switch vanilla, FGA built-in, or disabled filtering",
+     "carpet.fga.fake_player_item_sort.help_stock": "Search item names, IDs, or target fake players with a Java regex; all exports the complete TXT inventory list",
+-    "carpet.fga.fake_player_item_sort.help_permission": "Grant true/false access to one command or all for ops, permission levels 0–4, or a player name; OP access is the default"
++    "carpet.fga.fake_player_item_sort.help_permission": "Grant true/false access to one command or all for ops, permission levels 0–4, or a player name; OP access is the default",
++    "carpet.rule.silentAutoEat.desc": "Allow compatible clients to consume their own food instantly while preserving hunger, saturation, effects and remainders, without consumption animation, sounds or particles, disabled by default, 26.3 only"
+ }
+diff --git a/src/main/resources/assets/carpet-fga-addition/lang/zh_cn.json b/src/main/resources/assets/carpet-fga-addition/lang/zh_cn.json
+index a4817797c9bf62fa30a3e5e2b6ff98f933261e9e..326f705a4138d33b39a6cc5e42bd10693b7f4c66 100644
+--- a/src/main/resources/assets/carpet-fga-addition/lang/zh_cn.json
++++ b/src/main/resources/assets/carpet-fga-addition/lang/zh_cn.json
+@@ -507,5 +507,7 @@
+     "carpet.fga.fake_player_item_sort.stock_line": "%s：%s 个，约 %s 盒；分类假人：%s",
+     "carpet.fga.fake_player_item_sort.help_whitelist_status": "查看当前过滤模式和 FGA 白名单数量，也可切换 vanilla、FGA 内置白名单或关闭",
+     "carpet.fga.fake_player_item_sort.help_stock": "按 Java 正则表达式搜索物品名、物品 ID 或目标假人；all 会导出完整 TXT 清单",
+-    "carpet.fga.fake_player_item_sort.help_permission": "为单条命令或 all 设置 ops、权限等级 0–4 或玩家名的 true/false 访问权；默认仅 OP 可用"
++    "carpet.fga.fake_player_item_sort.help_permission": "为单条命令或 all 设置 ops、权限等级 0–4 或玩家名的 true/false 访问权；默认仅 OP 可用",
++    "carpet.rule.silentAutoEat.desc": "允许兼容客户端直接消耗自身背包食物，保留饥饿、饱和度、食用效果及余留物，无食用动画、声音和粒子，默认关闭，仅支持26.3",
++    "carpet.rule.silentAutoEat.name": "静默自动进食"
+ }
+diff --git a/src/main/resources/carpet-fga-addition.mixins.json b/src/main/resources/carpet-fga-addition.mixins.json
+index 68532e88260eddad3397b7d35bbcdd08f3e53388..6b6f2ebf8fb275634a52e90e6c86ecfdadc3972d 100644
+--- a/src/main/resources/carpet-fga-addition.mixins.json
++++ b/src/main/resources/carpet-fga-addition.mixins.json
+@@ -3,6 +3,12 @@
+     "package": "carpet.fga.mixin",
+     "compatibilityLevel": "{{COMPATIBILITY_LEVEL}}",
+     "mixins": [
++        //#if MC == 26.3
++        //$$ "SilentFoodEffectsMixin",
++        //$$ "SilentFoodNutritionMixin",
++        //$$ "WitherBossEventAccessor",
++        //$$ "DragonFightBossEventAccessor",
++        //#endif
+         //#if MC >= 1.21.1 && MC <= 26.3
+         "NaturalWeatherFeaturesMixin",
+         "NaturalWorldgenFeaturesMixin",

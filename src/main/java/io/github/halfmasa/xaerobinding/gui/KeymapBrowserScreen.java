@@ -585,6 +585,9 @@ public final class KeymapBrowserScreen extends GuiBase
 
     private void toggleWheelParticipation(BrowserEntry entry)
     {
+        //#if MC >= 1.21.1
+        if (!entry.isVanilla() && io.github.halfmasa.xaerobinding.feature.HoldToShow.isPassive(entry.hotkey())) return;
+        //#endif
         KeybindCustomizationStore.Entry data = this.customization(entry);
         boolean enabled = !data.participatesInWheel(this.orderedEntryKeys(entry));
         var original = KeybindCustomizationStore.getInstance().get(entryId(entry));
@@ -737,6 +740,9 @@ public final class KeymapBrowserScreen extends GuiBase
         Map<Integer, Integer> keyUses = new HashMap<>();
         for (BrowserEntry entry : entries)
         {
+            //#if MC >= 1.21.1
+            if (!entry.isVanilla() && io.github.halfmasa.xaerobinding.feature.HoldToShow.isPassive(entry.hotkey())) continue;
+            //#endif
             Set<Integer> keys = Set.copyOf(this.entryKeySet(entry));
             if (keys.isEmpty())
             {
@@ -755,7 +761,11 @@ public final class KeymapBrowserScreen extends GuiBase
         {
             Set<Integer> keys = Set.copyOf(this.entryKeySet(entry));
             ConflictType conflictType = ConflictType.NONE;
-            boolean sharesKey = keys.stream().anyMatch(code -> keyUses.getOrDefault(code, 0) > 1);
+            boolean passive = false;
+            //#if MC >= 1.21.1
+            passive = !entry.isVanilla() && io.github.halfmasa.xaerobinding.feature.HoldToShow.isPassive(entry.hotkey());
+            //#endif
+            boolean sharesKey = !passive && keys.stream().anyMatch(code -> keyUses.getOrDefault(code, 0) > 1);
             if (sharesKey && keys.size() > 1)
             {
                 conflictType = ConflictType.COMBINATION;
@@ -1467,6 +1477,9 @@ public final class KeymapBrowserScreen extends GuiBase
                     columns.detailX(), columns.wheelX() - 3, y, ROW_HEIGHT, 0xFFE0E0E0);
             boolean wheelHovered = hovered && mouseX >= columns.wheelX();
             boolean wheelEnabled = this.customization(entry).participatesInWheel(this.orderedEntryKeys(entry));
+            //#if MC >= 1.21.1
+            if (!entry.isVanilla() && io.github.halfmasa.xaerobinding.feature.HoldToShow.isPassive(entry.hotkey())) wheelEnabled = false;
+            //#endif
             this.drawRect(graphics, columns.wheelX(), y + 1, columns.right(),
                     y + ROW_HEIGHT - 1, wheelHovered ? 0xA0404A5C : 0x80202632);
             this.drawCenteredFittedKeyLabel(graphics,
