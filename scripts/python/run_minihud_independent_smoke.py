@@ -117,7 +117,12 @@ import org.spongepowered.asm.mixin.Mixin;
 
 
 def main():
-    harness.SOURCE = SOURCE
+    import sys
+    version = sys.argv[sys.argv.index("--version") + 1] if "--version" in sys.argv else "26.3"
+    harness.SOURCE = SOURCE if version == "26.3" else SOURCE.replace("fi.dy.masa.minihud.config.Hotkeys.INVENTORY_PREVIEW", "fi.dy.masa.minihud.config.Configs.Generic.INVENTORY_PREVIEW")
+    if version != '26.3':
+        # Older MaLiLib returns null for an empty Items list; preserve its native contract.
+        harness.SOURCE = harness.SOURCE.replace('empty.isEmpty()&&empty.getContainerSize()==27', 'empty==null')
     harness.PROBE = TEXT_PROBE
     harness.DRAW_PROBE = WORLD_PROBE
     harness.MAP_PROBE = MAP_PROBE

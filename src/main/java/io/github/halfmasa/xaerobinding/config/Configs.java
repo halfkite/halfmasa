@@ -28,7 +28,7 @@ import fi.dy.masa.malilib.hotkeys.IHotkey;
 import fi.dy.masa.malilib.hotkeys.KeyAction;
 import fi.dy.masa.malilib.hotkeys.KeybindSettings;
 import fi.dy.masa.malilib.util.FileUtils;
-//#if MC >= 1.21.11
+//#if MC > 1.21.10
 import fi.dy.masa.malilib.util.data.json.JsonUtils;
 //#else
 //$$ import fi.dy.masa.malilib.util.JsonUtils;
@@ -42,7 +42,7 @@ public final class Configs implements IConfigHandler
 {
     private static final String CONFIG_DIRECTORY_NAME = "halfmasa";
     private static final String CONFIG_FILE_NAME = "halfmasa.json";
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private static final int CONFIG_VERSION = 55;
     //#else
     //$$ private static final int CONFIG_VERSION = 54;
@@ -512,13 +512,13 @@ public final class Configs implements IConfigHandler
             "keepConfigSearchPosition", true, "").apply(PORTED_KEY);
     public static final ConfigBooleanHotkeyed KEEP_CONFIG_SELECTED_TAB = new ConfigBooleanHotkeyed(
             "keepConfigSelectedTab", true, "").apply(PORTED_KEY);
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     public static final ConfigBooleanHotkeyed KEEP_CREATIVE_SCREEN_POSITION = new ConfigBooleanHotkeyed(
             "keepCreativeScreenPosition", false, "").apply(PORTED_KEY);
     //#endif
     public static final List<IConfigBase> KEEP_CONFIG_POSITION_CHILDREN = List.of(
             KEEP_CONFIG_SEARCH_POSITION, KEEP_CONFIG_SELECTED_TAB
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             , KEEP_CREATIVE_SCREEN_POSITION
             //#endif
             );
@@ -575,7 +575,7 @@ public final class Configs implements IConfigHandler
     //#endif
     public static final ConfigBooleanHotkeyed CONDENSED_CREATIVE = new ConfigBooleanHotkeyed(
             "condensedCreative", false, "").apply(PORTED_KEY);
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     public static final ConfigBooleanHotkeyed KEEP_SCREEN_POSITION = new ConfigBooleanHotkeyed(
             "keepScreenPosition", false, "").apply(PORTED_KEY);
     /** Compatibility alias; only register this configuration object once. */
@@ -597,7 +597,7 @@ public final class Configs implements IConfigHandler
             "cycleItemManagerRecipeHistoryPosition", "", ANY_SCREEN_HOTKEY).applyTranslationKey(PORTED_KEY);
     public static final ConfigBoolean CONDENSED_CREATIVE_EXPANDED = new ConfigBoolean(
             "condensedCreativeExpanded", false).apply(PORTED_KEY);
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     public static final ConfigOptionList CONDENSED_CREATIVE_GROUPING = new ConfigOptionList(
             "condensedCreativeGrouping", CondensedCreativeGrouping.DEFAULT).apply(PORTED_KEY);
     public static final ConfigBoolean CONDENSED_CREATIVE_KEEP_EXPANDED = new ConfigBoolean(
@@ -610,13 +610,13 @@ public final class Configs implements IConfigHandler
     public static final ConfigBoolean CONDENSED_CREATIVE_POTIONS = new ConfigBoolean(
             "condensedCreativePotions", true).apply(PORTED_KEY);
     public static final ConfigBoolean CONDENSED_CREATIVE_ROTATING_PREVIEW = new ConfigBoolean(
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             "condensedCreativeRotatingPreview", false).apply(PORTED_KEY);
             //#else
             //$$ "condensedCreativeRotatingPreview", true).apply(PORTED_KEY);
             //#endif
     public static final ConfigBoolean CONDENSED_CREATIVE_BACKGROUND = new ConfigBoolean(
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             "condensedCreativeBackground", false).apply(PORTED_KEY);
             //#else
             //$$ "condensedCreativeBackground", true).apply(PORTED_KEY);
@@ -628,7 +628,7 @@ public final class Configs implements IConfigHandler
     public static final ConfigBoolean CONDENSED_CREATIVE_TOOLTIP = new ConfigBoolean(
             "condensedCreativeTooltip", true).apply(PORTED_KEY);
     private static final List<IConfigBase> CONDENSED_CREATIVE_CHILDREN = List.of(
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             CONDENSED_CREATIVE_GROUPING,
             CONDENSED_CREATIVE_KEEP_EXPANDED,
             //#endif
@@ -1047,7 +1047,7 @@ public final class Configs implements IConfigHandler
             .flatMap(list -> list.stream().map(config -> (IConfigBase) config))
             .toList();
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     public static final ConfigBooleanHotkeyed MINIHUD_PREVIEW_INDEPENDENT = new ConfigBooleanHotkeyed(
             "minihudPreviewIndependent", false, "").apply("halfmasa.config.extensions");
     public static final ConfigBoolean MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION = new ConfigBoolean(
@@ -1055,7 +1055,7 @@ public final class Configs implements IConfigHandler
     //#endif
 
     public static final List<IConfigBase> EXTENSIONS = Stream.of(
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             List.<IConfigBase>of(MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION, MINIHUD_PREVIEW_INDEPENDENT),
             //#endif
             CONFLUX_MAP_CONFIGS,
@@ -1229,7 +1229,7 @@ public final class Configs implements IConfigHandler
 
     public static final List<IHotkey> HOTKEYS = Stream.concat(
             Stream.of(
-                    //#if MC >= 26.3
+                    //#if MC >= 1.21.1
                     MINIHUD_PREVIEW_INDEPENDENT,
                     //#endif
                     OPEN_TOOLS,
@@ -1317,7 +1317,7 @@ public final class Configs implements IConfigHandler
     //#if MC >= 1.21.1
                     KEEP_CONFIG_SEARCH_POSITION,
                     KEEP_CONFIG_SELECTED_TAB,
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
                     KEEP_CREATIVE_SCREEN_POSITION,
     //#endif
     //#endif
@@ -1361,6 +1361,7 @@ public final class Configs implements IConfigHandler
         finally
         {
             configLoaded = true;
+            io.github.halfmasa.xaerobinding.feature.ConfigRenderingRefresh.onConfigLoaded();
             //#if MC >= 1.21.1
             io.github.halfmasa.xaerobinding.feature.EntityRenderDisableService.reload();
             //#endif
@@ -1381,7 +1382,7 @@ public final class Configs implements IConfigHandler
         }
     }
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private static boolean migrateKeepScreenPosition(JsonObject root)
     {
         if (!root.has("Ported") || !root.get("Ported").isJsonObject()) return false;
@@ -1411,7 +1412,7 @@ public final class Configs implements IConfigHandler
         if (element != null && element.isJsonObject())
         {
             JsonObject root = element.getAsJsonObject();
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             boolean migratedScreenPosition = migrateKeepScreenPosition(root);
             //#endif
             JsonObject ported = root.getAsJsonObject("Ported");
@@ -1484,7 +1485,7 @@ public final class Configs implements IConfigHandler
             }
 
             if (configVersion < CONFIG_VERSION
-                //#if MC >= 26.3
+                //#if MC >= 1.21.1
                 || migratedScreenPosition
                 //#endif
                 )
@@ -1674,7 +1675,7 @@ public final class Configs implements IConfigHandler
 
     private static Path getConfigDirectory()
     {
-        //#if MC >= 1.21.11
+        //#if MC > 1.21.10
         return FileUtils.getConfigDirectory();
         //#else
         //$$ return FileUtils.getConfigDirectoryAsPath();
@@ -2387,7 +2388,7 @@ public final class Configs implements IConfigHandler
 
     private static JsonElement parseJsonFile(Path file)
     {
-        //#if MC >= 1.21.11
+        //#if MC > 1.21.10
         return JsonUtils.parseJsonFile(file);
         //#else
         //$$ return JsonUtils.parseJsonFileAsPath(file);
@@ -2396,7 +2397,7 @@ public final class Configs implements IConfigHandler
 
     private static boolean writeJsonToFile(JsonObject root, Path file)
     {
-        //#if MC >= 1.21.11
+        //#if MC > 1.21.10
         return JsonUtils.writeJsonToFile(root, file);
         //#else
         //$$ return JsonUtils.writeJsonToFileAsPath(root, file);

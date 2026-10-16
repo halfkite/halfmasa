@@ -7,8 +7,11 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
+sys.stdout.reconfigure(encoding="utf-8")
 import time
 import zipfile
+import port_smoke_compat as port_compat
 import run_startup_smoke as startup
 import run_entity_render_disable_smoke as entity_smoke
 
@@ -135,21 +138,33 @@ public class Fixture implements ModInitializer {
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--artifact', type=Path, required=True)
-    parser.add_argument('--java-home', type=Path, default=Path('C:/Program Files/Java/jdk-25.0.3'))
+    parser.add_argument('--java-home', type=Path)
     parser.add_argument('--without-api', action='store_true')
+    parser.add_argument('--with-grouping', action='store_true', help='Run creative grouping in the same isolated world after position checks')
     parser.add_argument('--timeout', type=int, default=180)
+    parser.add_argument('--version', default='26.3')
     args = parser.parse_args()
+    if args.java_home is None:
+        args.java_home = ROOT / 'build/toolchains/jdk-21.0.12.1+1' if args.version.startswith('1.21.') else Path('C:/Program Files/Java/jdk-25.0.3')
     args.artifact = args.artifact.resolve()
-    args.version = '26.3'
     directory = ROOT / 'build/screen-position-tests' / datetime.now().strftime('%Y%m%d-%H%M%S-%f')
     classes = directory / 'classes'; classes.mkdir(parents=True)
+    cp = port_compat.classpath(args.version, args.artifact)
     sources = []
     frame = entity_smoke.FRAME.replace('entitydisablesmoke', 'screenmemorysmoke').replace('EntityDisableSmoke', 'ScreenMemorySmoke')
     clipboard = entity_smoke.CLIPBOARD.replace('entitydisablesmoke', 'screenmemorysmoke')
-    for name, text in [('ScreenMemorySmoke', SOURCE.replace('WITH_PAGES', str(not args.without_api).lower())), ('Fixture', FIXTURE), ('FrameMixin', frame), ('ClipboardMixin', clipboard)]:
-        path = directory / (name + '.java'); path.write_text(text, encoding='utf-8'); sources.append(str(path))
-    cp = str(args.artifact) + os.pathsep + (ROOT / 'build/port-classpath-26.3.txt').read_text().strip()
-    result = subprocess.run([str(args.java_home / 'bin/javac.exe'), '-J-Dfile.encoding=UTF-8', '-proc:none', '-encoding', 'UTF-8', '-cp', cp, '-d', str(classes), *sources], capture_output=True)
+    source = SOURCE
+    extra_sources = []
+    if args.with_grouping:
+        import run_condensed_creative_smoke as grouping
+        target = 'io.github.halfmasa.condensedcreativesmoke.CondensedCreativeSmoke'
+        source = source.replace('private void tick(Minecraft mc){try{', 'private void tick(Minecraft mc){try{if(stage==5){' + target + '.frame(mc);return;}if(stage==4){if(mc.level.getGameTime()-since>=4){' + target + '.begin();stage=5;}return;}')
+        source = source.replace('stage=4;mc.stop();', 'stage=4;since=mc.level.getGameTime();')
+        child = grouping.fixture_source(args.version).replace('public class CondensedCreativeSmoke implements ClientModInitializer {', 'public class CondensedCreativeSmoke implements ClientModInitializer {public static void begin(){instance=new CondensedCreativeSmoke();instance.configuration();instance.stage=1;}')
+        extra_sources.append(('CondensedCreativeSmoke', child))
+    for name, text in [('ScreenMemorySmoke', source.replace('WITH_PAGES', str(not args.without_api).lower())), ('Fixture', FIXTURE), ('FrameMixin', frame), ('ClipboardMixin', clipboard), *extra_sources]:
+        path = directory / (name + '.java'); path.write_text(port_compat.source(text, args.version, cp), encoding='utf-8'); sources.append(str(path))
+    result = subprocess.run([str(args.java_home / 'bin/javac.exe'), '-J-Dfile.encoding=UTF-8', '-J-Duser.language=en', '-proc:none', '-encoding', 'UTF-8', '-cp', cp, '-d', str(classes), *sources], capture_output=True)
     if result.returncode:
         diagnostic = result.stderr.decode('utf-8', errors='replace'); (directory / 'compile.log').write_text(diagnostic, encoding='utf-8'); print(diagnostic); return 1
     mod = directory / 'screen-memory-smoke.jar'
@@ -158,7 +173,8 @@ def main():
         entries = {'client': ['io.github.halfmasa.screenmemorysmoke.ScreenMemorySmoke']}
         if not args.without_api: entries['main'] = ['io.github.halfmasa.screenmemorysmoke.Fixture']
         jar.writestr('fabric.mod.json', json.dumps({'schemaVersion': 1, 'id': 'halfmasa_screen_memory_smoke', 'version': '1.0', 'environment': '*', 'entrypoints': entries, 'mixins': ['screen-memory-smoke.mixins.json']}))
-        jar.writestr('screen-memory-smoke.mixins.json', json.dumps({'required': True, 'package': 'io.github.halfmasa.screenmemorysmoke.mixin', 'compatibilityLevel': 'JAVA_25', 'client': ['FrameMixin', 'ClipboardMixin'], 'injectors': {'defaultRequire': 1}}))
+        jar.writestr('screen-memory-smoke.mixins.json', json.dumps({'required': True, 'package': 'io.github.halfmasa.screenmemorysmoke.mixin', 'compatibilityLevel': 'JAVA_21' if args.version.startswith('1.21.') else 'JAVA_25', 'client': ['FrameMixin', 'ClipboardMixin'], 'injectors': {'defaultRequire': 1}}))
+    mod = port_compat.remap_fixture(args.version, args.java_home, mod, cp, directory)
     game = directory / 'game'; config = game / 'config/halfmasa'; config.mkdir(parents=True); (game / 'mods').mkdir()
     (game / 'config/malilib.json').write_text('{}\n')
     (config / 'halfmasa.json').write_text(json.dumps({'ConfigVersion': 54, 'Ported': {'keepModMenuScroll': {'enabled': True, 'hotkey': {'keys': 'F7'}}, 'keepConfigSearchPosition': {'enabled': False, 'hotkey': {'keys': 'F5'}}, 'keepConfigSelectedTab': {'enabled': True, 'hotkey': {'keys': 'F6'}}, 'keepConfigPositionExpanded': True}}), encoding='utf-8')
@@ -166,9 +182,10 @@ def main():
     (config / 'custom-config-groups.json').write_text(json.dumps({'groups': groups}), encoding='utf-8')
     (game / 'options.txt').write_text('onboardAccessibility:false\nenableVsync:false\nmaxFps:30\nrenderDistance:3\nsimulationDistance:5\npauseOnLostFocus:false\nsoundCategory_master:0.0\nguiScale:1\nlang:en_us\ntutorialStep:none\n')
     if not args.without_api:
-        api = next(path for path in (Path.home() / '.gradle/caches/modules-2/files-2.1/net.fabricmc.fabric-api/fabric-api/0.161.0+26.3').glob('*/*.jar') if not path.name.endswith(('-sources.jar','-javadoc.jar'))); shutil.copy2(api, game / 'mods' / api.name)
+        api_version = dict(re.findall(r"'([\d.]+)': '([^']+)'", (ROOT / 'common.gradle').read_text(encoding='utf-8')))[args.version]
+        api = next(path for path in (Path.home() / f'.gradle/caches/modules-2/files-2.1/net.fabricmc.fabric-api/fabric-api/{api_version}').glob('*/*.jar') if not path.name.endswith(('-sources.jar','-javadoc.jar'))); shutil.copy2(api, game / 'mods' / api.name)
     command = startup.production_command(args, game, mod)
-    command[1:1] = ['-Djava.awt.headless=true', '-Dsun.java2d.d3d=false', '-XX:ActiveProcessorCount=4', f'-XX:ErrorFile={directory / "jvm-crash.log"}']
+    command[1:1] = ['-Djava.awt.headless=true', '-Dsun.java2d.d3d=false', '-XX:ActiveProcessorCount=2', f'-XX:ErrorFile={directory / "jvm-crash.log"}']
     command[command.index('--width')+1] = '1120'; command[command.index('--height')+1] = '720'
     log = directory / 'launcher.log'; started = time.monotonic(); timed_out = False
     with log.open('w', encoding='utf-8') as output:
@@ -176,8 +193,8 @@ def main():
         try: code = process.wait(timeout=args.timeout)
         except subprocess.TimeoutExpired:
             timed_out = True; subprocess.run(['taskkill','/PID',str(process.pid),'/T','/F'],capture_output=True); code = process.wait(timeout=30)
-    text = log.read_text(encoding='utf-8', errors='replace'); passed = code == 0 and not timed_out and 'SCREEN_MEMORY_WORLD_PASS' in text
-    report = {'result': 'PASS' if passed else 'FAIL', 'game_version': args.version, 'artifact': str(args.artifact), 'fabric_api_installed': not args.without_api, 'world_graphics_enabled': True, 'exit_code': code, 'timed_out': timed_out, 'duration_seconds': round(time.monotonic()-started,1), 'log': str(log), 'checks': [line for line in text.splitlines() if 'SCREEN_MEMORY_' in line], 'clipboard_initialization_disabled': True, 'screenshots': [str(p) for p in (game / 'screenshots').glob('*.png')]}
+    text = log.read_text(encoding='utf-8', errors='replace'); passed = code == 0 and not timed_out and 'SCREEN_MEMORY_WORLD_PASS' in text and (not args.with_grouping or 'CONDENSED_CREATIVE_WORLD_PASS' in text)
+    report = {'result': 'PASS' if passed else 'FAIL', 'game_version': args.version, 'artifact': str(args.artifact), 'fabric_api_installed': not args.without_api, 'grouping_suite': args.with_grouping, 'world_graphics_enabled': True, 'exit_code': code, 'timed_out': timed_out, 'duration_seconds': round(time.monotonic()-started,1), 'log': str(log), 'checks': [line for line in text.splitlines() if 'SCREEN_MEMORY_' in line or 'CONDENSED_' in line], 'clipboard_initialization_disabled': True, 'screenshots': [str(p) for p in (game / 'screenshots').glob('*.png')]}
     report_path = directory / 'report.json'; report_path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8'); print('SCREEN POSITION:',report['result']); print(report_path)
     if not passed: print('\n'.join(text.splitlines()[-65:]))
     return 0 if passed else 1

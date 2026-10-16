@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.feature;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import java.util.IdentityHashMap;
 import java.util.Map;
 import io.github.halfmasa.xaerobinding.config.Configs;
@@ -63,7 +63,13 @@ public final class CreativeScreenMemory
 
     private static boolean hasPages()
     {
-        return FabricLoader.getInstance().isModLoaded("fabric-creative-tab-api-v1");
+        return FabricLoader.getInstance().isModLoaded(
+                //#if MC >= 26.0
+                "fabric-creative-tab-api-v1"
+                //#else
+                //$$ "fabric-item-group-api-v1"
+                //#endif
+                );
     }
 
     public static int currentPage(CreativeModeInventoryScreen screen)

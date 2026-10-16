@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.mixin;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.11
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import fi.dy.masa.malilib.render.InventoryOverlayContext;
@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Desc;
 
 @Mixin(value = InventoryOverlayScreen.class, remap = false)
 public abstract class MiniHudPreviewOverlayMixin implements HeldWorldPreview.ScreenState
@@ -36,7 +37,7 @@ public abstract class MiniHudPreviewOverlayMixin implements HeldWorldPreview.Scr
         this.halfmasa$held = true;
     }
 
-    @WrapOperation(method = "renderData", at = @At(value = "INVOKE", target = "Lfi/dy/masa/malilib/render/InventoryOverlay;getInventoryPropsTemp(Lfi/dy/masa/malilib/render/InventoryOverlayType;I)Lfi/dy/masa/malilib/render/InventoryOverlay$InventoryProperties;"))
+    @WrapOperation(method = "renderData", at = @At(value = "INVOKE", desc = @Desc(owner = InventoryOverlay.class, value = "getInventoryPropsTemp", args = {InventoryOverlayType.class, int.class}, ret = fi.dy.masa.malilib.render.InventoryOverlay.InventoryProperties.class)))
     private InventoryOverlay.InventoryProperties halfmasa$layout(InventoryOverlayType type, int slots,
                                                                   Operation<InventoryOverlay.InventoryProperties> original)
     {
@@ -59,7 +60,7 @@ public abstract class MiniHudPreviewOverlayMixin implements HeldWorldPreview.Scr
         return this.halfmasa$layout;
     }
 
-    @WrapOperation(method = "renderData", at = @At(value = "INVOKE", target = "Lfi/dy/masa/malilib/render/InventoryOverlayRefresher;onContextRefresh(Lfi/dy/masa/malilib/render/InventoryOverlayContext;Lnet/minecraft/world/level/Level;)Lfi/dy/masa/malilib/render/InventoryOverlayContext;"))
+    @WrapOperation(method = "renderData", at = @At(value = "INVOKE", desc = @Desc(owner = InventoryOverlayRefresher.class, value = "onContextRefresh", args = {InventoryOverlayContext.class, Level.class}, ret = InventoryOverlayContext.class)))
     private InventoryOverlayContext halfmasa$refresh(InventoryOverlayRefresher refresher, InventoryOverlayContext data, Level world, Operation<InventoryOverlayContext> original)
     {
         // Native held previews use a fresh screen each frame and never reach this screen refresher.

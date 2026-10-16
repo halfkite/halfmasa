@@ -70,7 +70,7 @@
     "25-B": { "key": "disable_non_source_fluid_rendering", "status": "implemented" },
     "26": { "key": "entity_render_aggregation", "status": "implemented" },
     "27": { "key": "condensed_creative_inventory", "status": "implemented" },
-    "28": { "key": "keep_mod_menu_scroll", "status": "implemented" },
+    "28": { "key": "keep_screen_position", "status": "implemented" },
     "29": { "key": "creative_search_history", "status": "implemented" },
     "30": { "key": "item_manager_recipe_history", "status": "implemented" },
     "31": { "key": "night_vision_fade", "status": "implemented" },
@@ -96,7 +96,7 @@
     "43": { "key": "remove_cooldown_animations", "status": "implemented", "minecraft": ">=1.21.1" },
     "44": { "key": "custom_entity_render_disable", "status": "implemented", "minecraft": ">=1.21.1" },
     "45": { "key": "range_feeding", "status": "implemented", "minecraft": ">=1.21.1" },
-    "46": { "key": "minihud_container_preview_optimization", "status": "implemented", "minecraft": ">=26.3" },
-    "47": { "key": "minihud_preview_independent", "status": "implemented", "minecraft": ">=26.3" }
+    "46": { "key": "minihud_container_preview_optimization", "status": "implemented", "minecraft": ">=1.21.1" },
+    "47": { "key": "minihud_preview_independent", "status": "implemented", "minecraft": ">=1.21.1" }
   }
 }

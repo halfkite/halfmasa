@@ -113,7 +113,7 @@ public final class ConfigScrollMemory
         WidgetSearchBar search = widget.getSearchBarWidget();
         if (search != null)
         {
-            //#if MC >= 1.21.11
+            //#if MC > 1.21.10
             String text = ((ConfigSearchBarAccessor) search).halfmasa$getSearchBox().getValueWrapper();
             //#else
             //$$ String text = ((ConfigSearchBarAccessor) search).halfmasa$getSearchBox().getTextWrapper();
@@ -139,7 +139,7 @@ public final class ConfigScrollMemory
         {
             var textField = ((ConfigSearchBarAccessor) search).halfmasa$getSearchBox();
             // Restore filters first, then clamp against the rebuilt result list.
-            //#if MC >= 1.21.11
+            //#if MC > 1.21.10
             textField.setValueWrapper(state.text());
             //#else
             //$$ textField.setTextWrapper(state.text());
@@ -169,7 +169,7 @@ public final class ConfigScrollMemory
 
     private static boolean enabled()
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         return Configs.KEEP_SCREEN_POSITION.getBooleanValue();
         //#else
         //$$ return Configs.KEEP_MOD_MENU_SCROLL.getBooleanValue();

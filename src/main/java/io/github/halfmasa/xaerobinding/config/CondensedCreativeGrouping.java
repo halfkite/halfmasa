@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.config;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import fi.dy.masa.malilib.config.IConfigOptionListEntry;
 import fi.dy.masa.malilib.util.StringUtils;
 

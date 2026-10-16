@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.feature.minihud;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
@@ -11,7 +11,9 @@ import fi.dy.masa.malilib.interfaces.IClientTickHandler;
 import fi.dy.masa.malilib.util.data.tag.BaseData;
 import fi.dy.masa.malilib.util.data.tag.CompoundData;
 import fi.dy.masa.malilib.util.data.tag.ListData;
+//#if MC > 1.21.10
 import fi.dy.masa.malilib.util.nbt.NbtInventory;
+//#endif
 import io.github.halfmasa.xaerobinding.config.Configs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.NonNullList;
@@ -32,6 +34,7 @@ public final class PreviewCache implements IClientTickHandler
     private static final List<DataValue<?>> DATA = new ArrayList<>();
     private static final List<Serialized> SERIALIZED = new ArrayList<>();
     private static final List<BlockData> BLOCK_DATA = new ArrayList<>();
+    private static final List<BlockTag> BLOCK_TAGS = new ArrayList<>();
     private static final List<WorldData> WORLD_DATA = new ArrayList<>();
     private static final Map<ItemStack, DrawItem> DRAW_ITEMS = new WeakHashMap<>();
     private static int depth;
@@ -46,6 +49,7 @@ public final class PreviewCache implements IClientTickHandler
     private record DataValue<T>(Object kind, Object registry, BaseData snapshot, T value) {}
     private record Serialized(Object registry, List<ItemStack> snapshot, ListData value) {}
     private record BlockData(Object component, CompoundTag snapshot, CompoundData value) {}
+    private record BlockTag(Object component, CompoundTag snapshot, CompoundTag value) {}
     private record WorldInventory(int slots) {}
     private record DrawItem(ItemStack display, long tick, long revision) {}
     private static final class WorldData
@@ -90,9 +94,15 @@ public final class PreviewCache implements IClientTickHandler
         DATA.clear();
         SERIALIZED.clear();
         BLOCK_DATA.clear();
+        BLOCK_TAGS.clear();
         WORLD_DATA.clear();
         DRAW_ITEMS.clear();
+        //#if MC > 1.21.10
         HeldWorldPreview.clear();
+        //#else
+        //$$ LegacyHeldWorldPreview.clear();
+        //$$ LegacyNbtCache.clear();
+        //#endif
         revision++;
     }
 
@@ -140,6 +150,16 @@ public final class PreviewCache implements IClientTickHandler
         for (BlockData entry : BLOCK_DATA)
             if (entry.component == component && java.util.Objects.equals(entry.snapshot, tag)) return entry.value;
         return remember(BLOCK_DATA, new BlockData(component, tag == null ? null : tag.copy(), original.get())).value;
+    }
+
+    public static CompoundTag blockTag(ItemStack stack, Supplier<CompoundTag> original)
+    {
+        if (!active()) return original.get();
+        var component = stack.get(DataComponents.BLOCK_ENTITY_DATA);
+        CompoundTag tag = component == null ? null : component.getUnsafe();
+        for (BlockTag entry : BLOCK_TAGS)
+            if (entry.component == component && java.util.Objects.equals(entry.snapshot, tag)) return entry.value;
+        return remember(BLOCK_TAGS, new BlockTag(component, tag == null ? null : tag.copy(), original.get())).value;
     }
 
     /** Compare mutable data structurally, including added/removed compound keys and empty compounds. */
@@ -229,6 +249,7 @@ public final class PreviewCache implements IClientTickHandler
     }
 
     /** Ender previews often wrap the same live inventory in a new NbtInventory on every frame. */
+    //#if MC > 1.21.10
     public static ListData serialize(NbtInventory inventory, Object registry, Supplier<ListData> original)
     {
         if (!active()) return original.get();
@@ -245,5 +266,6 @@ public final class PreviewCache implements IClientTickHandler
         var snapshot = current.stream().map(ItemStack::copy).toList();
         return remember(SERIALIZED, new Serialized(registry, snapshot, value)).value;
     }
+    //#endif
 }
 //#endif

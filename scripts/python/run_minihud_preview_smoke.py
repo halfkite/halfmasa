@@ -12,6 +12,7 @@ import sys
 sys.stdout.reconfigure(encoding="utf-8")
 import run_startup_smoke as startup
 import run_entity_render_disable_smoke as entity_smoke
+import port_smoke_compat as port_compat
 
 ROOT = Path(__file__).resolve().parents[2]
 EXTRA_SOURCES = {}
@@ -167,21 +168,25 @@ def main():
     parser.add_argument('--timeout', type=int, default=300)
     parser.add_argument('--malilib', type=Path)
     parser.add_argument('--with-api', action='store_true')
+    parser.add_argument('--version', default='26.3')
+    parser.add_argument('--java-home', type=Path)
     args = parser.parse_args()
-    args.version = '26.3'
-    args.java_home = Path('C:/Program Files/Java/jdk-25.0.3')
+    if args.java_home is None:
+        args.java_home = Path('C:/Program Files/Java/jdk-25.0.3') if args.version.startswith('26.') else ROOT / 'build/toolchains/jdk-21.0.12.1+1'
     args.artifact = args.artifact.resolve()
     directory = ROOT / 'build/minihud-preview-tests' / datetime.now().strftime('%Y%m%d-%H%M%S-%f')
     classes = directory / 'classes'
     classes.mkdir(parents=True)
     frame = entity_smoke.FRAME.replace('entitydisablesmoke', 'previewsmoke').replace('EntityDisableSmoke', 'PreviewSmoke')
     clipboard = entity_smoke.CLIPBOARD.replace('entitydisablesmoke', 'previewsmoke')
+    native_cp = port_compat.classpath(args.version, args.artifact)
+    named_minihud = port_compat.named_mod(args.version, args.java_home, args.minihud, native_cp)
+    cp = os.pathsep.join(path for path in [str(named_minihud), str(args.malilib) if args.malilib else '', *map(str, EXTRA_CLASSPATH), native_cp] if path)
     sources = []
     for name, source in [('PreviewSmoke', SOURCE), ('FrameMixin', frame), ('ClipboardMixin', clipboard), ('ProbeMixin', PROBE), ('DrawProbeMixin', DRAW_PROBE), ('MapProbeMixin', MAP_PROBE), *EXTRA_SOURCES.items()]:
         path = directory / (name + '.java')
-        path.write_text(source, encoding='utf-8')
+        path.write_text(port_compat.source(source, args.version, cp), encoding='utf-8')
         sources.append(str(path))
-    cp = os.pathsep.join([str(args.artifact), str(args.minihud), str(args.malilib) if args.malilib else '', *map(str, EXTRA_CLASSPATH), (ROOT / 'build/port-classpath-26.3.txt').read_text().strip()])
     result = subprocess.run([str(args.java_home / 'bin/javac.exe'), '-J-Dfile.encoding=UTF-8', '-J-Duser.language=en', '-proc:none', '-encoding', 'UTF-8', '-cp', cp, '-d', str(classes), *sources], capture_output=True)
     if result.returncode:
         diagnostic = result.stderr.decode('utf-8', errors='replace')
@@ -193,7 +198,8 @@ def main():
         for path in classes.rglob('*.class'):
             jar.write(path, path.relative_to(classes).as_posix())
         jar.writestr('fabric.mod.json', json.dumps({'schemaVersion': 1, 'id': 'halfmasa_preview_smoke', 'version': '1.0', 'environment': 'client', 'entrypoints': {'client': ['io.github.halfmasa.previewsmoke.PreviewSmoke']}, 'mixins': ['preview-smoke.mixins.json']}))
-        jar.writestr('preview-smoke.mixins.json', json.dumps({'required': True, 'package': 'io.github.halfmasa.previewsmoke.mixin', 'compatibilityLevel': 'JAVA_25', 'client': ['FrameMixin', 'ClipboardMixin', 'ProbeMixin', 'DrawProbeMixin', 'MapProbeMixin', *EXTRA_SOURCES], 'injectors': {'defaultRequire': 1}}))
+        jar.writestr('preview-smoke.mixins.json', json.dumps({'required': True, 'package': 'io.github.halfmasa.previewsmoke.mixin', 'compatibilityLevel': 'JAVA_21' if args.version.startswith('1.21.') else 'JAVA_25', 'client': ['FrameMixin', 'ClipboardMixin', 'ProbeMixin', 'DrawProbeMixin', 'MapProbeMixin', *EXTRA_SOURCES], 'injectors': {'defaultRequire': 1}}))
+    mod = port_compat.remap_fixture(args.version, args.java_home, mod, cp, directory)
     game = directory / 'game'
     (game / 'mods').mkdir(parents=True)
     (game / 'config').mkdir()
@@ -203,7 +209,9 @@ def main():
     for extra_mod in EXTRA_MODS:
         shutil.copy2(extra_mod, game / 'mods' / extra_mod.name)
     if args.with_api:
-        api = next(p for p in (Path.home() / '.gradle/caches/modules-2/files-2.1/net.fabricmc.fabric-api/fabric-api/0.161.0+26.3').glob('*/*.jar') if not p.name.endswith(('-sources.jar', '-javadoc.jar')))
+        import re
+        api_version = dict(re.findall(r"'([\d.]+)': '([^']+)'", (ROOT / 'common.gradle').read_text(encoding='utf-8')))[args.version]
+        api = next(p for p in (Path.home() / f'.gradle/caches/modules-2/files-2.1/net.fabricmc.fabric-api/fabric-api/{api_version}').glob('*/*.jar') if not p.name.endswith(('-sources.jar', '-javadoc.jar')))
         shutil.copy2(api, game / 'mods' / api.name)
     command = startup.production_command(args, game, mod)
     if args.malilib:
@@ -213,7 +221,7 @@ def main():
             if metadata.get('id') == 'malilib':
                 assert installed.resolve().parent == (game / 'mods').resolve()
                 installed.write_bytes(args.malilib.read_bytes())
-    command[1:1] = ['-Djava.awt.headless=true', '-Dsun.java2d.d3d=false', '-XX:ActiveProcessorCount=4', f'-XX:ErrorFile={directory / "jvm-crash.log"}']
+    command[1:1] = ['-Djava.awt.headless=true', '-Dsun.java2d.d3d=false', '-XX:ActiveProcessorCount=2', f'-XX:ErrorFile={directory / "jvm-crash.log"}']
     command[command.index('--width') + 1] = '1120'
     command[command.index('--height') + 1] = '720'
     log = directory / 'launcher.log'

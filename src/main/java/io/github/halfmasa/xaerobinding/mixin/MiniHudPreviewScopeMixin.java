@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.mixin;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.11
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
@@ -16,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Desc;
 
 @Pseudo
 @Mixin(targets = "fi.dy.masa.minihud.event.RenderHandler", remap = false)
@@ -29,13 +30,13 @@ public abstract class MiniHudPreviewScopeMixin
         finally { PreviewCache.exit(); }
     }
 
-    @WrapOperation(method = "onRenderTooltipLast", at = @At(value = "INVOKE", target = "Lfi/dy/masa/malilib/util/InventoryUtils;getPlayerEnderItemsFromData(Lfi/dy/masa/malilib/util/data/tag/CompoundData;Lnet/minecraft/core/RegistryAccess;)Lnet/minecraft/world/inventory/PlayerEnderChestContainer;"))
+    @WrapOperation(method = "onRenderTooltipLast", at = @At(value = "INVOKE", desc = @Desc(owner = fi.dy.masa.malilib.util.InventoryUtils.class, value = "getPlayerEnderItemsFromData", args = {CompoundData.class, RegistryAccess.class}, ret = PlayerEnderChestContainer.class)))
     private PlayerEnderChestContainer halfmasa$enderItems(CompoundData data, RegistryAccess registry, Operation<PlayerEnderChestContainer> original)
     {
         return PreviewCache.data("ender", registry, data.getList(NbtKeys.ENDER_ITEMS), () -> original.call(data, registry));
     }
 
-    @WrapOperation(method = "onRenderTooltipLast", at = @At(value = "INVOKE", target = "Lfi/dy/masa/malilib/util/nbt/NbtInventory;toDataList(Lnet/minecraft/core/RegistryAccess;)Lfi/dy/masa/malilib/util/data/tag/ListData;"))
+    @WrapOperation(method = "onRenderTooltipLast", at = @At(value = "INVOKE", desc = @Desc(owner = NbtInventory.class, value = "toDataList", args = {RegistryAccess.class}, ret = ListData.class)))
     private ListData halfmasa$serializeEnder(NbtInventory inventory, RegistryAccess registry, Operation<ListData> original)
     {
         return PreviewCache.serialize(inventory, registry, () -> original.call(inventory, registry));

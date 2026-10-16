@@ -2,7 +2,7 @@ package io.github.halfmasa.xaerobinding.mixin;
 
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import org.spongepowered.asm.mixin.Mixin;
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import io.github.halfmasa.xaerobinding.feature.CreativeScreenMemory;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -19,12 +19,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(CreativeModeInventoryScreen.class)
 public abstract class CreativeScreenPositionMixin
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         extends AbstractContainerScreen<CreativeModeInventoryScreen.ItemPickerMenu>
         implements CreativeScreenMemory.ContentsReady
         //#endif
 {
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     @Shadow private static CreativeModeTab selectedTab;
     @Shadow private float scrollOffs;
     @Shadow private EditBox searchBox;

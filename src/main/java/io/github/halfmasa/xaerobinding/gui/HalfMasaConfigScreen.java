@@ -19,11 +19,16 @@ import io.github.halfmasa.xaerobinding.feature.ConfigScrollMemory;
 
 public final class HalfMasaConfigScreen extends GuiConfigsBase implements ScrollCategoryKeyProvider
 {
+    //#if MC >= 1.21.1
+    private static final int EXPANSION_HINT_HEIGHT = 16;
+    //#else
+    //$$ private static final int EXPANSION_HINT_HEIGHT = 0;
+    //#endif
     private Tab tab = Tab.ALL;
 
     public HalfMasaConfigScreen()
     {
-        super(10, 52, XaeroWorldBinding.MOD_ID, null, "halfmasa.gui.title");
+        super(10, 52 + EXPANSION_HINT_HEIGHT, XaeroWorldBinding.MOD_ID, null, "halfmasa.gui.title");
         //#if MC >= 1.21.1
         this.tab = Tab.valueOf(ConfigScrollMemory.restoreSelectedTab());
         //#endif
@@ -54,10 +59,14 @@ public final class HalfMasaConfigScreen extends GuiConfigsBase implements Scroll
         super.initGui();
         this.clearOptions();
 
+        //#if MC >= 1.21.1
+        this.addLabel(10, 26, -1, 10, 0xFFCCCCCC,
+                StringUtils.translate("halfmasa.gui.expansion_hint"));
+        //#endif
         int x = 10;
         for (Tab candidate : Tab.values())
         {
-            ButtonGeneric button = new ButtonGeneric(x, 26, -1, 20, candidate.getDisplayName());
+            ButtonGeneric button = new ButtonGeneric(x, 26 + EXPANSION_HINT_HEIGHT, -1, 20, candidate.getDisplayName());
             button.setEnabled(tab != candidate);
             this.addButton(button, new TabListener(candidate, this));
             x += button.getWidth() + 2;

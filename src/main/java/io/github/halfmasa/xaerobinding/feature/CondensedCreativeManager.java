@@ -14,7 +14,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-//#if MC >= 1.21.11
+//#if MC > 1.21.10
 import net.minecraft.resources.Identifier;
 //#else
 //$$ import net.minecraft.resources.ResourceLocation;
@@ -24,7 +24,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SpawnEggItem;
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import net.minecraft.world.item.BlockItem;
 import io.github.halfmasa.xaerobinding.config.CondensedCreativeGrouping;
 //#endif
@@ -34,7 +34,7 @@ import io.github.halfmasa.xaerobinding.config.Configs;
 public final class CondensedCreativeManager
 {
     private static final Map<CreativeModeInventoryScreen, State> STATES = new WeakHashMap<>();
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     // Only group identifiers survive screen closure. No screen, item or world data is retained or written to disk.
     private static final Set<String> SESSION_EXPANDED = new HashSet<>();
     //#endif
@@ -66,7 +66,7 @@ public final class CondensedCreativeManager
 
         State oldState = STATES.get(screen);
         Set<String> expanded = oldState != null ? new HashSet<>(oldState.expanded) : new HashSet<>();
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (Configs.CONDENSED_CREATIVE_KEEP_EXPANDED.getBooleanValue())
             expanded = new HashSet<>(SESSION_EXPANDED);
         else
@@ -87,7 +87,7 @@ public final class CondensedCreativeManager
                 rebuild(screen, tab, items);
                 return true;
             }
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             if (!state.settings.equals(GroupSettings.current()))
             {
                 // Rebuild from the original entries, never from a list containing group icons or history rows.
@@ -122,7 +122,7 @@ public final class CondensedCreativeManager
             {
                 String expansionKey = state.expansionKey(group.key);
                 if (!state.expanded.add(expansionKey)) state.expanded.remove(expansionKey);
-                //#if MC >= 26.3
+                //#if MC >= 1.21.1
                 if (Configs.CONDENSED_CREATIVE_KEEP_EXPANDED.getBooleanValue())
                 {
                     if (state.expanded.contains(expansionKey)) SESSION_EXPANDED.add(expansionKey);
@@ -233,7 +233,7 @@ public final class CondensedCreativeManager
     private static String groupKey(ItemStack stack, String tabId)
     {
         if (stack.isEmpty()) return null;
-        //#if MC >= 1.21.11
+        //#if MC > 1.21.10
         Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         //#else
         //$$ ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
@@ -241,7 +241,7 @@ public final class CondensedCreativeManager
         if (!"minecraft".equals(id.getNamespace())) return null;
         String path = id.getPath();
 
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (stack.getItem() instanceof BlockItem) return CondensedCreativeRules.blockGroup(stack, path, tabId);
         String itemGroup = CondensedCreativeRules.itemGroup(path, tabId);
         if (itemGroup != null) return itemGroup;
@@ -266,7 +266,7 @@ public final class CondensedCreativeManager
 
     private static Component groupTitle(String key, List<ItemStack> children)
     {
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         if (key.startsWith("wood:") || key.startsWith("material:")) return CondensedCreativeRules.materialTitle(key, children);
         //#else
         //$$ if (key.startsWith("wood:") || key.startsWith("material:")) return children.getFirst().getHoverName().copy();
@@ -393,7 +393,7 @@ public final class CondensedCreativeManager
         result = toolsGroup(stack, path);
         if (result != null) return result;
         result = spawnEggGroup(stack);
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         // Block materials are resolved above. A copper tool or iron ingot must not join a block group.
         return result;
         //#else
@@ -440,12 +440,12 @@ public final class CondensedCreativeManager
 
     private static String tabId(CreativeModeTab tab)
     {
-        //#if MC >= 1.21.11
+        //#if MC > 1.21.10
         Identifier id = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab);
         //#else
         //$$ ResourceLocation id = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab);
         //#endif
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         return id != null && "minecraft".equals(id.getNamespace()) ? id.getPath() : "unknown";
         //#else
         //$$ return id != null ? id.getPath() : "unknown";
@@ -486,7 +486,7 @@ public final class CondensedCreativeManager
 
     public record Visual(String key, boolean parent, boolean expanded) {}
 
-    //#if MC >= 26.3
+    //#if MC >= 1.21.1
     private record GroupSettings(CondensedCreativeGrouping grouping, boolean books, boolean arrows, boolean potions, boolean rotating, boolean keepExpanded)
     {
         private static GroupSettings current()
@@ -508,13 +508,13 @@ public final class CondensedCreativeManager
         private final String tabId;
         private final Map<String, Group> groups = new LinkedHashMap<>();
         private long lastPreviewStep = Long.MIN_VALUE;
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         private GroupSettings settings = GroupSettings.current();
         //#endif
 
         private String expansionKey(String key)
         {
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             return this.tabId + ":" + this.settings.grouping.getStringValue() + ":" + key;
             //#else
             //$$ return key;

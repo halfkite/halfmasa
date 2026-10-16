@@ -16,7 +16,7 @@ public final class XaeroMixinPlugin implements IMixinConfigPlugin
     {
         if (mixinClassName.contains("MiniHudPreview"))
         {
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             return FabricLoader.getInstance().isModLoaded("minihud");
             //#else
             //$$ return false;
@@ -24,7 +24,7 @@ public final class XaeroMixinPlugin implements IMixinConfigPlugin
         }
         if (mixinClassName.endsWith("CreativeScreenPositionMixin"))
         {
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             return true;
             //#else
             //$$ return false;

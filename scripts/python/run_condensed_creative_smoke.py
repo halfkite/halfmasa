@@ -2,13 +2,17 @@
 import argparse
 from datetime import datetime
 import json
+import re
 import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
+sys.stdout.reconfigure(encoding="utf-8")
 import time
 import zipfile
 
+import port_smoke_compat as port_compat
 import run_startup_smoke as startup
 import run_entity_render_disable_smoke as entity_smoke
 
@@ -176,28 +180,34 @@ public class CondensedCreativeSmoke implements ClientModInitializer {
 '''
 
 
+def fixture_source(version):
+    return SOURCE if version == '26.3' else SOURCE.replace('source.size()>16', 'source.size()>=16').replace('String actual=key(id,tab);', 'if(!BuiltInRegistries.ITEM.containsKey(Identifier.withDefaultNamespace(id)))return;String actual=key(id,tab);').replace('one.add(stack("white_wool_stairs"))', 'one.add(stack("white_wool"))').replace('ItemStack.matches(one.getFirst(),stack("white_wool_stairs"))', 'ItemStack.matches(one.getFirst(),stack("white_wool"))').replace('key("oak_shelf","functional_blocks")', 'key("oak_door","functional_blocks")')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--artifact', type=Path, required=True)
-    parser.add_argument('--java-home', type=Path, default=Path('C:/Program Files/Java/jdk-25.0.3'))
+    parser.add_argument('--java-home', type=Path)
     parser.add_argument('--with-api', action='store_true')
     parser.add_argument('--timeout', type=int, default=180)
+    parser.add_argument('--version', default='26.3')
     args = parser.parse_args()
+    if args.java_home is None:
+        args.java_home = ROOT / 'build/toolchains/jdk-21.0.12.1+1' if args.version.startswith('1.21.') else Path('C:/Program Files/Java/jdk-25.0.3')
     args.artifact = args.artifact.resolve()
     if not args.artifact.is_file():
         parser.error(f'Artifact does not exist: {args.artifact}')
-    args.version = '26.3'
     directory = ROOT / 'build/condensed-creative-tests' / datetime.now().strftime('%Y%m%d-%H%M%S-%f')
     classes = directory / 'classes'
     classes.mkdir(parents=True)
     frame = entity_smoke.FRAME.replace('entitydisablesmoke', 'condensedcreativesmoke').replace('EntityDisableSmoke', 'CondensedCreativeSmoke')
     clipboard = entity_smoke.CLIPBOARD.replace('entitydisablesmoke', 'condensedcreativesmoke')
+    cp = port_compat.classpath(args.version, args.artifact)
     sources = []
-    for name, text in [('CondensedCreativeSmoke', SOURCE), ('FrameMixin', frame), ('ClipboardMixin', clipboard)]:
+    for name, text in [('CondensedCreativeSmoke', fixture_source(args.version)), ('FrameMixin', frame), ('ClipboardMixin', clipboard)]:
         path = directory / (name + '.java')
-        path.write_text(text, encoding='utf-8')
+        path.write_text(port_compat.source(text, args.version, cp), encoding='utf-8')
         sources.append(str(path))
-    cp = str(args.artifact) + os.pathsep + (ROOT / 'build/port-classpath-26.3.txt').read_text().strip()
     compile_result = subprocess.run([str(args.java_home / 'bin/javac.exe'), '-J-Dfile.encoding=UTF-8', '-J-Duser.language=en', '-proc:none', '-encoding', 'UTF-8', '-cp', cp, '-d', str(classes), *sources], capture_output=True)
     if compile_result.returncode:
         diagnostic = compile_result.stderr.decode('utf-8', errors='replace')
@@ -209,7 +219,8 @@ def main():
         for path in classes.rglob('*.class'):
             jar.write(path, path.relative_to(classes).as_posix())
         jar.writestr('fabric.mod.json', json.dumps({'schemaVersion': 1, 'id': 'halfmasa_condensed_creative_smoke', 'version': '1.0', 'environment': 'client', 'entrypoints': {'client': ['io.github.halfmasa.condensedcreativesmoke.CondensedCreativeSmoke']}, 'mixins': ['condensed-creative-smoke.mixins.json']}))
-        jar.writestr('condensed-creative-smoke.mixins.json', json.dumps({'required': True, 'package': 'io.github.halfmasa.condensedcreativesmoke.mixin', 'compatibilityLevel': 'JAVA_25', 'client': ['FrameMixin', 'ClipboardMixin'], 'injectors': {'defaultRequire': 1}}))
+        jar.writestr('condensed-creative-smoke.mixins.json', json.dumps({'required': True, 'package': 'io.github.halfmasa.condensedcreativesmoke.mixin', 'compatibilityLevel': 'JAVA_21' if args.version.startswith('1.21.') else 'JAVA_25', 'client': ['FrameMixin', 'ClipboardMixin'], 'injectors': {'defaultRequire': 1}}))
+    mod = port_compat.remap_fixture(args.version, args.java_home, mod, cp, directory)
     game = directory / 'game'
     (game / 'config/halfmasa').mkdir(parents=True)
     (game / 'mods').mkdir()
@@ -217,10 +228,11 @@ def main():
     (game / 'config/halfmasa/halfmasa.json').write_text('{}\n')
     (game / 'options.txt').write_text('onboardAccessibility:false\nenableVsync:false\nmaxFps:30\nrenderDistance:3\nsimulationDistance:5\npauseOnLostFocus:false\nsoundCategory_master:0.0\nguiScale:2\nlang:en_us\ntutorialStep:none\n')
     if args.with_api:
-        api = next(p for p in (Path.home() / '.gradle/caches/modules-2/files-2.1/net.fabricmc.fabric-api/fabric-api/0.161.0+26.3').glob('*/*.jar') if not p.name.endswith(('-sources.jar', '-javadoc.jar')))
+        api_version = dict(re.findall(r"'([\d.]+)': '([^']+)'", (ROOT / 'common.gradle').read_text(encoding='utf-8')))[args.version]
+        api = next(p for p in (Path.home() / f'.gradle/caches/modules-2/files-2.1/net.fabricmc.fabric-api/fabric-api/{api_version}').glob('*/*.jar') if not p.name.endswith(('-sources.jar', '-javadoc.jar')))
         shutil.copy2(api, game / 'mods' / api.name)
     command = startup.production_command(args, game, mod)
-    command[1:1] = ['-Djava.awt.headless=true', '-Dsun.java2d.d3d=false', '-XX:ActiveProcessorCount=4', f'-XX:ErrorFile={directory / "jvm-crash.log"}']
+    command[1:1] = ['-Djava.awt.headless=true', '-Dsun.java2d.d3d=false', '-XX:ActiveProcessorCount=2', f'-XX:ErrorFile={directory / "jvm-crash.log"}']
     command[command.index('--width') + 1] = '1120'
     command[command.index('--height') + 1] = '720'
     log = directory / 'launcher.log'

@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.mixin;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.11
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
@@ -17,14 +17,16 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Desc;
 import org.spongepowered.asm.mixin.injection.Coerce;
 
 @Pseudo
+@Desc(id = "getRenderContext", value = "getRenderContext", args = {GuiContext.class, ProfilerFiller.class}, ret = InventoryOverlayContext.class)
 @Mixin(targets = "fi.dy.masa.minihud.renderer.InventoryOverlayHandler", remap = false)
 public abstract class MiniHudPreviewWorldScopeMixin
 {
     // Held world previews create a new screen each frame, so scope the actual handler entry.
-    @WrapMethod(method = "getRenderContext(Lfi/dy/masa/malilib/render/GuiContext;Lnet/minecraft/util/profiling/ProfilerFiller;)Lfi/dy/masa/malilib/render/InventoryOverlayContext;")
+    @WrapMethod(method = "@Desc(getRenderContext)")
     private InventoryOverlayContext halfmasa$worldPreviewScope(GuiContext ctx, ProfilerFiller profiler,
                                                                Operation<InventoryOverlayContext> original)
     {
@@ -41,8 +43,8 @@ public abstract class MiniHudPreviewWorldScopeMixin
                 () -> original.call(world, pos, blockEntity, data));
     }
 
-    @WrapOperation(method = "getRenderContext(Lfi/dy/masa/malilib/render/GuiContext;Lnet/minecraft/util/profiling/ProfilerFiller;)Lfi/dy/masa/malilib/render/InventoryOverlayContext;",
-            at = @At(value = "INVOKE", target = "Lfi/dy/masa/minihud/renderer/InventoryOverlayHandler;renderInventoryOverlay(Lfi/dy/masa/malilib/render/GuiContext;Lfi/dy/masa/malilib/render/InventoryOverlayContext;ZZ)V"))
+    @WrapOperation(method = "@Desc(getRenderContext)",
+            at = @At(value = "INVOKE", desc = @Desc(value = "renderInventoryOverlay", args = {GuiContext.class, InventoryOverlayContext.class, boolean.class, boolean.class})))
     private void halfmasa$drawPrepared(@Coerce IInventoryOverlayHandler handler, GuiContext ctx,
                                        InventoryOverlayContext context, boolean shulkerBackground,
                                        boolean villagerBackground, Operation<Void> original)

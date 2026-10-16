@@ -212,7 +212,7 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         registerTrigger(Configs.CLEAR_SERVER_ICON_CACHE, ServerIconCache::requestClear);
         registerTrigger(Configs.CYCLE_ITEM_MANAGER_RECIPE_HISTORY_POSITION, ItemManagerHistoryOverlay::cyclePosition);
         registerTrigger(Configs.CONFLUX_MAP_TEMPORARY_WAYPOINT, ConfluxMapTemporaryWaypoint::placeAtPlayer);
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.minihud.PreviewCache.getInstance());
         Configs.MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION.setValueChangeCallback(config ->
                 io.github.halfmasa.xaerobinding.feature.minihud.PreviewCache.clear());
@@ -243,28 +243,37 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         //#endif
         Configs.KEEP_MOD_MENU_SCROLL.setValueChangeCallback(config -> {
             if (!Configs.KEEP_MOD_MENU_SCROLL.getBooleanValue()) ConfigScrollMemory.clear();
-            //#if MC >= 26.3
+            //#if MC >= 1.21.1
             if (!Configs.KEEP_SCREEN_POSITION.getBooleanValue())
                 io.github.halfmasa.xaerobinding.feature.CreativeScreenMemory.clear();
             //#endif
         });
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         Configs.KEEP_CONFIG_POSITION_EXPANDED.setComment("halfmasa.config.ported.comment.keepConfigPositionExpanded.screen");
         Configs.KEEP_CREATIVE_SCREEN_POSITION.setValueChangeCallback(config -> {
             if (!Configs.KEEP_CREATIVE_SCREEN_POSITION.getBooleanValue())
                 io.github.halfmasa.xaerobinding.feature.CreativeScreenMemory.clear();
         });
         //#endif
-        Configs.CJK_LATIN_SPACING.setValueChangeCallback(config -> {
-            if (Configs.isConfigLoaded()) Minecraft.getInstance().reloadResourcePacks();
-        });
-        Configs.CJK_LATIN_SPACING_TRANSLATIONS.setValueChangeCallback(
-                config -> {
-                    if (Configs.isConfigLoaded()) Minecraft.getInstance().reloadResourcePacks();
-                });
+        //#if MC >= 1.21.1
+        Configs.CJK_LATIN_SPACING.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.ConfigRenderingRefresh.refreshTranslations());
+        Configs.CJK_LATIN_SPACING_TRANSLATIONS.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.ConfigRenderingRefresh.refreshTranslations());
+        //#else
+        //$$ Configs.CJK_LATIN_SPACING.setValueChangeCallback(config -> {
+        //$$     if (Configs.isConfigLoaded()) Minecraft.getInstance().reloadResourcePacks();
+        //$$ });
+        //$$ Configs.CJK_LATIN_SPACING_TRANSLATIONS.setValueChangeCallback(
+        //$$         config -> {
+        //$$             if (Configs.isConfigLoaded()) Minecraft.getInstance().reloadResourcePacks();
+        //$$         });
+        //#endif
         Configs.ENABLE_WORLD_BINDING.setValueChangeCallback(config -> WorldBindingStore.ensureCurrentWorldBinding());
-        Configs.DISABLE_FLUID_RENDERING.setValueChangeCallback(config -> refreshWorldRendering());
-        Configs.DISABLE_NON_SOURCE_FLUID_RENDERING.setValueChangeCallback(config -> refreshWorldRendering());
+        Configs.DISABLE_FLUID_RENDERING.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.ConfigRenderingRefresh.refreshFluids());
+        Configs.DISABLE_NON_SOURCE_FLUID_RENDERING.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.ConfigRenderingRefresh.refreshFluids());
         Configs.ENTITY_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearEntities());
         //#if MC >= 1.21.1
         Configs.ITEM_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearItems());
@@ -356,12 +365,4 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         });
     }
 
-    private static void refreshWorldRendering()
-    {
-        Minecraft client = Minecraft.getInstance();
-        if (client.level != null)
-        {
-            MinecraftClientCompat.reloadLevelRenderer(client);
-        }
-    }
 }

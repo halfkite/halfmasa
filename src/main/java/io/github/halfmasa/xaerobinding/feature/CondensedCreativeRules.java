@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.feature;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -8,7 +8,11 @@ import java.util.Set;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+//#if MC > 1.21.10
 import net.minecraft.resources.Identifier;
+//#else
+//$$ import net.minecraft.resources.ResourceLocation;
+//#endif
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -47,6 +51,12 @@ final class CondensedCreativeRules
             "emerald", "lapis", "redstone", "coal", "amethyst", "brick", "stone");
 
     private CondensedCreativeRules() {}
+
+    //#if MC > 1.21.10
+    private static Identifier identifier(String path) { return Identifier.withDefaultNamespace(path); }
+    //#else
+    //$$ private static ResourceLocation identifier(String path) { return ResourceLocation.withDefaultNamespace(path); }
+    //#endif
 
     static String blockGroup(ItemStack stack, String path, String tab)
     {
@@ -88,7 +98,13 @@ final class CondensedCreativeRules
             case "resin" -> "resin_bricks";
             default -> family;
         };
+        //#if MC > 1.21.10
         var item = BuiltInRegistries.ITEM.getValue(Identifier.withDefaultNamespace(base));
+        //#elseif MC > 1.21.1
+        //$$ var item = BuiltInRegistries.ITEM.getValue(ResourceLocation.withDefaultNamespace(base));
+        //#else
+        //$$ var item = BuiltInRegistries.ITEM.get(ResourceLocation.withDefaultNamespace(base));
+        //#endif
         Component name = item != null && item != Items.AIR ? item.getDefaultInstance().getHoverName() : children.getFirst().getHoverName();
         return Component.translatable("halfmasa.feature.condensed_creative.material_group", name);
     }
@@ -194,7 +210,7 @@ final class CondensedCreativeRules
     private static boolean tag(ItemStack stack, String name)
     {
         return stack.getItem() instanceof BlockItem item && item.getBlock().builtInRegistryHolder()
-                .is(TagKey.create(Registries.BLOCK, Identifier.withDefaultNamespace(name)));
+                .is(TagKey.create(Registries.BLOCK, identifier(name)));
     }
 
     private static String withoutColor(String path)

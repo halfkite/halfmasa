@@ -67,7 +67,7 @@ public abstract class CondensedCreativeMixin extends AbstractContainerScreen<Cre
                 this.menu.items,
                 this.halfmasa$getSearchText());
         this.menu.scrollTo(this.scrollOffs);
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         io.github.halfmasa.xaerobinding.feature.CreativeScreenMemory.contentsReady((CreativeModeInventoryScreen) (Object) this, false);
         //#endif
     }
@@ -86,7 +86,7 @@ public abstract class CondensedCreativeMixin extends AbstractContainerScreen<Cre
             this.menu.scrollTo(this.scrollOffs);
         }
         this.halfmasa$refreshedDuringTabSelection = false;
-        //#if MC >= 26.3
+        //#if MC >= 1.21.1
         io.github.halfmasa.xaerobinding.feature.CreativeScreenMemory.contentsReady((CreativeModeInventoryScreen) (Object) this, true);
         //#endif
     }
@@ -196,7 +196,7 @@ public abstract class CondensedCreativeMixin extends AbstractContainerScreen<Cre
         {
             List<Component> tooltip = new ArrayList<>(cir.getReturnValue());
             tooltip.add(hint);
-            //#if MC < 26.3
+            //#if MC < 1.21.1
             //$$ tooltip.add(Component.translatable("halfmasa.feature.condensed_creative.source"));
             //#endif
             cir.setReturnValue(tooltip);

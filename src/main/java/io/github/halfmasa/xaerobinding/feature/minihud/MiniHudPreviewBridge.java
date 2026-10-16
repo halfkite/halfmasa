@@ -1,11 +1,15 @@
 package io.github.halfmasa.xaerobinding.feature.minihud;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.1
 import fi.dy.masa.malilib.config.IConfigBoolean;
 import fi.dy.masa.malilib.hotkeys.IHotkey;
 import fi.dy.masa.malilib.hotkeys.IKeybind;
 import fi.dy.masa.malilib.interfaces.IInventoryOverlayHandler;
+//#if MC > 1.21.10
 import fi.dy.masa.malilib.render.GuiContext;
+//#else
+//$$ import net.minecraft.client.gui.GuiGraphics;
+//#endif
 import io.github.halfmasa.xaerobinding.XaeroWorldBinding;
 import io.github.halfmasa.xaerobinding.config.Configs;
 import net.fabricmc.loader.api.FabricLoader;
@@ -24,7 +28,11 @@ public final class MiniHudPreviewBridge
 
     private MiniHudPreviewBridge() {}
 
+    //#if MC > 1.21.10
     public static void render(GuiContext context, ProfilerFiller profiler)
+    //#else
+    //$$ public static void render(GuiGraphics context, ProfilerFiller profiler)
+    //#endif
     {
         if (!INSTALLED || !Configs.MINIHUD_PREVIEW_INDEPENDENT.getBooleanValue() || context == null || profiler == null) return;
         Minecraft client = Minecraft.getInstance();
@@ -33,7 +41,11 @@ public final class MiniHudPreviewBridge
         if (current == null || current.main.getBooleanValue() || !current.enabled.getBooleanValue()
                 || !current.key.isKeybindHeld()) return;
         // Do not change the main toggle, replay the full HUD callback, or add a second native preview.
+        //#if MC > 1.21.10
         current.handler.getRenderContext(context, profiler);
+        //#else
+        //$$ current.handler.getRenderContext(context, profiler, client);
+        //#endif
     }
 
     private static Access resolve()
@@ -43,7 +55,11 @@ public final class MiniHudPreviewBridge
         try
         {
             Class<?> generic = Class.forName("fi.dy.masa.minihud.config.Configs$Generic");
+            //#if MC >= 26.3
             Class<?> hotkeys = Class.forName("fi.dy.masa.minihud.config.Hotkeys");
+            //#else
+            //$$ Class<?> hotkeys = generic;
+            //#endif
             Object main = generic.getField("MAIN_RENDERING_TOGGLE").get(null);
             Object enabled = generic.getField("INVENTORY_PREVIEW_ENABLED").get(null);
             Object previewKey = hotkeys.getField("INVENTORY_PREVIEW").get(null);

@@ -130,10 +130,14 @@ processResources {
             compatibility_level: unobfuscated ? 'JAVA_25' : 'JAVA_21'
     ]
     inputs.properties(properties)
+    // Compatibility filters are part of the output, even when resource sources did not change.
+    inputs.file(rootProject.file('common.gradle'))
     filesMatching('fabric.mod.json') { expand properties }
     filesMatching('halfmasa.mixins.json') {
         filter { line ->
-            if (project.mcVersion < 26_03_00 && line.contains('"MiniHudPreview')) return null
+            if (line.contains('"MiniHudPreviewLegacy') && (project.mcVersion < 1_21_01 || project.mcVersion >= 1_21_11)) return null
+            if (line.contains('"MiniHudPreview') && !line.contains('"MiniHudPreviewLegacy') && !line.contains('"MiniHudPreviewLifecycle') && project.mcVersion < 1_21_11) return null
+            if (line.contains('"MiniHudPreviewLifecycle') && project.mcVersion < 1_21_01) return null
             if (unobfuscated && line.contains('"refmap"')) return null
             if (project.mcVersion >= 1_21_01 && line.contains('"ConfluxMapDualWaypointListMixin"')) return null
             if (project.mcVersion < 1_21_01 && line.contains('"ConfluxMapCombinedWaypointListMixin"')) return null
@@ -210,6 +214,10 @@ java {
 sourceSets {
     main {
         java {
+            if (project.mcVersion >= 1_21_11) {
+                exclude 'io/github/halfmasa/xaerobinding/feature/minihud/Legacy*.java'
+                exclude 'io/github/halfmasa/xaerobinding/mixin/MiniHudPreviewLegacy*.java'
+            }
             if (project.mcVersion < 1_21_03) {
                 exclude 'io/github/halfmasa/xaerobinding/mixin/ItemDespawnRenderStateMixin.java'
             }

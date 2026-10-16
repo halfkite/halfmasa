@@ -12,6 +12,14 @@
     "DragonFightBossEventAccessor"
   ],
   "client": [
+    "MiniHudPreviewLegacyIndependentMixin",
+    "MiniHudPreviewLegacyScopeMixin",
+    "MiniHudPreviewLegacyWorldScopeMixin",
+    "MiniHudPreviewLegacyWorldInventoryMixin",
+    "MiniHudPreviewLegacyDrawMixin",
+    "MiniHudPreviewLegacyRenderMixin",
+    "MiniHudPreviewLegacyOverlayMixin",
+    "MiniHudPreviewLegacySyncMixin",
     "MiniHudPreviewIndependentMixin",
     "MiniHudPreviewScopeMixin",
     "MiniHudPreviewWorldScopeMixin",

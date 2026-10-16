@@ -2,11 +2,13 @@
 
 # halfmasa Features and Configuration
 
-Version 1.7.0 backports range feeding, Auto Eat, Better Boss Bar, invisible block markers, animation controls, custom entity rendering filters and the combined Conflux Map list to every project target. Vanilla preedit display settings apply to 26.1+; older targets retain the Windows JNI input method.
+Version 1.7.0 backports range feeding, Auto Eat, Better Boss Bar, invisible block markers, animation controls, custom entity rendering filters, the combined Conflux Map list, creative material grouping, screen position memory and MiniHUD preview extensions to every project target. Vanilla preedit display settings apply to 26.1+; older targets retain the Windows JNI input method.
 
 Conflux Map 0.1.11-beta.1 requires Fabric Loader 0.19.0+ on 26.x; integration checks use 0.19.5. The standalone HalfMasa minimum remains defined by its mod metadata.
 
 > Documentation version `1.7.0` | Open the configuration screen with `X + H` (or from Mod Menu) | Disabled by default unless noted; an empty hotkey means unbound
+
+The screen displays “Click [+] to expand sub-settings” at the top. Opening, closing or saving unrelated settings does not rebuild chunks; changing actual fluid visibility still triggers the required refresh. Chinese-English spacing updates only the language, without reloading all resource packs.
 
 ## Invisible Block Markers
 
@@ -131,10 +133,10 @@ Ordinary Servux entity replies are implemented. Splitter packets 10/11 are curre
 | Search history rows<br>`itemSearchHistoryRows` | Integer | `3` | Maximum number of rows in creative search history. Range: 1–9. |
 | Show history while searching<br>`itemSearchHistoryDuringSearch` | Boolean | `false` | Keep the history visible while search text is entered. When disabled, it appears only after the search box is cleared. |
 | Condensed creative items<br>`condensedCreative` | Boolean | `false` | Combine enchanted books, potions, tipped arrows, and block variants into expandable entries. Inventory hover tooltips omit source attribution. |
-| Grouping mode (26.3)<br>`condensedCreativeGrouping` | Option list | `default` | Existing categories / Material first. Material first groups block forms of the same material, limited to entries in the current tab or search results. |
-| Keep entries expanded (26.3)<br>`condensedCreativeKeepExpanded` | Boolean | `true` | Remember expanded entries per tab and grouping mode when reopening the inventory during this game session; not written to disk and cleared on restart. |
-| Entry background (26.3)<br>`condensedCreativeBackground` | Boolean | `false` | Translucent group backgrounds; existing preferences are preserved. |
-| Rotating group preview (26.3)<br>`condensedCreativeRotatingPreview` | Boolean | `false` | Cycle collapsed icons once per second. Disabled by default; existing preferences are preserved. |
+| Grouping mode<br>`condensedCreativeGrouping` | Option list | `default` | Existing categories / Material first. Material first groups block forms of the same material, limited to entries in the current tab or search results. |
+| Keep entries expanded<br>`condensedCreativeKeepExpanded` | Boolean | `true` | Remember expanded entries per tab and grouping mode when reopening the inventory during this game session; not written to disk and cleared on restart. |
+| Entry background<br>`condensedCreativeBackground` | Boolean | `false` | Translucent group backgrounds; existing preferences are preserved. |
+| Rotating group preview<br>`condensedCreativeRotatingPreview` | Boolean | `false` | Cycle collapsed icons once per second. Disabled by default; existing preferences are preserved. |
 | Trial tab<br>`trialCreativeTab` | Boolean | `false` | Add a “Trial” tab at the end of the creative inventory containing 42 trial spawners (14 configurations × 3 states: normal/ominous/cooldown, with block-entity data) and 2 Trial Vaults. |
 
 ## Client and Interface Features
@@ -164,10 +166,10 @@ Ordinary Servux entity replies are implemented. Splitter packets 10/11 are curre
 | Bridging assist<br>`bridgingAssist` | Boolean with hotkey | unbound, `false` | Provide Bedrock-style wraparound placement when the crosshair is not targeting a block. Expand to set distance, crouching, axes, delay, line of sight, snapping, slab assist, torch filtering, crosshair, and outline. |
 | Skip resource-pack compatibility check<br>`skipResourcePackCompatibilityCheck` | Boolean | `false` | Treat added resource packs as compatible and skip the version-mismatch confirmation. |
 | Disable paused item-trajectory prediction<br>`disablePausedItemTrajectoryPrediction` | Boolean | `false` | Stop client-side dropped-item trajectory prediction while Carpet or vanilla `/tick freeze` pauses ticks. |
-| Keep screen position (26.3)<br>`keepScreenPosition` | Hotkeyed boolean | `false` | Remember Mod Menu scrolling; children control configuration search/scroll, selected category and creative inventory state. Earlier versions retain `keepModMenuScroll`. |
+| Keep screen position<br>`keepScreenPosition` | Hotkeyed boolean | `false` | Remember Mod Menu scrolling; children control configuration search/scroll, selected category and creative inventory state. All targets migrate the old `keepModMenuScroll` configuration, preserving its value and hotkey. |
 | Keep search content and position<br>`keepConfigSearchPosition` | Boolean | `true` | When the main option is enabled, restore search text, key search, search-bar state, and list position per MaLiLib category. Session-only. |
 | Keep selected tab<br>`keepConfigSelectedTab` | Boolean | `true` | Restore the previously selected tab when reopening configuration. |
-| Keep creative screen position (26.3)<br>`keepCreativeScreenPosition` | Hotkeyed boolean | `false` | Restore the creative tab, page, search and separate scrolling for each tab while the master is enabled. Session only. |
+| Keep creative screen position<br>`keepCreativeScreenPosition` | Hotkeyed boolean | `false` | Restore the creative tab, page, search and separate scrolling for each tab while the master is enabled. Session only. |
 | Classic pause menu<br>`classicPauseMenu` | Boolean | `false` | Restore the classic pause-menu button arrangement; move extra buttons to the right and use columns in small windows. |
 
 ## Void Trading
@@ -343,9 +345,9 @@ Hold to Show Entities defaults to off and must be enabled before its temporary d
 
 ## MiniHUD container preview optimization
 
-MiniHUD Container Preview Optimization (26.3) defaults to enabled under Other Mod Extensions, with no additional hotkey. It caches data preparation for container, shulker box, bundle and ender chest previews. Following Jade's separation of updates and drawing, held world-container previews validate contents per client tick and reuse preparation within that tick; new data, source replacement, block-state changes and target changes can refresh earlier. Different slot-count requests share content validation. The preview screen and its independent layout are reused. Native target checks, data requests and live drawing still run every frame, preserving complete slots, counts, colors and controls. Generic grids use independent display-stack snapshots validated on ticks and data updates, with immediate count changes, avoiding per-frame copies; special layouts and hover tooltips keep their existing protection. Crafter disabled slots can update immediately. Disconnects, resource reloads and disabling clear caches; disabling restores the original path. Mixins do not apply without MiniHUD. Maps and enchantment effects remain live; frame render states are not cached. Jade is not required.
+MiniHUD Container Preview Optimization defaults to enabled under Other Mod Extensions, with no additional hotkey. It caches data preparation for container, shulker box, bundle and ender chest previews. Following Jade's separation of updates and drawing, held world-container previews validate contents per client tick and reuse preparation within that tick; new data, source replacement, block-state changes and target changes can refresh earlier. Different slot-count requests share content validation. The preview screen and its independent layout are reused. Native target checks, data requests and live drawing still run every frame, preserving complete slots, counts, colors and controls. Generic grids use independent display-stack snapshots validated on ticks and data updates, with immediate count changes, avoiding per-frame copies; special layouts and hover tooltips keep their existing protection. Crafter disabled slots can update immediately. Disconnects, resource reloads and disabling clear caches; disabling restores the original path. Mixins do not apply without MiniHUD. Maps and enchantment effects remain live; frame render states are not cached. Jade is not required.
 
 
 ## MiniHUD independent preview
 
-MiniHUD Independent Preview (26.3) defaults to off under Other Mod Extensions, with an unbound toggle hotkey. Enabling it keeps world-container previews available with the original MiniHUD preview key while its main rendering toggle is off. MiniHUD preview controls, background colors and target detection remain in use. When the main toggle is on, MiniHUD handles the preview once through its native path; when off, only the world-container preview is added and info lines remain disabled. Item, bundle, ender chest and map tooltip previews retain their settings. This toggle is independent of preview optimization and does nothing without MiniHUD.
+MiniHUD Independent Preview defaults to off under Other Mod Extensions, with an unbound toggle hotkey. Enabling it keeps world-container previews available with the original MiniHUD preview key while its main rendering toggle is off. MiniHUD preview controls, background colors and target detection remain in use. When the main toggle is on, MiniHUD handles the preview once through its native path; when off, only the world-container preview is added and info lines remain disabled. Item, bundle, ender chest and map tooltip previews retain their settings. This toggle is independent of preview optimization and does nothing without MiniHUD.

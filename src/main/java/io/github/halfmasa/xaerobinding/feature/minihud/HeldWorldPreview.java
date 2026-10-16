@@ -1,6 +1,6 @@
 package io.github.halfmasa.xaerobinding.feature.minihud;
 
-//#if MC >= 26.3
+//#if MC >= 1.21.11
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.function.Supplier;
@@ -77,12 +77,20 @@ public final class HeldWorldPreview
             state.villagerBackground != villagerBackground)
         {
             state.screen = new InventoryOverlayScreen(handler.getModId(), context, shulkerBackground, villagerBackground);
+            //#if MC > 1.21.10
             state.screen.init(0, 0);
+            //#else
+            //$$ state.screen.init(net.minecraft.client.Minecraft.getInstance(), 0, 0);
+            //#endif
             state.shulkerBackground = shulkerBackground;
             state.villagerBackground = villagerBackground;
         }
         ((ScreenState) state.screen).halfmasa$setHeldContext(context);
+        //#if MC >= 26.1
         state.screen.extractRenderState(ctx, 0, 0, 0);
+        //#else
+        //$$ state.screen.render(ctx, 0, 0, 0);
+        //#endif
     }
 }
 //#endif
