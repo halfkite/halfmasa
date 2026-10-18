@@ -135,6 +135,7 @@ processResources {
     filesMatching('fabric.mod.json') { expand properties }
     filesMatching('halfmasa.mixins.json') {
         filter { line ->
+            if (project.mcVersion < 1_21_01 && line.contains('"ConfluxMapSurfaceTeleportMixin"')) return null
             if (line.contains('"MiniHudPreviewLegacy') && (project.mcVersion < 1_21_01 || project.mcVersion >= 1_21_11)) return null
             if (line.contains('"MiniHudPreview') && !line.contains('"MiniHudPreviewLegacy') && !line.contains('"MiniHudPreviewLifecycle') && project.mcVersion < 1_21_11) return null
             if (line.contains('"MiniHudPreviewLifecycle') && project.mcVersion < 1_21_01) return null

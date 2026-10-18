@@ -65,12 +65,13 @@ public class PreviewSmoke implements ClientModInitializer {
  }
  private void tick(Minecraft mc){try{
   if(stage==0){if(!(MinecraftClientCompat.getScreen(mc) instanceof TitleScreen)||mc.gui.overlay()!=null)return;
-   check(Configs.MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION.getBooleanValue(),"new option defaults enabled");check(Configs.EXTENSIONS.contains(Configs.MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION),"option appears in Extensions");
+   DEFAULT_CONFIGURATION_CHECKS
+   check(Configs.EXTENSIONS.contains(Configs.MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION),"option appears in Extensions");
    enabled(false);new Configs().save();enabled(true);new Configs().load();check(!Configs.MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION.getBooleanValue(),"saved disabled choice survives reload");enabled(true);
    fi.dy.masa.minihud.config.Configs.Generic.MAIN_RENDERING_TOGGLE.setBooleanValue(false);fi.dy.masa.minihud.config.Configs.Generic.SHULKER_BOX_PREVIEW.setBooleanValue(true);fi.dy.masa.minihud.config.Configs.Generic.SHULKER_DISPLAY_REQUIRE_SHIFT.setBooleanValue(false);fi.dy.masa.minihud.config.Configs.Generic.BUNDLE_PREVIEW.setBooleanValue(true);fi.dy.masa.minihud.config.Configs.Generic.BUNDLE_DISPLAY_REQUIRE_SHIFT.setBooleanValue(false);fi.dy.masa.minihud.config.Configs.Generic.SHULKER_DISPLAY_ENDER_CHEST.setBooleanValue(true);Configs.MAP_IN_SLOT.setBooleanValue(false);
    stage=1;mc.createWorldOpenFlows().createFreshLevel("preview-fixture",new LevelSettings("Preview Fixture",GameType.CREATIVE,new LevelSettings.DifficultySettings(Difficulty.PEACEFUL,false,false),true,WorldDataConfiguration.DEFAULT),new WorldOptions(123L,false,false),WorldPresets::createTestWorldDimensions,MinecraftClientCompat.getScreen(mc));return;
   }
-  if(stage==1&&mc.level!=null&&mc.player!=null&&mc.level.getGameTime()>40){stage=2;screen=new PreviewScreen();MinecraftClientCompat.setScreen(mc,screen);}
+  if(stage==1&&mc.level!=null&&mc.player!=null&&mc.level.getGameTime()>40){IN_GAME_HOTKEY_CHECKS stage=2;screen=new PreviewScreen();MinecraftClientCompat.setScreen(mc,screen);}
   if(stage==2&&screen.done){stage=3;System.out.println("PREVIEW_WORLD_PASS checks="+checks);}
   else if(stage==3){stage=4;net.minecraft.client.Screenshot.grab(mc,false);}
   else if(stage==4){stage=5;mc.stop();}
@@ -174,6 +175,28 @@ def main():
     if args.java_home is None:
         args.java_home = Path('C:/Program Files/Java/jdk-25.0.3') if args.version.startswith('26.') else ROOT / 'build/toolchains/jdk-21.0.12.1+1'
     args.artifact = args.artifact.resolve()
+    defaults = r'''
+   var option=Configs.MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION;
+   check(!option.getBooleanValue()&&!option.getDefaultBooleanValue(),"optimization defaults off");
+   check(option.getKeybind().getKeys().isEmpty()&&Configs.HOTKEYS.contains(option),"optimization hotkey defaults unbound and is registered");
+   var callback=((fi.dy.masa.malilib.hotkeys.KeybindMulti)option.getKeybind()).getCallback();long revision=PreviewCache.revision();
+   check(callback!=null&&callback.onKeyAction(fi.dy.masa.malilib.hotkeys.KeyAction.PRESS,option.getKeybind())&&option.getBooleanValue(),"native optimization hotkey enables feature");
+   check(PreviewCache.revision()>revision,"hotkey toggle invalidates preview cache");revision=PreviewCache.revision();
+   check(option.getKeybind().getSettings().getActivateOn()==fi.dy.masa.malilib.hotkeys.KeyAction.PRESS,"native key settings activate on press only");
+   callback.onKeyAction(fi.dy.masa.malilib.hotkeys.KeyAction.PRESS,option.getKeybind());check(!option.getBooleanValue(),"second press disables optimization");
+   for(boolean saved:new boolean[]{true,false}){option.setValueFromJsonElement(new com.google.gson.JsonPrimitive(saved));check(option.getBooleanValue()==saved,"legacy boolean preference preserved: "+saved);}
+   option.getKeybind().setValueFromString("F8");enabled(true);new Configs().save();enabled(false);option.getKeybind().resetToDefault();new Configs().load();
+   check(option.getBooleanValue()&&option.getKeybind().getStringValue().equals("F8"),"enabled preference and hotkey survive save and reload");option.resetToDefault();check(!option.getBooleanValue()&&option.getKeybind().getKeys().isEmpty(),"reset restores disabled and unbound defaults");
+'''
+    in_game_hotkey = r'''
+   var option=Configs.MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION;option.getKeybind().setValueFromString("F8");enabled(false);
+   fi.dy.masa.malilib.event.InputEventHandler.getKeybindManager().updateUsedKeys();var input=(fi.dy.masa.malilib.event.InputEventHandler)fi.dy.masa.malilib.event.InputEventHandler.getInputManager();var event=new net.minecraft.client.input.KeyEvent(option.getKeybind().getKeys().getFirst(),0,0);long revision=PreviewCache.revision();
+   fi.dy.masa.malilib.hotkeys.KeybindMulti.onKeyInputPre(event,com.mojang.blaze3d.platform.InputConstants.PRESS);input.onKeyInput(event,com.mojang.blaze3d.platform.InputConstants.PRESS,mc);check(option.getBooleanValue()&&PreviewCache.revision()>revision,"registered optimization hotkey responds to native in-game press and clears cache");revision=PreviewCache.revision();
+   fi.dy.masa.malilib.hotkeys.KeybindMulti.onKeyInputPre(event,com.mojang.blaze3d.platform.InputConstants.REPEAT);input.onKeyInput(event,com.mojang.blaze3d.platform.InputConstants.REPEAT,mc);fi.dy.masa.malilib.hotkeys.KeybindMulti.onKeyInputPre(event,com.mojang.blaze3d.platform.InputConstants.RELEASE);input.onKeyInput(event,com.mojang.blaze3d.platform.InputConstants.RELEASE,mc);check(option.getBooleanValue()&&PreviewCache.revision()==revision,"native repeat and release do not toggle or clear twice");
+   option.getKeybind().resetToDefault();
+'''
+    if args.version != '26.3':
+        in_game_hotkey = ''
     directory = ROOT / 'build/minihud-preview-tests' / datetime.now().strftime('%Y%m%d-%H%M%S-%f')
     classes = directory / 'classes'
     classes.mkdir(parents=True)
@@ -185,7 +208,7 @@ def main():
     sources = []
     for name, source in [('PreviewSmoke', SOURCE), ('FrameMixin', frame), ('ClipboardMixin', clipboard), ('ProbeMixin', PROBE), ('DrawProbeMixin', DRAW_PROBE), ('MapProbeMixin', MAP_PROBE), *EXTRA_SOURCES.items()]:
         path = directory / (name + '.java')
-        path.write_text(port_compat.source(source, args.version, cp), encoding='utf-8')
+        path.write_text(port_compat.source(source.replace('DEFAULT_CONFIGURATION_CHECKS', defaults).replace('IN_GAME_HOTKEY_CHECKS', in_game_hotkey), args.version, cp), encoding='utf-8')
         sources.append(str(path))
     result = subprocess.run([str(args.java_home / 'bin/javac.exe'), '-J-Dfile.encoding=UTF-8', '-J-Duser.language=en', '-proc:none', '-encoding', 'UTF-8', '-cp', cp, '-d', str(classes), *sources], capture_output=True)
     if result.returncode:

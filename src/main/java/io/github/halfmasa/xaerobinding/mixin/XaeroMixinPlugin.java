@@ -14,6 +14,15 @@ public final class XaeroMixinPlugin implements IMixinConfigPlugin
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName)
     {
+        //#if MC < 1.21.8
+        //$$ if (mixinClassName.endsWith("BookEditScreenMixin") ||
+                //$$ mixinClassName.endsWith("BookEditDisplayCacheMixin"))
+        //$$ {
+            // Caxton replaces both book layout and its index mapping. Keep the
+            // complete vanilla-layout spacing pair out of that pipeline.
+            //$$ return !FabricLoader.getInstance().isModLoaded("caxton");
+        //$$ }
+        //#endif
         if (mixinClassName.contains("MiniHudPreview"))
         {
             //#if MC >= 1.21.1
@@ -114,11 +123,26 @@ public final class XaeroMixinPlugin implements IMixinConfigPlugin
         if (mixinClassName.endsWith("ConfluxMapCombinedWaypointListMixin"))
         {
             //#if MC >= 1.21.1
-            return FabricLoader.getInstance().isModLoaded("confluxmap");
+            return FabricLoader.getInstance().isModLoaded("confluxmap") &&
+                    io.github.halfmasa.xaerobinding.compat.ConfluxMapCapabilities.combinedList();
+            //#else
+            //#if MC >= 1.21.1
+            //$$ return FabricLoader.getInstance().isModLoaded("confluxmap");
             //#else
             //$$ return false;
             //#endif
+            //#endif
         }
+        //#if MC >= 1.21.1
+        if (mixinClassName.endsWith("ConfluxMapSurfaceTeleportMixin"))
+            return FabricLoader.getInstance().isModLoaded("confluxmap") &&
+                    !io.github.halfmasa.xaerobinding.compat.ConfluxMapCapabilities.event("teleportLandingResolve") &&
+                    io.github.halfmasa.xaerobinding.compat.ConfluxMapCapabilities.legacyTeleport();
+        if (mixinClassName.endsWith("ConfluxMapTeleportScreenMixin")) return false;
+        if (mixinClassName.endsWith("ConfluxMapWaypointListMixin"))
+            return FabricLoader.getInstance().isModLoaded("confluxmap") &&
+                    !io.github.halfmasa.xaerobinding.compat.ConfluxMapCapabilities.event("waypointListOpening");
+        //#endif
         if (mixinClassName.endsWith("ConfluxMapWaypointListMixin") ||
                 mixinClassName.endsWith("ConfluxMapDualWaypointListMixin") ||
                 mixinClassName.endsWith("ConfluxMapTeleportScreenMixin"))

@@ -34,6 +34,7 @@ public class ConfluxGridSmoke implements ClientModInitializer {
  public static int hoverX=-1,hoverY=-1;
  private volatile boolean packReady;private int stage,checks;private long since;private volatile boolean ready;private volatile Throwable serverError;
  private WaypointListScreen ui;private WaypointStore store;private UUID personalId;private ConfluxWaypointScreenBridge.Row teleportTarget;
+ private FullscreenMapScreen fallbackMap;
  private final List<UUID> ids=new ArrayList<>();
  @Override public void onInitializeClient(){instance=this;}
  private void check(boolean value,String why){checks++;if(!value)throw new AssertionError(why);System.out.println("CONFLUX_GRID_CHECK "+why);}
@@ -110,7 +111,34 @@ public class ConfluxGridSmoke implements ClientModInitializer {
     packReady=false;mc.getResourcePackRepository().reload();mc.getResourcePackRepository().setSelected(List.of("file/conflux-native-style-test.zip"));mc.reloadResourcePacks().whenComplete((unused,error)->{serverError=error;packReady=true;});next(mc,7);}
    case 7->{if(!packReady||mc.gui.overlay()!=null)return;check(ConfluxMapClient.get().uiResourceTheme().useVanillaButtonStyle(),"actual resource pack reload activates native button skin");MinecraftClientCompat.setScreen(mc,ui);rebuild();hover(mc,rows().stream().filter(r->r.local()!=null).findFirst().orElseThrow());check(actions().stream().allMatch(w->w.getClass().getName().endsWith("ConfluxTextButton")),"all popup controls follow reloaded native button theme");next(mc,8);}
    case 8->{if(mc.level.getGameTime()-since<5)return;net.minecraft.client.Screenshot.grab(mc,false);packReady=false;mc.getResourcePackRepository().setSelected(List.of());mc.reloadResourcePacks().whenComplete((unused,error)->{serverError=error;packReady=true;});next(mc,9);}
-   case 9->{if(!packReady||mc.gui.overlay()!=null||mc.level.getGameTime()-since<20)return;check(!ConfluxMapClient.get().uiResourceTheme().useVanillaButtonStyle(),"removing resource pack restores native Conflux style");for(var flag:List.of(Configs.CONFLUX_MAP_EXTENSIONS,Configs.CONFLUX_MAP_SHOW_BOTH_WAYPOINTS,Configs.CONFLUX_MAP_WAYPOINT_COMPACT,Configs.CONFLUX_MAP_WAYPOINT_DIMENSION,Configs.CONFLUX_MAP_WAYPOINT_DISTANCE))flag.resetToDefault();new Configs().save();System.out.println("CONFLUX_GRID_WORLD_PASS checks="+checks);stage=10;mc.stop();}
+   case 9->{if(!packReady||mc.gui.overlay()!=null||mc.level.getGameTime()-since<20)return;check(!ConfluxMapClient.get().uiResourceTheme().useVanillaButtonStyle(),"removing resource pack restores native Conflux style");next(mc,20);}
+   case 20->{
+    Configs.CONFLUX_MAP_EXTENSIONS.setBooleanValue(true);Configs.CONFLUX_MAP_UNKNOWN_HEIGHT.setIntegerValue(128);Configs.CONFLUX_MAP_CLOSE_AFTER_TELEPORT.setBooleanValue(true);
+    fallbackMap=new FullscreenMapScreen(null);MinecraftClientCompat.setScreen(mc,fallbackMap);
+    check(io.github.halfmasa.xaerobinding.compat.ConfluxMapCapabilities.legacyTeleport(),"real installed jar selects dual lookup contract");
+    check(!io.github.halfmasa.xaerobinding.compat.ConfluxMapCapabilities.event("teleportLandingResolve"),"legacy fixture has no public resolver");
+    var adapter=new ConfluxMapLegacyTeleport(fallbackMap.getClass());
+    var targetType=Class.forName("cn.net.rms.confluxmap.mc.ui.screen.FullscreenMapLocationMenu$Target");
+    var lookupType=cn.net.rms.confluxmap.core.store.ColumnStore.SurfaceLookup.class;
+    var ctor=targetType.getDeclaredConstructor(int.class,lookupType,int.class);ctor.setAccessible(true);
+    var unknown=ctor.newInstance(50000,cn.net.rms.confluxmap.core.store.ColumnStore.SurfaceLookup.UNKNOWN,50000);
+    check(!adapter.needsFallback(fallbackMap,unknown),"real live unknown target retains native ground discovery");
+    var target=ctor.newInstance(50000,new cn.net.rms.confluxmap.core.store.ColumnStore.SurfaceLookup(true,OptionalInt.empty()),50000);
+    check(adapter.needsFallback(fallbackMap,target),"real void target requests fallback");
+    // Exercise the menu wrapper and transformed HEAD/TAIL hooks, not just the helper.
+    method(fallbackMap.getClass(),"locationMenuButtonSpecs",targetType,Class.forName("cn.net.rms.confluxmap.core.waypoint.WaypointRenderEntry"),UUID.class,boolean.class).invoke(fallbackMap,target,null,null,false);
+    var actionType=Class.forName("cn.net.rms.confluxmap.mc.ui.screen.FullscreenMapLocationMenu$Action");
+    Object teleport=Arrays.stream(actionType.getEnumConstants()).filter(a->a.toString().equals("TELEPORT")).findFirst().orElseThrow();
+    var run=Arrays.stream(fallbackMap.getClass().getDeclaredMethods()).filter(m->m.getName().equals("runLocationAction")).findFirst().orElseThrow();run.setAccessible(true);run.invoke(fallbackMap,teleport,target,null,null,fallbackMap);
+    check(MinecraftClientCompat.getScreen(mc)==null,"legacy teleport closes fullscreen map immediately");
+    Object service=field(fallbackMap.getClass(),"groundTeleport").get(fallbackMap);
+    check(field(service.getClass(),"pending").get(service)==null,"fallback has no deferred correction or duplicate task");next(mc,21);
+   }
+   case 21->{
+    if(Math.abs(mc.player.getX()-50000.5)>.1||Math.abs(mc.player.getZ()-50000.5)>.1)return;
+    check(Math.abs(mc.player.getY()-128)<2,"fallback command reaches configured Y on real server");
+    for(var flag:List.of(Configs.CONFLUX_MAP_EXTENSIONS,Configs.CONFLUX_MAP_SHOW_BOTH_WAYPOINTS,Configs.CONFLUX_MAP_WAYPOINT_COMPACT,Configs.CONFLUX_MAP_WAYPOINT_DIMENSION,Configs.CONFLUX_MAP_WAYPOINT_DISTANCE,Configs.CONFLUX_MAP_CLOSE_AFTER_TELEPORT))flag.resetToDefault();Configs.CONFLUX_MAP_UNKNOWN_HEIGHT.resetToDefault();new Configs().save();System.out.println("CONFLUX_GRID_WORLD_PASS checks="+checks);stage=22;mc.stop();
+   }
 
   }
  }catch(Throwable error){throw new IllegalStateException("Conflux grid smoke stage="+stage,error);}}
@@ -143,6 +171,9 @@ public class ServerFixture implements DedicatedServerModInitializer {
  @Override public void onInitializeServer(){ServerTickEvents.END_SERVER_TICK.register(server->{
   if(ready||server.getPlayerList().getPlayers().isEmpty())return;ready=true;
   var p=server.getPlayerList().getPlayers().getFirst();
+  // Keep post-teleport gravity from changing the landing Y before the slow
+  // interpreted test client observes the server correction packet.
+  p.getAbilities().flying=true;p.onUpdateAbilities();p.setNoGravity(true);
   server.getCommands().performPrefixedCommand(server.createCommandSourceStack(),"op HalfMasaSmoke");
   var original=p.position();server.getCommands().performPrefixedCommand(p.createCommandSourceStack(),"confluxmap waypoints enable");
   for(int i=0;i<7;i++){p.setPos(original.x+2*i,original.y,original.z+4);server.getCommands().performPrefixedCommand(p.createCommandSourceStack(),"confluxmap waypoints add Server "+i);}
@@ -157,7 +188,7 @@ def main():
     parser.add_argument("--java-home", type=Path, default=Path("C:/Program Files/Java/jdk-25.0.3"))
     parser.add_argument("--jvm-arg", action="append", default=[])
     parser.add_argument("--extra-mod", action="append", type=Path, default=[])
-    parser.add_argument("--conflux", type=Path, default=Path("D:/我的世界/.minecraft/versions/26.3-Fabric 0.19.5/mods/confluxmap-26.3-0.1.11-beta.1.jar"))
+    parser.add_argument("--conflux", type=Path, default=Path("D:/我的世界/.minecraft/versions/26.3-Fabric 0.19.5/mods/confluxmap-26.3-0.1.11.jar"))
     parser.set_defaults(with_api=True)
     parser.add_argument("--timeout", type=int, default=480)
     args = parser.parse_args()
@@ -251,7 +282,7 @@ def main():
                 except subprocess.TimeoutExpired: server.kill();server.wait(timeout=10)
     log = log_path.read_text(encoding="utf-8", errors="replace")
     passed = code == 0 and not timed_out and "CONFLUX_GRID_WORLD_PASS" in log
-    report = {"result": "PASS" if passed else "FAIL", "artifact": str(args.artifact), "fabric_api_installed": args.with_api, "extra_mods": [str(p.resolve()) for p in args.extra_mod], "jvm_args": args.jvm_arg, "duration_seconds": round(time.monotonic() - started, 1), "exit_code": code, "timed_out": timed_out, "log": str(log_path), "server_log": str(server_log), "connection": "127.0.0.1", "checks": [line for line in log.splitlines() if "CONFLUX_GRID_" in line], "screenshots": [str(p) for p in (game / "screenshots").glob("*.png")]}
+    report = {"result": "PASS" if passed else "FAIL", "artifact": str(args.artifact), "conflux": str(args.conflux.resolve()), "fabric_api_installed": args.with_api, "extra_mods": [str(p.resolve()) for p in args.extra_mod], "jvm_args": args.jvm_arg, "duration_seconds": round(time.monotonic() - started, 1), "exit_code": code, "timed_out": timed_out, "log": str(log_path), "server_log": str(server_log), "connection": "127.0.0.1", "checks": [line for line in log.splitlines() if "CONFLUX_GRID_" in line], "screenshots": [str(p) for p in (game / "screenshots").glob("*.png")]}
     (directory / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print("CONFLUX GRID:", report["result"], flush=True)
     print(directory / "report.json", flush=True)

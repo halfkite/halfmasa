@@ -218,6 +218,9 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
                 io.github.halfmasa.xaerobinding.feature.minihud.PreviewCache.clear());
         //#endif
         TickHandler.getInstance().registerClientTickHandler(ConfluxMapTemporaryWaypoint.getInstance());
+        //#if MC >= 1.21.1
+        TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.ConfluxMapApiCompat.getInstance());
+        //#endif
         TickHandler.getInstance().registerClientTickHandler(
                 io.github.halfmasa.xaerobinding.feature.LitematicaMaterialRefill.getInstance());
         Configs.LITEMATICA_AUTO_REFILL.setValueChangeCallback(config ->

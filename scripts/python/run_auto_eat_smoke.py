@@ -38,7 +38,8 @@ import io.github.halfmasa.xaerobinding.feature.*;
 import io.github.halfmasa.xaerobinding.gui.*;
 import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
 public class AutoEatSmoke implements ClientModInitializer {
- public static boolean holdPackets,dropQuickRequests;
+ public static boolean holdPackets,dropQuickRequests,holdSilentReplies;
+ public static final Queue<Runnable> silentReplies=new ConcurrentLinkedQueue<>();
  public static int openMenus,quickRequests;
  public static int useRequests,foodSounds;
  public static boolean observeSilent;
@@ -66,13 +67,15 @@ public class AutoEatSmoke implements ClientModInitializer {
   for(int width:new int[]{140,240,380}){
    var row=new ActionConfigOptionWidget(10,80,700,22,180,width,GuiConfigsBase.ConfigOptionWrapper.createFor(List.of(Configs.AUTO_EAT_SOURCE)).getFirst(),0,screen,list,list,HalfMasaConfigExpansionProvider.INSTANCE);
    var all=buttons(row);var mode=all.stream().min(Comparator.comparingInt(ButtonBase::getX)).orElseThrow();var key=(ConfigButtonKeybind)all.stream().filter(b->b instanceof ConfigButtonKeybind).findFirst().orElseThrow();var reset=all.stream().max(Comparator.comparingInt(ButtonBase::getX)).orElseThrow();
-   check(mode.getWidth()==60&&key.getX()==mode.getX()+mode.getWidth()+2&&key.getX()+key.getWidth()==mode.getX()+width&&reset.getX()==mode.getX()+width+2,"source controls use native aligned columns width="+width);
+   var settings=((List<WidgetBase>)field(row.getClass(),"subWidgets").get(row)).stream().filter(w->w instanceof WidgetKeybindSettings).findFirst().orElseThrow();
+   check(mode.getWidth()==60&&key.getX()==mode.getX()+mode.getWidth()+2&&settings.getX()==key.getX()+key.getWidth()+2&&settings.getX()+settings.getWidth()==mode.getX()+width&&reset.getX()==settings.getX()+settings.getWidth()+2,"source controls and native keybind settings use aligned columns width="+width);
    Configs.AUTO_EAT_SOURCE.resetToDefault();for(var expected:List.of(AutoEatSourceMode.INVENTORY,AutoEatSourceMode.QUICK_SHULKER,AutoEatSourceMode.HOTBAR)){click(mode);check(Configs.AUTO_EAT_SOURCE.getOptionListValue()==expected,"source button cycles");}
    Configs.AUTO_EAT_SOURCE.setOptionListValue(AutoEatSourceMode.INVENTORY);Configs.AUTO_EAT_SOURCE_HOTKEY.setValueFromString("F8");click(reset);check(Configs.AUTO_EAT_SOURCE.getOptionListValue()==AutoEatSourceMode.HOTBAR&&Configs.AUTO_EAT_SOURCE_HOTKEY.getStringValue().isEmpty(),"source reset restores mode and hotkey");
   }
   Configs.AUTO_EAT_SOURCE.setOptionListValue(AutoEatSourceMode.QUICK_SHULKER);
  }
  private static Object value(String name)throws Exception{Field field=AutoEatService.class.getDeclaredField(name);field.setAccessible(true);return field.get(service);}
+ private static void setValue(String name,Object value)throws Exception{Field field=AutoEatService.class.getDeclaredField(name);field.setAccessible(true);field.set(service,value);}
  private static String state()throws Exception{return value("state").toString();}
  private long age(Minecraft mc){return mc.level.getGameTime()-started;}
  private void next(Minecraft mc,int stage){this.stage=stage;started=mc.level.getGameTime();System.out.println("AUTO_EAT_STAGE "+stage+" state="+safeState()+" hunger="+mc.player.getFoodData().getFoodLevel());}
@@ -143,6 +146,7 @@ public class AutoEatSmoke implements ClientModInitializer {
  }
  private void run(Minecraft mc){try{
   replay=true;try{if(!holdPackets)for(Runnable task;(task=delayed.poll())!=null;)task.run();}finally{replay=false;}
+  replay=true;try{if(!holdSilentReplies)for(Runnable task;(task=silentReplies.poll())!=null;)task.run();}finally{replay=false;}
   if(stage==0){
    if(!(MinecraftClientCompat.getScreen(mc) instanceof TitleScreen)||mc.gui.overlay()!=null)return;
    stage=1;System.out.println("AUTO_EAT_CREATING_WORLD");
@@ -156,9 +160,49 @@ public class AutoEatSmoke implements ClientModInitializer {
    System.out.println("AUTO_EAT_WORLD_PASS assertions="+assertions+" quickshulker="+compat+" menus="+openMenus+" requests="+quickRequests);stage=34;mc.stop();return;
   }
   if(mc.player==null||mc.level==null||mc.getSingleplayerServer()==null)return;
-  if(stage==1){if(mc.level.getGameTime()<50)return;rules();MinecraftClientCompat.setScreen(mc,null);compat=AutoEatQuickShulkerBridge.isAvailable();fixture(mc,"hotbar",15);next(mc,2);return;}
+  if(stage==1){if(mc.level.getGameTime()<50)return;rules();MinecraftClientCompat.setScreen(mc,null);compat=AutoEatQuickShulkerBridge.isAvailable();if(Boolean.getBoolean("halfmasa.eat.silentCancelRegression")){fixture(mc,"inventory",14);Configs.AUTO_EAT_SOURCE.setOptionListValue(AutoEatSourceMode.INVENTORY);Configs.AUTO_EAT_SILENT.setBooleanValue(true);next(mc,100);return;}fixture(mc,"hotbar",15);next(mc,2);return;}
   if(age(mc)>500)throw new AssertionError("stage timeout "+stage+" state="+state()+" hunger="+mc.player.getFoodData().getFoodLevel()+" food="+foodCount(mc));
   switch(stage){
+   case 100 -> {if(!synced(mc,14,Items.BREAD,10))return;holdPackets=true;holdSilentReplies=true;Configs.AUTO_EAT.setBooleanValue(true);next(mc,101);}
+   case 101 -> {
+    if(!state().equals("WAIT_SILENT"))return;
+    check(((Integer)value("activeSlot"))==10,"silent request starts with inventory food slot");
+    rpcBeforeUses=useRequests;rpcExpected=mc.player.getInventory().getItem(10).copy();
+    long request=(Long)value("silentRequest");
+    service.onSettingsChanged();
+    // Before the fix this executes Inventory.getItem(-1), reproducing the report.
+    service.onClientTick(mc);
+    check(state().equals("WAIT_SILENT")&&((Integer)value("activeSlot"))==10,"settings cancellation preserves pending silent food context");
+    check(((Long)value("silentRequest"))==request,"settings cancellation does not send another request");
+    mc.options.keyAttack.setDown(true);service.onClientTick(mc);mc.options.keyAttack.setDown(false);
+    check(state().equals("WAIT_SILENT")&&((Integer)value("activeSlot"))==10,"manual interruption keeps valid pending slot");
+    Configs.AUTO_EAT_SOURCE.setOptionListValue(AutoEatSourceMode.HOTBAR);service.onClientTick(mc);
+    check(state().equals("WAIT_SILENT")&&((Integer)value("activeSlot"))==10,"source switch keeps original request context");
+    Configs.AUTO_EAT.setBooleanValue(false);service.onClientTick(mc);
+    check(state().equals("WAIT_SILENT")&&((Integer)value("activeSlot"))==10,"disable preserves unresolved request without using invalid slot");
+    setValue("deadline",0L);service.onClientTick(mc);service.onClientTick(mc);
+    check((Boolean)value("silentSuppressed")&&state().equals("WAIT_SILENT"),"disabled pending request still reaches uncertain timeout");
+    check(((Long)value("silentRequest"))==request&&useRequests==rpcBeforeUses,"uncertain request has no new nonce or ordinary-use fallback");
+    holdSilentReplies=false;next(mc,102);
+   }
+   case 102 -> {
+    if(age(mc)<10||silentReplies.size()>0||value("silentResult")==null)return;
+    check(state().equals("WAIT_SILENT")&&((Integer)value("activeSlot"))==10,"OK response waits for authoritative inventory update even while disabled");
+    check("OK".equals(value("silentResult")),"disabled service consumes delayed support reply");
+    holdPackets=false;next(mc,103);
+   }
+   case 103 -> {
+    if(!stateIdle())return;
+    check(foodCount(mc)==7&&mc.player.getFoodData().getFoodLevel()==19,"cancelled in-flight meal settles exactly one server consumption");
+    check(((Integer)value("activeSlot"))==-1,"slot cleared only after request leaves wait state");
+    check(mc.player.getInventory().getSelectedSlot()==3&&useRequests==rpcBeforeUses,"settlement preserves user selection and sends no use packet");
+    next(mc,104);
+   }
+   case 104 -> {
+    if(age(mc)<30)return;check(foodCount(mc)==7&&stateIdle(),"disabled service does not resume feeding after settlement");
+    service.onWorldExit();check(stateIdle()&&((Integer)value("activeSlot"))==-1,"world exit clears state and slot together");
+    stage=33;mc.disconnectWithSavingScreen();
+   }
    case 2 -> {if(!synced(mc,15,Items.BREAD,0))return;Configs.AUTO_EAT.setBooleanValue(true);next(mc,3);}
    case 3 -> {if(age(mc)<40)return;check(mc.player.getFoodData().getFoodLevel()==15&&foodCount(mc)==6&&!mc.player.isUsingItem(),"above threshold does not eat");mc.getSingleplayerServer().execute(()->mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst().getFoodData().setFoodLevel(14));next(mc,4);}
    case 4 -> {
@@ -318,6 +362,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  @Inject(method="handleOpenScreen",at=@At("TAIL")) private void eatSmoke$open(ClientboundOpenScreenPacket p,CallbackInfo ci){AutoEatSmoke.openMenus++;}
 }'''
 
+SILENT_REPLY_DELAY = '''package io.github.halfmasa.eatsmoke.mixin;
+import io.github.halfmasa.eatsmoke.AutoEatSmoke;
+import io.github.halfmasa.xaerobinding.feature.HalfMasaSupportClient;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.*;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+@Mixin(value=HalfMasaSupportClient.class,remap=false) public class AutoEatSilentReplyDelayMixin {
+ @Inject(method="result",at=@At("HEAD"),cancellable=true,remap=false)
+ private static void delay(long id,String status,CallbackInfo ci){
+  if(AutoEatSmoke.holdSilentReplies&&!AutoEatSmoke.replay){AutoEatSmoke.silentReplies.add(()->HalfMasaSupportClient.result(id,status));ci.cancel();}
+ }
+}'''
+
 PROBE = '''package io.github.halfmasa.eatsmoke.mixin;
 import io.github.halfmasa.eatsmoke.AutoEatSmoke;
 import net.minecraft.client.multiplayer.ClientCommonPacketListenerImpl;
@@ -353,7 +410,7 @@ def main():
     directory = ROOT / "build/auto-eat-tests" / datetime.now(timezone(timedelta(hours=8))).strftime("%Y%m%d-%H%M%S-%f")
     directory.mkdir(parents=True)
     sources = []
-    for name, content in [("AutoEatSmoke", SOURCE), ("AutoEatFrameMixin", FRAME), ("AutoEatDelayMixin", DELAY), ("AutoEatProbeMixin", PROBE)]:
+    for name, content in [("AutoEatSmoke", SOURCE), ("AutoEatFrameMixin", FRAME), ("AutoEatDelayMixin", DELAY), ("AutoEatProbeMixin", PROBE), ("AutoEatSilentReplyDelayMixin", SILENT_REPLY_DELAY)]:
         path = directory / (name + ".java")
         path.write_text(content, encoding="utf-8")
         sources.append(path)
@@ -369,7 +426,7 @@ def main():
         for path in classes.rglob("*.class"):
             jar.write(path, path.relative_to(classes).as_posix())
         jar.writestr("fabric.mod.json", json.dumps({"schemaVersion": 1, "id": "halfmasa_auto_eat_smoke", "version": "1.0", "environment": "client", "entrypoints": {"client": ["io.github.halfmasa.eatsmoke.AutoEatSmoke"]}, "mixins": ["auto-eat-smoke.mixins.json"]}))
-        jar.writestr("auto-eat-smoke.mixins.json", json.dumps({"required": True, "package": "io.github.halfmasa.eatsmoke.mixin", "compatibilityLevel": "JAVA_25", "client": ["AutoEatFrameMixin", "AutoEatDelayMixin", "AutoEatProbeMixin"], "injectors": {"defaultRequire": 1}}))
+        jar.writestr("auto-eat-smoke.mixins.json", json.dumps({"required": True, "package": "io.github.halfmasa.eatsmoke.mixin", "compatibilityLevel": "JAVA_25", "client": ["AutoEatFrameMixin", "AutoEatDelayMixin", "AutoEatProbeMixin", "AutoEatSilentReplyDelayMixin"], "injectors": {"defaultRequire": 1}}))
     game = directory / "game"
     (game / "mods").mkdir(parents=True)
     (game / "config").mkdir()

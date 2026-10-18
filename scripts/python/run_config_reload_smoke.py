@@ -46,19 +46,28 @@ public class ConfigReloadSmoke implements ClientModInitializer {
  private void check(boolean value,String why){checks++;if(!value)throw new AssertionError(why);System.out.println("CONFIG_RELOAD_CHECK "+why);}
  private HalfMasaConfigScreen open(){var ui=new HalfMasaConfigScreen();GuiBase.openGui(ui);return ui;}
  private void close(Minecraft mc){MinecraftClientCompat.setScreen(mc,new TitleScreen());}
+ private void optimizationHotkey(Minecraft mc)throws Exception{
+  var option=Configs.MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION;check(!option.getBooleanValue()&&!option.getDefaultBooleanValue()&&option.getKeybind().getKeys().isEmpty(),"optimization defaults disabled and unbound");check(Configs.HOTKEYS.contains(option),"optimization registered with hotkey manager");
+  for(boolean saved:new boolean[]{true,false}){option.setValueFromJsonElement(new com.google.gson.JsonPrimitive(saved));check(option.getBooleanValue()==saved,"legacy optimization boolean preserved "+saved);}
+  option.getKeybind().setValueFromString("F8");option.setBooleanValue(true);new Configs().save();option.setBooleanValue(false);option.getKeybind().resetToDefault();new Configs().load();check(option.getBooleanValue()&&option.getKeybind().getStringValue().equals("F8"),"optimization value and hotkey survive save and reload");
+  MinecraftClientCompat.setScreen(mc,null);option.setBooleanValue(false);fi.dy.masa.malilib.event.InputEventHandler.getKeybindManager().updateUsedKeys();var input=(fi.dy.masa.malilib.event.InputEventHandler)fi.dy.masa.malilib.event.InputEventHandler.getInputManager();int code=option.getKeybind().getKeys().getFirst();var event=new net.minecraft.client.input.KeyEvent(code,0,0);long revision=io.github.halfmasa.xaerobinding.feature.minihud.PreviewCache.revision();
+  fi.dy.masa.malilib.hotkeys.KeybindMulti.onKeyInputPre(event,com.mojang.blaze3d.platform.InputConstants.PRESS);input.onKeyInput(event,com.mojang.blaze3d.platform.InputConstants.PRESS,mc);check(option.getBooleanValue()&&io.github.halfmasa.xaerobinding.feature.minihud.PreviewCache.revision()>revision,"native optimization press toggles and clears cache");revision=io.github.halfmasa.xaerobinding.feature.minihud.PreviewCache.revision();
+  fi.dy.masa.malilib.hotkeys.KeybindMulti.onKeyInputPre(event,com.mojang.blaze3d.platform.InputConstants.REPEAT);input.onKeyInput(event,com.mojang.blaze3d.platform.InputConstants.REPEAT,mc);fi.dy.masa.malilib.hotkeys.KeybindMulti.onKeyInputPre(event,com.mojang.blaze3d.platform.InputConstants.RELEASE);input.onKeyInput(event,com.mojang.blaze3d.platform.InputConstants.RELEASE,mc);check(option.getBooleanValue()&&io.github.halfmasa.xaerobinding.feature.minihud.PreviewCache.revision()==revision,"native repeat and release do not toggle twice");option.resetToDefault();check(!option.getBooleanValue()&&option.getKeybind().getKeys().isEmpty(),"optimization reset restores disabled and unbound");
+ }
  private WidgetListConfigOptions list(HalfMasaConfigScreen ui)throws Exception{return (WidgetListConfigOptions)method(ui.getClass(),"getListWidget").invoke(ui);}
  @SuppressWarnings("unchecked") private void layout(Minecraft mc,HalfMasaConfigScreen ui)throws Exception{
   if(DIAGNOSTIC)return;
   var widgets=(List<WidgetBase>)field(ui.getClass(),"widgets").get(ui);WidgetLabel hint=null;
-  for(var widget:widgets)if(widget instanceof WidgetLabel label&&((List<String>)field(label.getClass(),"labels").get(label)).contains("Click [+] to expand sub-settings"))hint=label;
-  check(hint!=null,"expansion hint is a visible top-level label");check(hint.getY()>10&&hint.getY()+hint.getHeight()<42,"hint has its own line above tabs");check(field(list(ui).getClass(),"posY").getInt(list(ui))>=68,"configuration rows remain below hint and tabs");
+  for(var widget:widgets)if(widget instanceof WidgetLabel label&&((List<String>)field(label.getClass(),"labels").get(label)).contains(fi.dy.masa.malilib.util.StringUtils.translate("halfmasa.gui.expansion_hint")))hint=label;
+  check(hint!=null,"expansion hint is a visible top-level label");
+  HINT_LAYOUT_CHECKS
  }
  private void tick(Minecraft mc){try{
   if(mc.gui.overlay()!=null)return;
   if(stage==-1){if(!(MinecraftClientCompat.getScreen(mc) instanceof TitleScreen))return;stage=0;mc.createWorldOpenFlows().createFreshLevel("config-reload-fixture",new LevelSettings("Config Reload Fixture",GameType.CREATIVE,new LevelSettings.DifficultySettings(Difficulty.PEACEFUL,false,false),true,WorldDataConfiguration.DEFAULT),new WorldOptions(123L,false,false),WorldPresets::createTestWorldDimensions,MinecraftClientCompat.getScreen(mc));return;}
   if(mc.level==null||mc.player==null||mc.level.getGameTime()<40)return;
   if(++frames<8)return;frames=0;
-  if(stage==0){reloads=0;chunks=0;if(!DIAGNOSTIC){var manager=mc.getLanguageManager();var language=manager.getSelected();manager.setSelected("zh_cn");manager.onResourceManagerReload(mc.getResourceManager());var text=Component.translatable("halfmasa.config.client.name.bossBarScale");check(text.getString().equals("Boss 栏大小"),"persisted spacing enabled on first language load");Configs.CJK_LATIN_SPACING.setBooleanValue(false);check(text.getString().equals("Boss栏大小"),"first toggle after startup removes persisted spacing");Configs.CJK_LATIN_SPACING.setBooleanValue(true);check(text.getString().equals("Boss 栏大小"),"first toggle back restores spacing");manager.setSelected(language);manager.onResourceManagerReload(mc.getResourceManager());}layout(mc,open());stage++;return;}
+  if(stage==0){reloads=0;chunks=0;if(!DIAGNOSTIC){optimizationHotkey(mc);var manager=mc.getLanguageManager();var language=manager.getSelected();manager.setSelected("zh_cn");manager.onResourceManagerReload(mc.getResourceManager());var text=Component.translatable("halfmasa.config.client.name.bossBarScale");check(text.getString().equals("Boss 栏大小"),"persisted spacing enabled on first language load");Configs.CJK_LATIN_SPACING.setBooleanValue(false);check(text.getString().equals("Boss栏大小"),"first toggle after startup removes persisted spacing");Configs.CJK_LATIN_SPACING.setBooleanValue(true);check(text.getString().equals("Boss 栏大小"),"first toggle back restores spacing");manager.setSelected(language);manager.onResourceManagerReload(mc.getResourceManager());}layout(mc,open());stage++;return;}
   if(stage==1){net.minecraft.client.Screenshot.grab(mc,false);stage=10;return;}
   if(stage==10){close(mc);System.out.println("CONFIG_RELOAD_OBSERVE unchangedClose="+reloads+" chunks="+chunks);if(!DIAGNOSTIC)check(reloads==0&&chunks==0,"opening and closing unchanged configuration causes no resource or chunk reload");stage=2;return;}
   if(stage==2){var ui=open();Configs.BOAT_VIEW_360.toggleBooleanValue();list(ui).markConfigsModified();close(mc);System.out.println("CONFIG_RELOAD_OBSERVE unrelatedToggleClose="+reloads+" chunks="+chunks);if(!DIAGNOSTIC)check(reloads==0&&chunks==0,"unrelated toggle and save cause no resource or chunk reload");stage++;return;}
@@ -95,6 +104,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--artifact', type=Path, required=True)
     parser.add_argument('--version', default='26.3')
+    parser.add_argument('--language', default='en_us')
     parser.add_argument('--diagnostic', action='store_true')
     parser.add_argument('--timeout', type=int, default=150)
     args = parser.parse_args()
@@ -103,6 +113,11 @@ def main():
     directory = ROOT / 'build/config-reload-tests' / datetime.now().strftime('%Y%m%d-%H%M%S-%f')
     classes = directory / 'classes'; classes.mkdir(parents=True)
     cp = port_compat.classpath(args.version, args.artifact)
+    hint_checks = '''check(hint.getY()+hint.getHeight()/2-1-ui.fontHeight/2==10,"hint text baseline matches title");check(hint.getX()>20+ui.getStringWidth(ui.getTitleString()),"hint follows the measured title without overlap");check(field(list(ui).getClass(),"posY").getInt(list(ui))==52,"title-row hint restores original list height");
+  var options=list(ui);((io.github.halfmasa.xaerobinding.mixin.ConfigSearchBarAccessor)options.getSearchBarWidget()).halfmasa$getSearchBox().setValueWrapper(Configs.MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION.getConfigGuiDisplayName());options.getSearchBarWidget().setSearchOpen(true);options.refreshEntries();
+  var rows=(List<WidgetConfigOption>)field(options.getClass(),"listWidgets").get(options);var row=rows.stream().filter(w->w.getEntry().getConfig()==Configs.MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION).findFirst().orElseThrow();var children=(List<WidgetBase>)field(row.getClass(),"subWidgets").get(row);
+  var toggle=children.stream().filter(w->w.getClass().getSimpleName().equals("ConfigButtonBoolean")).findFirst().orElseThrow();var key=children.stream().filter(w->w instanceof fi.dy.masa.malilib.gui.button.ConfigButtonKeybind).findFirst().orElseThrow();check(toggle.getY()==key.getY()&&toggle.getX()+toggle.getWidth()<=key.getX(),"optimization toggle and native hotkey share one row without overlap");
+'''
     frame = fixtures.FRAME.replace('entitydisablesmoke', 'configreloadsmoke').replace('EntityDisableSmoke', 'ConfigReloadSmoke')
     frame = frame.replace('@Mixin(Minecraft.class) public class FrameMixin {', '''@Mixin(Minecraft.class) public class FrameMixin {
  @Inject(method="reloadResourcePacks(ZLnet/minecraft/client/GameLoadCookie;)Ljava/util/concurrent/CompletableFuture;",at=@At("HEAD"))
@@ -123,7 +138,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
         frame = frame.replace('Lnet/minecraft/client/GameLoadCookie;', 'Lnet/minecraft/client/Minecraft$GameLoadCookie;')
     sources = []
     for name, source in [('ConfigReloadSmoke', SOURCE.replace('DIAGNOSTIC_VALUE', str(args.diagnostic).lower())), ('FrameMixin', frame), ('ClipboardMixin', clipboard), ('ChunkProbeMixin', chunks)]:
-        path = directory / (name + '.java'); path.write_text(port_compat.source(source, args.version, cp), encoding='utf-8'); sources.append(str(path))
+        path = directory / (name + '.java'); path.write_text(port_compat.source(source.replace('HINT_LAYOUT_CHECKS', hint_checks), args.version, cp), encoding='utf-8'); sources.append(str(path))
     result = subprocess.run([str(args.java_home / 'bin/javac.exe'), '-J-Duser.language=en', '-proc:none', '-encoding', 'UTF-8', '-cp', cp, '-d', str(classes), *sources], capture_output=True)
     if result.returncode:
         print(result.stderr.decode('utf-8', errors='replace')); return 1
@@ -137,7 +152,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
     (game / 'config/malilib.json').write_text('{}\n')
     # A persisted enabled value exercises MaLiLib's last-value/dirty callbacks when the GUI closes.
     (config / 'halfmasa.json').write_text(json.dumps({'ConfigVersion': 55, 'Ported': {'cjkLatinSpacing': {'enabled': True, 'hotkey': {'keys': ''}}, 'cjkLatinSpacingTranslations': True}, 'Disabled': {'disableFluidRendering': {'enabled': True, 'hotkey': {'keys': ''}}, 'disableNonSourceFluidRendering': {'enabled': True, 'hotkey': {'keys': ''}}}}))
-    (game / 'options.txt').write_text('onboardAccessibility:false\nenableVsync:false\nmaxFps:30\nrenderDistance:3\nsimulationDistance:5\npauseOnLostFocus:false\nsoundCategory_master:0.0\nguiScale:1\nlang:en_us\ntutorialStep:none\n')
+    (game / 'options.txt').write_text('onboardAccessibility:false\nenableVsync:false\nmaxFps:30\nrenderDistance:3\nsimulationDistance:5\npauseOnLostFocus:false\nsoundCategory_master:0.0\nguiScale:1\nlang:LANGUAGE\ntutorialStep:none\n'.replace('LANGUAGE', args.language))
     command = startup.production_command(args, game, mod)
     command[1:1] = ['-Djava.awt.headless=true', '-XX:ActiveProcessorCount=2']
     command[command.index('--width')+1] = '1120'; command[command.index('--height')+1] = '720'

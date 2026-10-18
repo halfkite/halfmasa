@@ -1050,8 +1050,8 @@ public final class Configs implements IConfigHandler
     //#if MC >= 1.21.1
     public static final ConfigBooleanHotkeyed MINIHUD_PREVIEW_INDEPENDENT = new ConfigBooleanHotkeyed(
             "minihudPreviewIndependent", false, "").apply("halfmasa.config.extensions");
-    public static final ConfigBoolean MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION = new ConfigBoolean(
-            "minihudContainerPreviewOptimization", true).apply("halfmasa.config.extensions");
+    public static final ConfigBooleanHotkeyed MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION = new ConfigBooleanHotkeyed(
+            "minihudContainerPreviewOptimization", false, "").apply("halfmasa.config.extensions");
     //#endif
 
     public static final List<IConfigBase> EXTENSIONS = Stream.of(
@@ -1229,6 +1229,9 @@ public final class Configs implements IConfigHandler
 
     public static final List<IHotkey> HOTKEYS = Stream.concat(
             Stream.of(
+                    //#if MC >= 1.21.1
+                    MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION,
+                    //#endif
                     //#if MC >= 1.21.1
                     MINIHUD_PREVIEW_INDEPENDENT,
                     //#endif

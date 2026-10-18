@@ -166,7 +166,12 @@ public final class AutoEatService implements IClientTickHandler
             handleRestore(client);
             if (this.pendingRestore != null) return;
         }
-        if (!Configs.AUTO_EAT.getBooleanValue()) return;
+        //#if MC >= 1.21.1
+        // A sent consume request must settle even after the feature is disabled.
+        if (!Configs.AUTO_EAT.getBooleanValue() && this.state != State.WAIT_SILENT) return;
+        //#else
+        //$$ if (!Configs.AUTO_EAT.getBooleanValue()) return;
+        //#endif
 
         boolean combat = Configs.AUTO_EAT_PAUSE_COMBAT.getBooleanValue()
                 && (this.actor.hurtTime > 0 || client.options.keyAttack.isDown() || this.ticks < this.combatUntil);
@@ -176,7 +181,12 @@ public final class AutoEatService implements IClientTickHandler
         if (manual || combat || foreignMenu)
         {
             if (foreignMenu) this.ownedMenu = null;
-            cancel(client, manual || foreignMenu); return;
+            cancel(client, manual || foreignMenu);
+            //#if MC >= 1.21.1
+            if (this.state != State.WAIT_SILENT) return;
+            //#else
+            //$$ return;
+            //#endif
         }
 
         if (this.state == State.WAIT_OPEN || this.state == State.WAIT_TAKE)
@@ -190,15 +200,25 @@ public final class AutoEatService implements IClientTickHandler
             {
                 if (!java.util.Set.of("STALE", "NOT_NEEDED", "BUSY", "COOLDOWN", "NO_SPACE", "RATE_LIMITED").contains(this.silentResult))
                 { this.silentSuppressed = true; warnSilent(client); }
-                this.state = State.IDLE; this.nextScan = this.ticks + IDLE_RESCAN_TICKS; return;
+                this.state = State.IDLE; this.nextScan = this.ticks + IDLE_RESCAN_TICKS;
+                //#if MC >= 1.21.1
+                if (!this.feeding && this.pendingRestore == null && this.pendingReturn == null) finishSelection();
+                //#endif
+                return;
             }
             ItemStack remaining = this.actor.getInventory().getItem(this.activeSlot);
             if ("OK".equals(this.silentResult) && consumedConfirmed(remaining)) mealFinished(remaining);
             else if (this.ticks >= this.deadline)
             {
                 // An uncertain consume cannot be retried with a new nonce or followed by normal use.
+                //#if MC >= 1.21.1
+                if (!this.silentSuppressed)
+                    MinecraftClientCompat.setOverlayMessage(client, Component.translatable("halfmasa.auto_eat.silent_uncertain"), false);
                 this.silentSuppressed = true; this.feeding = false;
-                MinecraftClientCompat.setOverlayMessage(client, Component.translatable("halfmasa.auto_eat.silent_uncertain"), false);
+                //#else
+                //$$ this.silentSuppressed = true; this.feeding = false;
+                //$$ MinecraftClientCompat.setOverlayMessage(client, Component.translatable("halfmasa.auto_eat.silent_uncertain"), false);
+                //#endif
             }
             return;
         }
@@ -719,6 +739,11 @@ public final class AutoEatService implements IClientTickHandler
 
     private void finishSelection()
     {
+        //#if MC >= 1.21.1
+        // Cancellation stops new meals, but cannot undo a server request already sent.
+        // Keep its slot and expected stack until the reply and inventory sync settle it.
+        if (this.state == State.WAIT_SILENT) return;
+        //#endif
         if (this.actor != null && this.selectedBefore >= 0 && this.restoreSelection && Configs.AUTO_EAT_RESTORE_SLOT.getBooleanValue()
                 && selectedSlot(this.actor.getInventory()) == this.activeSlot)
             selectSlot(this.actor.getInventory(), this.selectedBefore);
