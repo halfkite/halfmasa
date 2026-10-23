@@ -10,6 +10,8 @@ ROOT = Path(__file__).resolve().parents[2]
 def source(text, version, classpath):
     if version == '26.3':
         return text
+    text = text.replace('new LevelSettings.DifficultySettings(Difficulty.NORMAL,false,false),true,WorldDataConfiguration.DEFAULT',
+                        'new LevelSettings.DifficultySettings(Difficulty.PEACEFUL,false,false),true,WorldDataConfiguration.DEFAULT')
     if version == '26.1.2' or version.startswith('1.21.'):
         text = text.replace('mc.gui.overlay()', 'mc.getOverlay()')
         text = text.replace('WorldPresets::createTestWorldDimensions', 'WorldPresets::createFlatWorldDimensions')
@@ -59,6 +61,7 @@ def source(text, version, classpath):
 ''')
         if v < (1, 21, 10):
             text = text.replace('var event=new net.minecraft.client.input.KeyEvent(code,0,0);', '')
+            text = text.replace('var event=new net.minecraft.client.input.KeyEvent(code,code,0);', '')
             text = re.sub(r'KeybindMulti\.onKeyInputPre\(event,([^;)]+)\)', r'KeybindMulti.onKeyInputPre(code,0,0,\1)', text)
             text = re.sub(r'input\.onKeyInput\(event,([^;)]+),mc\)', r'input.onKeyInput(code,0,0,\1,mc)', text)
         if v <= (1, 21, 5):

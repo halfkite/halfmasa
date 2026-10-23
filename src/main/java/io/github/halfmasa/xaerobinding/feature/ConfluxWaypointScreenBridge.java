@@ -32,6 +32,68 @@ public final class ConfluxWaypointScreenBridge
     private final Method markerDraw, fill, text, background, tooltip;
     private final Object noVerticalRelation;
     private boolean collecting;
+    //#if MC >= 1.21.1
+    private final java.util.Map<Button, Row> publicationButtons = new java.util.IdentityHashMap<>();
+
+    public void clearPublicationButtons() { publicationButtons.clear(); }
+
+    public boolean selected(Row row) throws ReflectiveOperationException
+    { return ((java.util.Set<?>)field(screen.getClass(), "selectedWaypointIds").get(screen)).contains(row.id); }
+
+    public void toggleSelection(Row target) throws ReflectiveOperationException
+    {
+        for (Row row : rows(false)) if (row.sameIdentity(target) && row.local != null)
+        {
+            Object store = localCurrent.invoke(service);
+            if (store != null && (boolean)method(store.getClass(), "persistenceWritable").invoke(store))
+                named(screen.getClass(), "toggleSelected").invoke(screen, store, row.id);
+            return;
+        }
+    }
+
+    private record Publication(Access access, String labelKey) {}
+
+    private Publication publicationState(Row row) throws ReflectiveOperationException
+    {
+        for (String[] state : new String[][] {
+                {"isLocationShared", "halfmasa.conflux_map.published"},
+                {"isCreatePending", "halfmasa.conflux_map.publishing"} })
+            if ((boolean)method(sharedService.getClass(), state[0], row.local.getClass()).invoke(sharedService, row.local))
+                return new Publication(new Access(false, Component.translatable(state[1])), state[1]);
+        boolean allowed = (boolean)method(sharedService.getClass(), "canCreate").invoke(sharedService);
+        Object reason = method(sharedService.getClass(), "createDisabledReasonKey").invoke(sharedService);
+        return new Publication(new Access(allowed, Component.translatable(allowed
+                ? "halfmasa.conflux_map.publish_hint" : String.valueOf(reason))), "halfmasa.conflux_map.publish");
+    }
+
+    private Access publishAccess(Row row) throws ReflectiveOperationException
+    { return publicationState(row).access; }
+
+    public void refreshPublicationButtons() throws ReflectiveOperationException
+    {
+        for (var entry : publicationButtons.entrySet())
+        {
+            Publication state = publicationState(entry.getValue());
+            Button button = entry.getKey();
+            button.active = state.access.available;
+            button.setMessage(Component.translatable(state.labelKey));
+            button.setTooltip(net.minecraft.client.gui.components.Tooltip.create(state.access.explanation));
+        }
+    }
+
+    private void publish(Row target) throws ReflectiveOperationException
+    {
+        if (!io.github.halfmasa.xaerobinding.config.Configs.CONFLUX_MAP_EXTENSIONS.getBooleanValue()
+                || !io.github.halfmasa.xaerobinding.config.Configs.CONFLUX_MAP_QUICK_PUBLISH.getBooleanValue()) return;
+        for (Row row : rows(false)) if (row.sameIdentity(target) && row.local != null)
+        {
+            if (publishAccess(row).available)
+                method(sharedService.getClass(), "create", row.local.getClass()).invoke(sharedService, row.local);
+            refreshPublicationButtons();
+            return;
+        }
+    }
+    //#endif
 
     public boolean collecting() { return collecting; }
 
@@ -56,8 +118,25 @@ public final class ConfluxWaypointScreenBridge
     {
         var before = new java.util.HashSet<>(screen.children());
         named(screen.getClass(), "addRowWidgets").invoke(screen, row.nativeRow, localCurrent.invoke(service));
-        var widgets = screen.children().stream().filter(child -> !before.contains(child) && child instanceof AbstractWidget)
-                .map(child -> (AbstractWidget)child).toList();
+        var widgets = new ArrayList<>(screen.children().stream().filter(child -> !before.contains(child) && child instanceof AbstractWidget)
+                .map(child -> (AbstractWidget)child).toList());
+        //#if MC >= 1.21.1
+        if (row.local != null && io.github.halfmasa.xaerobinding.config.Configs.CONFLUX_MAP_QUICK_PUBLISH.getBooleanValue())
+        {
+            Button publish = button(Component.translatable("halfmasa.conflux_map.publish"), ignored -> {
+                try { publish(row); }
+                catch (ReflectiveOperationException error)
+                {
+                    io.github.halfmasa.xaerobinding.XaeroWorldBinding.LOGGER.warn("Cannot publish Conflux waypoint copy", error);
+                    ignored.active = false;
+                    ignored.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("halfmasa.conflux_map.publish_unavailable")));
+                }
+            }, 0, 0, 108);
+            ((io.github.halfmasa.xaerobinding.mixin.ScreenAccessor)screen).halfmasa$addRenderableWidget(publish);
+            publicationButtons.put(publish, row); widgets.add(publish);
+            refreshPublicationButtons();
+        }
+        //#endif
         // Popup widgets are drawn above the header while retaining native input/narration.
         ((io.github.halfmasa.xaerobinding.mixin.ScreenAccessor)screen).halfmasa$getRenderables().removeAll(widgets);
         return widgets;
@@ -81,6 +160,9 @@ public final class ConfluxWaypointScreenBridge
     {
         var icons = (java.util.Set<?>)field(screen.getClass(), "iconActions").get(screen);
         icons.removeAll(widgets);
+        //#if MC >= 1.21.1
+        for (var widget : widgets) publicationButtons.remove(widget);
+        //#endif
         for (var widget : widgets)
         {
             if (screen.getFocused() == widget) screen.setFocused(null);
@@ -106,6 +188,9 @@ public final class ConfluxWaypointScreenBridge
         return java.util.Objects.hash(field(config.getClass(), "localWaypointsVisible").get(config),
                 field(config.getClass(), "crossWorldWaypointsVisible").get(config),
                 field(config.getClass(), "teleportCommand").get(config),
+                //#if MC >= 1.21.1
+                io.github.halfmasa.xaerobinding.config.Configs.CONFLUX_MAP_QUICK_PUBLISH.getBooleanValue(),
+                //#endif
                 net.minecraft.client.Minecraft.getInstance().options.languageCode);
     }
 
@@ -138,6 +223,56 @@ public final class ConfluxWaypointScreenBridge
         background = draw.getMethod("renderBackground", Screen.class, int.class, int.class, float.class);
         tooltip = draw.getMethod("drawTooltip", Screen.class, Font.class, Component.class, int.class, int.class);
     }
+
+    //#if MC >= 1.21.1
+    public int viewToken() throws ReflectiveOperationException
+    { return java.util.Objects.hash(tab(), dimensionFilter.get(screen), field(screen.getClass(), "selectedSetFilter").get(screen)); }
+
+    public String worldKey() throws ReflectiveOperationException
+    {
+        Object store = localCurrent.invoke(service);
+        if (store == null) return null;
+        Object world = method(store.getClass(), "world").invoke(store);
+        if (!(boolean)method(world.getClass(), "isPresent").invoke(world)) return null;
+        return method(world.getClass(), "serverId").invoke(world) + "\n"
+                + method(world.getClass(), "worldId").invoke(world);
+    }
+
+    public ConfluxWaypointListMemory.State snapshot(Object preferredTab, int compactScroll) throws ReflectiveOperationException
+    {
+        Object filter = dimensionFilter.get(screen);
+        Object dim = method(filter.getClass(), "dimension").invoke(filter);
+        return new ConfluxWaypointListMemory.State(String.valueOf(preferredTab == null ? tab() : preferredTab),
+                String.valueOf(method(filter.getClass(), "mode").invoke(filter)), dim == null ? null : dim.toString(),
+                (String)field(screen.getClass(), "selectedSetFilter").get(screen), query(),
+                field(screen.getClass(), "scrollOffset").getInt(screen), compactScroll);
+    }
+
+    public Object restore(ConfluxWaypointListMemory.State state) throws ReflectiveOperationException
+    {
+        Object requested = "PUBLIC".equals(state.tab()) ? publicTab : localTab;
+        Object availability = method(sharedService.getClass(), "availability").invoke(sharedService);
+        if (requested == publicTab && !(boolean)method(availability.getClass(), "enabled").invoke(availability)) requested = localTab;
+        tab(requested);
+        Object filter = method(dimensionFilter.getType(), "current").invoke(null);
+        if ("ALL".equals(state.dimensionMode())) filter = method(dimensionFilter.getType(), "all").invoke(null);
+        else if ("ONLY".equals(state.dimensionMode()))
+        {
+            Object session = method(gameBridge.getClass(), "session").invoke(gameBridge);
+            Object dim = method(session.getClass(), "dimension").invoke(session);
+            for (Object known : (List<?>)named(screen.getClass(), "knownDimensions").invoke(screen, dim))
+                if (known.toString().equals(state.dimension()))
+                    filter = method(dimensionFilter.getType(), "only", known.getClass()).invoke(null, known);
+        }
+        dimensionFilter.set(screen, filter);
+        field(screen.getClass(), "selectedSetFilter").set(screen, state.set());
+        var box = (net.minecraft.client.gui.components.EditBox)search.get(screen);
+        box.setValue(state.search());
+        field(screen.getClass(), "observedSearch").set(screen, box.getValue());
+        field(screen.getClass(), "scrollOffset").setInt(screen, state.nativeScroll());
+        return requested;
+    }
+    //#endif
 
     public Object tab() throws IllegalAccessException { return tab.get(screen); }
     public void tab(Object value) throws IllegalAccessException { tab.set(screen, value); }
@@ -173,6 +308,10 @@ public final class ConfluxWaypointScreenBridge
         List<Row> personal, server;
         try
         {
+            //#if MC >= 1.21.1
+            if (!io.github.halfmasa.xaerobinding.config.Configs.CONFLUX_MAP_SHOW_BOTH_WAYPOINTS.getBooleanValue())
+                return List.copyOf(readRows(currentDimension, x, y, z, query));
+            //#endif
             tab(localTab); personal = readRows(currentDimension, x, y, z, query);
             tab(publicTab); server = readRows(currentDimension, x, y, z, query);
         }

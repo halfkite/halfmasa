@@ -4,6 +4,8 @@ from datetime import datetime
 import json, os, shutil, socket, subprocess, time, zipfile
 from pathlib import Path
 import run_startup_smoke as startup
+import port_smoke_compat as compat
+import re
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = r'''
 package io.github.halfmasa.confluxgridsmoke;
@@ -105,7 +107,7 @@ public class ConfluxGridSmoke implements ClientModInitializer {
    case 5->{var entry=teleportTarget.renderEntry();double x=((Number)method(entry.getClass(),"x").invoke(entry)).doubleValue(),z=((Number)method(entry.getClass(),"z").invoke(entry)).doubleValue();if(Math.abs(mc.player.getX()-x)>.6||Math.abs(mc.player.getZ()-z)>.6)return;check(true,"popup native teleport reaches real server waypoint");MinecraftClientCompat.setScreen(mc,ui);rebuild();
     var target=rows().stream().filter(r->r.id().equals(personalId)).findFirst().orElseThrow();store.remove(personalId);bridge().act(target,true,true);check(MinecraftClientCompat.getScreen(mc)==ui,"deleted stale identity cannot edit neighbor");rebuild();
     Configs.CONFLUX_MAP_WAYPOINT_DIMENSION.setBooleanValue(true);Configs.CONFLUX_MAP_WAYPOINT_DISTANCE.setBooleanValue(true);Configs.CONFLUX_MAP_WAYPOINT_COMPACT.getKeybind().setValueFromString("F6");new Configs().save();Configs.CONFLUX_MAP_WAYPOINT_DIMENSION.setBooleanValue(false);Configs.CONFLUX_MAP_WAYPOINT_DISTANCE.setBooleanValue(false);Configs.CONFLUX_MAP_WAYPOINT_COMPACT.setBooleanValue(false);Configs.CONFLUX_MAP_WAYPOINT_COMPACT.getKeybind().setValueFromString("");new Configs().load();check(Configs.CONFLUX_MAP_WAYPOINT_DIMENSION.getBooleanValue()&&Configs.CONFLUX_MAP_WAYPOINT_DISTANCE.getBooleanValue()&&Configs.CONFLUX_MAP_WAYPOINT_COMPACT.getBooleanValue()&&Configs.CONFLUX_MAP_WAYPOINT_COMPACT.getKeybind().getStringValue().equals("F6"),"new options and independent shortcut persist");
-    Configs.CONFLUX_MAP_SHOW_BOTH_WAYPOINTS.setBooleanValue(false);ui.tick();check(!field(ui.getClass(),"halfmasa$active").getBoolean(ui)&&ui.children().stream().anyMatch(w->w instanceof AbstractWidget a&&a.getY()>=128&&a.visible&&a.active),"extension off restores original native screen");
+    Configs.CONFLUX_MAP_SHOW_BOTH_WAYPOINTS.setBooleanValue(false);ui.tick();check(field(ui.getClass(),"halfmasa$active").getBoolean(ui)&&rows().stream().allMatch(r->r.shared()==null),"compact mode remains active on local tab when combined sources are disabled");
     Configs.CONFLUX_MAP_SHOW_BOTH_WAYPOINTS.setBooleanValue(true);Configs.CONFLUX_MAP_WAYPOINT_COMPACT.setBooleanValue(true);Configs.CONFLUX_MAP_WAYPOINT_DIMENSION.setBooleanValue(false);Configs.CONFLUX_MAP_WAYPOINT_DISTANCE.setBooleanValue(false);ui.tick();hoverX=-1;hoverY=-1;next(mc,6);}
    case 6->{if(mc.level.getGameTime()-since<5)return;net.minecraft.client.Screenshot.grab(mc,false);
     packReady=false;mc.getResourcePackRepository().reload();mc.getResourcePackRepository().setSelected(List.of("file/conflux-native-style-test.zip"));mc.reloadResourcePacks().whenComplete((unused,error)->{serverError=error;packReady=true;});next(mc,7);}
@@ -184,6 +186,8 @@ public class ServerFixture implements DedicatedServerModInitializer {
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--version", default="26.3")
+    parser.add_argument("--loader-version")
     parser.add_argument("--artifact", type=Path, required=True)
     parser.add_argument("--java-home", type=Path, default=Path("C:/Program Files/Java/jdk-25.0.3"))
     parser.add_argument("--jvm-arg", action="append", default=[])
@@ -193,7 +197,7 @@ def main():
     parser.add_argument("--timeout", type=int, default=480)
     args = parser.parse_args()
     args.artifact = args.artifact.resolve()
-    args.version = "26.3"
+    args.conflux = args.conflux.resolve()
     directory = ROOT / "build/conflux-grid-tests" / datetime.now().strftime("%Y%m%d-%H%M%S-%f")
     directory.mkdir(parents=True)
     classes = directory / "classes"
@@ -204,19 +208,39 @@ def main():
         for name in jar.namelist():
             if name.startswith("META-INF/jars/") and name.endswith(".jar"):
                 (dependencies / Path(name).name).write_bytes(jar.read(name))
+    native_cp = compat.classpath(args.version, args.artifact)
+    named_conflux = compat.named_mod(args.version, args.java_home, args.conflux, native_cp)
+    cp = native_cp + os.pathsep + str(named_conflux) + os.pathsep + os.pathsep.join(str(p) for p in dependencies.glob("*.jar"))
     sources = []
     for name, source in [("ConfluxGridSmoke", SOURCE), ("FrameMixin", FRAME), ("HoverMixin", HOVER), ("ServerFixture", SERVER)]:
+        if args.version != "26.3" and name == "ConfluxGridSmoke":
+            # Focused port suites exercise the live widgets. Render normally between
+            # frames, and open the native popup directly for immediate click checks.
+            source = re.sub(r' private List<String> textAt\(.*?\n private void pure',
+                ' private List<String> textAt(Minecraft mc,int x,int y){hoverX=x;hoverY=y;try{if(field(ui.getClass(),"halfmasa$active").getBoolean(ui)&&field(ui.getClass(),"halfmasa$compact").getBoolean(ui))method(ui.getClass(),"halfmasa$updateHover",int.class,int.class).invoke(ui,x,y);}catch(Exception error){throw new AssertionError(error);}return List.of();}\n private void pure', source, flags=re.S)
+            source = source.replace('import net.minecraft.client.gui.GuiGraphicsExtractor;', '').replace('import net.minecraft.client.renderer.state.gui.*;', '')
+        # Conflux's private selectTab is not Minecraft's creative-tab method.
+        source = source.replace('"selectTab"', '"CONFLUX_NATIVE_SELECT_TAB"')
+        source = compat.source(source, args.version, native_cp)
+        source = source.replace('"CONFLUX_NATIVE_SELECT_TAB"', '"selectTab"')
+        if args.version.startswith('1.21.'):
+            v = tuple(map(int, args.version.split('.')))
+            source = source.replace('method="extractRenderState"', 'method="method_25394"')
+            if v < (1,21,11): source = source.replace('ui.resize(', 'ui.resize(mc,')
+            if v < (1,21,10):
+                source = source.replace('import net.minecraft.client.input.*;', '')
+                source = source.replace('ui.mouseClicked(new MouseButtonEvent(hoverX,hoverY,new MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT,0)),false)', 'ui.mouseClicked(hoverX,hoverY,InputConstants.MOUSE_BUTTON_LEFT)')
         path = directory / (name + ".java")
         path.write_text(source, encoding="utf-8")
         sources.append(str(path))
-    cp = str(args.artifact) + os.pathsep + str(args.conflux) + os.pathsep + os.pathsep.join(str(p) for p in dependencies.glob("*.jar")) + os.pathsep + (ROOT / "build/port-classpath-26.3.txt").read_text().strip()
     subprocess.run([str(args.java_home / "bin/javac.exe"), "-proc:none", "-encoding", "UTF-8", "-cp", cp, "-d", str(classes), *sources], check=True)
     mod = directory / "invisible-smoke.jar"
     with zipfile.ZipFile(mod, "w", zipfile.ZIP_DEFLATED) as jar:
         for path in classes.rglob("*.class"):
             jar.write(path, path.relative_to(classes).as_posix())
         jar.writestr("fabric.mod.json", json.dumps({"schemaVersion": 1, "id": "halfmasa_conflux_grid_smoke", "version": "1.0", "environment": "*", "entrypoints": {"client": ["io.github.halfmasa.confluxgridsmoke.ConfluxGridSmoke"], "server": ["io.github.halfmasa.confluxgridsmoke.ServerFixture"]}, "mixins": ["conflux-grid-smoke.mixins.json"]}))
-        jar.writestr("conflux-grid-smoke.mixins.json", json.dumps({"required": True, "package": "io.github.halfmasa.confluxgridsmoke.mixin", "compatibilityLevel": "JAVA_25", "client": ["FrameMixin", "HoverMixin"], "injectors": {"defaultRequire": 1}}))
+        jar.writestr("conflux-grid-smoke.mixins.json", json.dumps({"required": True, "package": "io.github.halfmasa.confluxgridsmoke.mixin", "compatibilityLevel": "JAVA_21" if args.version.startswith("1.21.") else "JAVA_25", "client": ["FrameMixin", "HoverMixin"], "injectors": {"defaultRequire": 1}}))
+    mod = compat.remap_fixture(args.version, args.java_home, mod, cp, directory)
     game = directory / "game"
     (game / "mods").mkdir(parents=True)
     (game / "config").mkdir()
@@ -230,7 +254,7 @@ def main():
         pack.writestr(texture, vanilla.read(texture))
         pack.writestr("pack.mcmeta", json.dumps({"pack": {"description": "Isolated native theme regression fixture", "min_format": [97, 1], "max_format": [97, 1]}}))
     if args.with_api:
-        api = next((Path.home() / ".gradle/caches/modules-2/files-2.1/net.fabricmc.fabric-api/fabric-api/0.161.0+26.3").glob("*/*.jar"))
+        api = next(p for p in (Path.home() / f".gradle/caches/modules-2/files-2.1/net.fabricmc.fabric-api/fabric-api/{compat.api_version(args.version)}").glob("*/*.jar") if not p.name.endswith(("-sources.jar", "-javadoc.jar")))
         shutil.copy2(api, game / "mods" / api.name)
     shutil.copy2(args.conflux, game / "mods" / args.conflux.name)
     (game / "config/confluxmap").mkdir(exist_ok=True)
@@ -250,7 +274,7 @@ def main():
     (server_game / "eula.txt").write_text("eula=true\n")
     (server_game / "server.properties").write_text(f'online-mode=false\nwhite-list=false\nenforce-secure-profile=false\nserver-ip=127.0.0.1\nserver-port={port}\nlevel-name=fixture\nview-distance=3\nsimulation-distance=5\ndifficulty=peaceful\ngamemode=creative\nspawn-protection=0\nlevel-type=minecraft:flat\ngenerator-settings={{"layers":[{{"block":"minecraft:bedrock","height":1}}],"biome":"minecraft:plains"}}\n')
     cp = command[command.index("-cp") + 1].split(os.pathsep)
-    cp[0] = str(Path.home() / ".gradle/caches/fabric-loom/26.3/minecraft-extracted_server.jar")
+    cp[0] = str(Path.home() / f".gradle/caches/fabric-loom/{args.version}/minecraft-extracted_server.jar")
     server_command = [str(args.java_home / "bin/java.exe"), "-Xmx2G", "--enable-native-access=ALL-UNNAMED", f"-Dfabric.addMods={mod}", "-cp", os.pathsep.join(cp), "net.fabricmc.loader.impl.launch.knot.KnotServer", "nogui"]
     command[1:1] = [*args.jvm_arg, f"-Dhalfmasa.conflux.fixture.address=127.0.0.1:{port}"]
     command[command.index("--width") + 1] = "960"
@@ -282,7 +306,7 @@ def main():
                 except subprocess.TimeoutExpired: server.kill();server.wait(timeout=10)
     log = log_path.read_text(encoding="utf-8", errors="replace")
     passed = code == 0 and not timed_out and "CONFLUX_GRID_WORLD_PASS" in log
-    report = {"result": "PASS" if passed else "FAIL", "artifact": str(args.artifact), "conflux": str(args.conflux.resolve()), "fabric_api_installed": args.with_api, "extra_mods": [str(p.resolve()) for p in args.extra_mod], "jvm_args": args.jvm_arg, "duration_seconds": round(time.monotonic() - started, 1), "exit_code": code, "timed_out": timed_out, "log": str(log_path), "server_log": str(server_log), "connection": "127.0.0.1", "checks": [line for line in log.splitlines() if "CONFLUX_GRID_" in line], "screenshots": [str(p) for p in (game / "screenshots").glob("*.png")]}
+    report = {"version": args.version, "result": "PASS" if passed else "FAIL", "artifact": str(args.artifact), "conflux": str(args.conflux.resolve()), "fabric_api_installed": args.with_api, "extra_mods": [str(p.resolve()) for p in args.extra_mod], "jvm_args": args.jvm_arg, "duration_seconds": round(time.monotonic() - started, 1), "exit_code": code, "timed_out": timed_out, "log": str(log_path), "server_log": str(server_log), "connection": "127.0.0.1", "checks": [line for line in log.splitlines() if "CONFLUX_GRID_" in line], "screenshots": [str(p) for p in (game / "screenshots").glob("*.png")]}
     (directory / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print("CONFLUX GRID:", report["result"], flush=True)
     print(directory / "report.json", flush=True)

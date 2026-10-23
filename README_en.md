@@ -12,7 +12,7 @@ halfmasa is a Minecraft Fabric client-side utility mod that brings together wayp
 
 Supports the Fabric Loader and Minecraft versions `1.21.1`–`26.3`.
 
-Version `1.7.1` brings range feeding (baby protection, temporary hold activation and adjustable speed), Auto Eat, Better Boss Bar, invisible block markers, animation controls, custom entity rendering filters and the combined Conflux Map list to all ten build targets. It also fixes an Auto Eat cancellation crash and improves compatibility with current and legacy Conflux Map APIs. Highlight child settings use MaLiLib's native keybind settings widget with aligned reset columns.
+Version `1.7.2` adds quick publication of public waypoint copies, selection checkboxes on compact cards, and waypoint list view memory for Conflux Map. Compact layout remains available when local and server waypoints are not combined. Silent Auto Eat now waits for the vanilla food use duration before consuming food. These features and fixes are available on all ten build targets.
 
 ## Documentation
 

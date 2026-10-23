@@ -1,4 +1,18 @@
 {
+  "halfmasa.config.ported.name.confluxMapRememberList": "Remember waypoint list",
+  "halfmasa.config.ported.prettyName.confluxMapRememberList": "Remember waypoint list",
+  "halfmasa.config.ported.comment.confluxMapRememberList": "On by default. Remember tab, dimension filter, set, search and scroll per server/world. Restore on reopening, before using opening defaults. Invalid filters and unavailable public tabs fall back safely. Do not restore selections or pending actions.",
+
+  "halfmasa.config.ported.name.confluxMapQuickPublish": "Quick public waypoint publishing",
+  "halfmasa.config.ported.prettyName.confluxMapQuickPublish": "Quick public waypoint publishing",
+  "halfmasa.config.ported.comment.confluxMapQuickPublish": "Off by default. Add a publish action to compact waypoint popups. Publish a public copy while keeping the local waypoint and its set. Requires companion support and permission.",
+  "halfmasa.conflux_map.publish": "Make public",
+  "halfmasa.conflux_map.publish_hint": "Publish a public copy; keep the local waypoint and its set.",
+  "halfmasa.conflux_map.published": "Already public",
+  "halfmasa.conflux_map.publishing": "Publishing…",
+  "halfmasa.conflux_map.publish_unavailable": "Publishing unavailable: Conflux Map interface failed. See the log.",
+  "halfmasa.conflux_map.select": "Select waypoint for batch actions; synchronized with the popup checkbox.",
+
   "halfmasa.config.ported.comment.keepConfigPositionExpanded.screen": "Expand or collapse search/scroll, selected-tab and creative inventory memory settings.",
   "halfmasa.config.ported.name.keepScreenPosition": "Keep Screen Position",
   "halfmasa.config.ported.prettyName.keepScreenPosition": "Keep Screen Position",
@@ -47,7 +61,7 @@
   "halfmasa.config.ported.comment.confluxMapWaypointOrder": "Server waypoints first by default; switch to personal first. Keep native distance ordering within each source.",
   "halfmasa.config.ported.name.confluxMapWaypointCompact": "Compact waypoints",
   "halfmasa.config.ported.prettyName.confluxMapWaypointCompact": "Compact waypoints",
-  "halfmasa.config.ported.comment.confluxMapWaypointCompact": "Off by default. Native-styled continuous grid with optional dimension and distance. Hover opens details and native actions; disabling preserves the original list style.",
+  "halfmasa.config.ported.comment.confluxMapWaypointCompact": "Off by default. Works independently of the combined list; otherwise shows only the current tab. Native-styled continuous grid with optional dimension and distance. Hover opens details and native actions; disabling preserves the original list style.",
   "halfmasa.option.conflux_map_waypoint_order.server_first": "Server first",
   "halfmasa.option.conflux_map_waypoint_order.personal_first": "Personal first",
   "halfmasa.conflux_map.compact_on": "Compact grid: ON",

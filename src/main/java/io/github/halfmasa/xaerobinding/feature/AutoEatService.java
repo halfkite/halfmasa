@@ -52,7 +52,11 @@ public final class AutoEatService implements IClientTickHandler
         //$$ inventory.selected = slot;
         //#endif
     }
-    private enum State { IDLE, WAIT_SWAP, EATING, WAIT_SILENT, WAIT_OPEN, WAIT_TAKE, WAIT_RESTORE,
+    private enum State { IDLE, WAIT_SWAP, EATING,
+        //#if MC >= 1.21.1
+        WAIT_SILENT_USE,
+        //#endif
+        WAIT_SILENT, WAIT_OPEN, WAIT_TAKE, WAIT_RESTORE,
         WAIT_RETURN_SWAP, WAIT_RETURN_OPEN, WAIT_RETURN }
     private record Candidate(int index, ItemStack stack, boolean ender) {}
     private record ContainerScan(ItemStack stack, java.util.List<ItemStack> inventory) {}
@@ -79,6 +83,9 @@ public final class AutoEatService implements IClientTickHandler
     private PendingRestore pendingRestore;
     private RemoteWithdrawal pendingReturn;
     private long silentRequest;
+    //#if MC >= 1.21.1
+    private long silentUseReadyAt;
+    //#endif
     private String silentResult;
     private boolean silentSuppressed, silentWarned;
     private java.util.List<ItemStack> beforeTake;
@@ -155,11 +162,18 @@ public final class AutoEatService implements IClientTickHandler
         if (!Configs.AUTO_EAT.getBooleanValue() && !returning()) cancel(client, false);
 
         if (this.pendingReturn != null && this.state != State.EATING && this.state != State.WAIT_SILENT
+                //#if MC >= 1.21.1
+                && this.state != State.WAIT_SILENT_USE
+                //#endif
                 && (returning() || this.pendingRestore == null))
         {
             if (handleReturn(client)) return;
         }
-        if (this.pendingRestore != null && !this.ownsUse && this.state != State.EATING && this.state != State.WAIT_SILENT)
+        if (this.pendingRestore != null && !this.ownsUse && this.state != State.EATING && this.state != State.WAIT_SILENT
+                //#if MC >= 1.21.1
+                && this.state != State.WAIT_SILENT_USE
+                //#endif
+                )
         {
             if (this.state == State.WAIT_SWAP && (MinecraftClientCompat.getScreen(client) != null
                     || selectedSlot(this.actor.getInventory()) != this.pendingRestore.selected)) cancel(client, true);
@@ -189,6 +203,21 @@ public final class AutoEatService implements IClientTickHandler
             //#endif
         }
 
+        //#if MC >= 1.21.1
+        if (this.state == State.WAIT_SILENT_USE)
+        {
+            // Nothing has been sent yet: interrupted preparation can be cancelled safely.
+            ItemStack food = this.actor.getInventory().getItem(this.activeSlot);
+            if (MinecraftClientCompat.getScreen(client) != null || this.actor.isUsingItem()
+                    || !ItemStack.matches(food, this.eatingFood) || !AutoEatFoodRules.isAllowed(food)
+                    || this.actor.getFoodData().getFoodLevel() >= targetHunger() || !silentAvailable(client))
+            {
+                cancel(client, false); return;
+            }
+            if (this.level.getGameTime() >= this.silentUseReadyAt) requestSilentMeal();
+            return;
+        }
+        //#endif
         if (this.state == State.WAIT_OPEN || this.state == State.WAIT_TAKE)
         {
             handleContainer(client); return;
@@ -315,9 +344,16 @@ public final class AutoEatService implements IClientTickHandler
         this.activeSlot = slot; this.eatingFood = this.actor.getInventory().getItem(slot).copy();
         if (silentAvailable(client))
         {
-            this.requestRevision = this.sync.revision(); this.deadline = this.ticks + RESPONSE_TIMEOUT_TICKS;
-            this.state = State.WAIT_SILENT; this.silentResult = null;
-            this.silentRequest = HalfMasaSupportClient.eat(slot,this.eatingFood,targetHunger(),Configs.AUTO_EAT_PAUSE_COMBAT.getBooleanValue());
+            //#if MC >= 1.21.1
+            // Silence removes sound and hand use, not the food's vanilla consumption time.
+            this.silentUseReadyAt = this.level.getGameTime() + Math.max(0, this.eatingFood.getUseDuration(this.actor));
+            this.state = State.WAIT_SILENT_USE;
+            if (this.level.getGameTime() >= this.silentUseReadyAt) requestSilentMeal();
+            //#else
+            //$$ this.requestRevision = this.sync.revision(); this.deadline = this.ticks + RESPONSE_TIMEOUT_TICKS;
+            //$$ this.state = State.WAIT_SILENT; this.silentResult = null;
+            //$$ this.silentRequest = HalfMasaSupportClient.eat(slot,this.eatingFood,targetHunger(),Configs.AUTO_EAT_PAUSE_COMBAT.getBooleanValue());
+            //#endif
             return;
         }
         selectSlot(this.actor.getInventory(), slot); this.requestRevision = this.sync.revision();
@@ -325,6 +361,16 @@ public final class AutoEatService implements IClientTickHandler
         this.state = State.EATING; this.ownsUse = true;
         client.gameMode.useItem(this.actor, InteractionHand.MAIN_HAND);
     }
+
+    //#if MC >= 1.21.1
+    private void requestSilentMeal()
+    {
+        this.requestRevision = this.sync.revision(); this.deadline = this.ticks + RESPONSE_TIMEOUT_TICKS;
+        this.state = State.WAIT_SILENT; this.silentResult = null;
+        this.silentRequest = HalfMasaSupportClient.eat(this.activeSlot, this.eatingFood,
+                targetHunger(), Configs.AUTO_EAT_PAUSE_COMBAT.getBooleanValue());
+    }
+    //#endif
 
     private boolean consumedConfirmed(ItemStack remaining)
     {

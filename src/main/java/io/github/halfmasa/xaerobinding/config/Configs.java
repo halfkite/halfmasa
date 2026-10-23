@@ -294,6 +294,12 @@ public final class Configs implements IConfigHandler
     public static final ConfigBooleanHotkeyed CONFLUX_MAP_WAYPOINT_DISTANCE = new ConfigBooleanHotkeyed(
             "confluxMapWaypointDistance", false, "").apply(PORTED_KEY);
     //#endif
+    //#if MC >= 1.21.1
+    public static final ConfigBoolean CONFLUX_MAP_REMEMBER_LIST = new ConfigBoolean(
+            "confluxMapRememberList", true).apply(PORTED_KEY);
+    public static final ConfigBoolean CONFLUX_MAP_QUICK_PUBLISH = new ConfigBoolean(
+            "confluxMapQuickPublish", false).apply(PORTED_KEY);
+    //#endif
     public static final ConfigBooleanHotkeyed CONFLUX_MAP_CLOSE_AFTER_TELEPORT = new ConfigBooleanHotkeyed(
             "confluxMapCloseAfterTeleport",
             //#if MC >= 1.21.1
@@ -317,6 +323,9 @@ public final class Configs implements IConfigHandler
             CONFLUX_MAP_WAYPOINT_DIMENSION, CONFLUX_MAP_WAYPOINT_DISTANCE,
             //#else
             //$$ CONFLUX_MAP_WAYPOINT_LIST_LAYOUT,
+            //#endif
+            //#if MC >= 1.21.1
+            CONFLUX_MAP_QUICK_PUBLISH, CONFLUX_MAP_REMEMBER_LIST,
             //#endif
             CONFLUX_MAP_CLOSE_AFTER_TELEPORT,
             CONFLUX_MAP_UNKNOWN_HEIGHT,
@@ -2122,7 +2131,11 @@ public final class Configs implements IConfigHandler
 
     private static boolean isConfluxMapExtensionChild(IConfigBase config)
     {
-        return config == CONFLUX_MAP_ALL_DIMENSIONS || config == CONFLUX_MAP_PUBLIC_WAYPOINTS ||
+        return
+                //#if MC >= 1.21.1
+                config == CONFLUX_MAP_QUICK_PUBLISH || config == CONFLUX_MAP_REMEMBER_LIST ||
+                //#endif
+                config == CONFLUX_MAP_ALL_DIMENSIONS || config == CONFLUX_MAP_PUBLIC_WAYPOINTS ||
                 config == CONFLUX_MAP_SHOW_BOTH_WAYPOINTS ||
                 //#if MC >= 1.21.1
                 config == CONFLUX_MAP_WAYPOINT_ORDER || config == CONFLUX_MAP_WAYPOINT_COMPACT ||

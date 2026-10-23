@@ -42,15 +42,92 @@ public abstract class ConfluxMapCombinedWaypointListMixin extends Screen
     @Unique private WaypointGridLayout.Cell halfmasa$anchor, halfmasa$panel;
     @Unique private List<AbstractWidget> halfmasa$actions = List.of();
 
+    //#if MC >= 1.21.1
+    @Unique private List<AbstractWidget> halfmasa$checks = List.of();
+    @Unique private boolean halfmasa$merged, halfmasa$memoryRestored;
+    @Unique private String halfmasa$memoryWorld;
+    @Unique private int halfmasa$viewToken;
+
+    @Unique private void halfmasa$restoreMemory() throws ReflectiveOperationException
+    {
+        if (halfmasa$memoryRestored || !io.github.halfmasa.xaerobinding.feature.ConfluxWaypointListMemory.enabled()) return;
+        if (halfmasa$bridge == null) halfmasa$bridge = new ConfluxWaypointScreenBridge(this);
+        String world = halfmasa$bridge.worldKey();
+        if (world == null) return;
+        halfmasa$memoryWorld = world; halfmasa$memoryRestored = true;
+        var state = io.github.halfmasa.xaerobinding.feature.ConfluxWaypointListMemory.get(world);
+        if (state == null) return;
+        Object requested = halfmasa$bridge.restore(state);
+        halfmasa$previousTab = Configs.CONFLUX_MAP_SHOW_BOTH_WAYPOINTS.getBooleanValue() ? requested : null;
+        if (halfmasa$previousTab != null) halfmasa$bridge.useLocalTab();
+        halfmasa$scroll = state.compactScroll(); halfmasa$query = halfmasa$bridge.query();
+        halfmasa$viewToken = halfmasa$bridge.viewToken();
+        halfmasa$bridge.rebuild();
+    }
+
+    @Inject(method = {"init", "method_25426"}, at = @At("TAIL"), require = 1, remap = false)
+    private void halfmasa$restoreLastList(CallbackInfo ci)
+    {
+        try { halfmasa$restoreMemory(); }
+        catch (ReflectiveOperationException error) { halfmasa$contractFailure(error); }
+    }
+
+    @Override
+    public void removed()
+    {
+        try
+        {
+            if (halfmasa$bridge != null && halfmasa$memoryWorld != null && halfmasa$memoryWorld.equals(halfmasa$bridge.worldKey()))
+                io.github.halfmasa.xaerobinding.feature.ConfluxWaypointListMemory.save(halfmasa$memoryWorld,
+                        halfmasa$bridge.snapshot(halfmasa$previousTab, halfmasa$scroll));
+        }
+        catch (ReflectiveOperationException error) { halfmasa$contractFailure(error); }
+        super.removed();
+    }
+
+
+    @Unique private void halfmasa$rebuildChecks() throws ReflectiveOperationException
+    {
+        for (var check : halfmasa$checks)
+            ((ScreenAccessor)this).halfmasa$removeWidget(check);
+        var checks = new ArrayList<AbstractWidget>();
+        if (halfmasa$compact && halfmasa$layout != null)
+            for (var cell : halfmasa$layout.cells())
+            {
+                var row = halfmasa$rows.get(cell.index());
+                if (row.local() == null || cell.width() < 48) continue;
+                var check = halfmasa$bridge.button(Component.literal(halfmasa$bridge.selected(row) ? "✓" : ""), button -> {
+                    try { halfmasa$bridge.toggleSelection(row); }
+                    catch (ReflectiveOperationException error) { halfmasa$contractFailure(error); }
+                }, cell.x() + cell.width() - 23, cell.y() + (cell.height() - 20) / 2, 20);
+                check.active = halfmasa$bridge.editAccess(row).available();
+                check.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("halfmasa.conflux_map.select")));
+                this.addRenderableWidget(check);
+                ((ScreenAccessor)this).halfmasa$getRenderables().remove(check);
+                checks.add(check);
+            }
+        halfmasa$checks = checks;
+    }
+    //#endif
+
     protected ConfluxMapCombinedWaypointListMixin(Component title) { super(title); }
     @Unique private boolean halfmasa$enabled()
-    { return !halfmasa$failed && Configs.CONFLUX_MAP_EXTENSIONS.getBooleanValue() && Configs.CONFLUX_MAP_SHOW_BOTH_WAYPOINTS.getBooleanValue(); }
+    { return !halfmasa$failed && Configs.CONFLUX_MAP_EXTENSIONS.getBooleanValue()
+            && (Configs.CONFLUX_MAP_SHOW_BOTH_WAYPOINTS.getBooleanValue()
+                //#if MC >= 1.21.1
+                || Configs.CONFLUX_MAP_WAYPOINT_COMPACT.getBooleanValue()
+                //#endif
+                ); }
     @Unique private boolean halfmasa$serverFirst()
     { return Configs.CONFLUX_MAP_WAYPOINT_ORDER.getOptionListValue() == ConfluxMapWaypointOrder.SERVER_FIRST; }
 
     @Inject(method = "rebuild", at = @At("HEAD"), require = 1, remap = false)
     private void halfmasa$prepareContract(CallbackInfo ci)
     {
+        //#if MC >= 1.21.1
+        halfmasa$checks = List.of();
+        if (halfmasa$bridge != null) halfmasa$bridge.clearPublicationButtons();
+        //#endif
         // The native rebuild clears children. Forget popup widgets before that happens.
         halfmasa$restoreHover = halfmasa$hover;
         halfmasa$actions = List.of(); halfmasa$hover = null; halfmasa$panel = null;
@@ -59,8 +136,17 @@ public abstract class ConfluxMapCombinedWaypointListMixin extends Screen
             if (halfmasa$enabled())
             {
                 if (halfmasa$bridge == null) halfmasa$bridge = new ConfluxWaypointScreenBridge(this);
-                if (halfmasa$previousTab == null) halfmasa$previousTab = halfmasa$bridge.tab();
-                halfmasa$bridge.useLocalTab();
+                //#if MC >= 1.21.1
+                if (Configs.CONFLUX_MAP_SHOW_BOTH_WAYPOINTS.getBooleanValue())
+                {
+                //#endif
+                    if (halfmasa$previousTab == null) halfmasa$previousTab = halfmasa$bridge.tab();
+                    halfmasa$bridge.useLocalTab();
+                //#if MC >= 1.21.1
+                }
+                else if (halfmasa$previousTab != null)
+                { halfmasa$bridge.tab(halfmasa$previousTab); halfmasa$previousTab = null; }
+                //#endif
             }
             else if (halfmasa$previousTab != null)
             { halfmasa$bridge.tab(halfmasa$previousTab); halfmasa$previousTab = null; }
@@ -71,7 +157,7 @@ public abstract class ConfluxMapCombinedWaypointListMixin extends Screen
     @Inject(method = "buildRows", at = @At("RETURN"), cancellable = true, require = 1, remap = false)
     private void halfmasa$combineNativeRows(CallbackInfoReturnable<List<Object>> cir)
     {
-        if (!halfmasa$enabled() || halfmasa$bridge == null || halfmasa$bridge.collecting()) return;
+        if (!halfmasa$enabled() || !Configs.CONFLUX_MAP_SHOW_BOTH_WAYPOINTS.getBooleanValue() || halfmasa$bridge == null || halfmasa$bridge.collecting()) return;
         try { cir.setReturnValue(halfmasa$bridge.combinedNativeRows(halfmasa$serverFirst())); }
         catch (ReflectiveOperationException | LinkageError exception) { halfmasa$contractFailure(exception); }
     }
@@ -79,7 +165,7 @@ public abstract class ConfluxMapCombinedWaypointListMixin extends Screen
     @Redirect(method = "rebuild", at = @At(value = "INVOKE", target = "Ljava/util/List;sort(Ljava/util/Comparator;)V"), require = 1, remap = false)
     private void halfmasa$sortSources(List<Object> rows, Comparator<Object> nativeSort)
     {
-        if (!halfmasa$enabled() || halfmasa$bridge == null) { rows.sort(nativeSort); return; }
+        if (!halfmasa$enabled() || !Configs.CONFLUX_MAP_SHOW_BOTH_WAYPOINTS.getBooleanValue() || halfmasa$bridge == null) { rows.sort(nativeSort); return; }
         rows.sort(Comparator.comparingInt((Object row) -> halfmasa$bridge.sourceRank(row, halfmasa$serverFirst())).thenComparing(nativeSort));
     }
 
@@ -90,6 +176,12 @@ public abstract class ConfluxMapCombinedWaypointListMixin extends Screen
         if (!halfmasa$active) { halfmasa$rows = List.of(); halfmasa$layout = null; return; }
         try
         {
+            //#if MC >= 1.21.1
+            halfmasa$merged = Configs.CONFLUX_MAP_SHOW_BOTH_WAYPOINTS.getBooleanValue();
+            int viewToken = halfmasa$bridge.viewToken();
+            if (viewToken != halfmasa$viewToken) halfmasa$scroll = 0;
+            halfmasa$viewToken = viewToken;
+            //#endif
             halfmasa$compact = Configs.CONFLUX_MAP_WAYPOINT_COMPACT.getBooleanValue();
             halfmasa$dimension = Configs.CONFLUX_MAP_WAYPOINT_DIMENSION.getBooleanValue();
             halfmasa$distance = Configs.CONFLUX_MAP_WAYPOINT_DISTANCE.getBooleanValue();
@@ -101,13 +193,30 @@ public abstract class ConfluxMapCombinedWaypointListMixin extends Screen
             halfmasa$settingsToken = halfmasa$bridge.settingsToken();
             halfmasa$relayout();
             int top = halfmasa$bridge.listTop();
+            //#if MC >= 1.21.1
+            var tabs = new ArrayList<AbstractWidget>();
+            //#endif
             for (var child : this.children()) if (child instanceof AbstractWidget widget)
             {
+                //#if MC >= 1.21.1
+                if (!halfmasa$merged && widget.getY() == 28) { tabs.add(widget); continue; }
+                //#endif
                 if (widget.getY() == 28 || halfmasa$compact && widget.getY() >= top && widget.getY() < this.height - 34)
                 { widget.visible = false; widget.active = false; }
             }
             int total = Math.min(halfmasa$compact ? 440 : 284, Math.max(1, this.width - 32));
             int part = total / (halfmasa$compact ? 4 : 2), x = (this.width - total) / 2;
+            //#if MC >= 1.21.1
+            if (!halfmasa$merged)
+            {
+                total = Math.min(880, Math.max(1, this.width - 32));
+                part = total / (tabs.size() + (halfmasa$compact ? 3 : 1)); x = (this.width - total) / 2;
+                for (var tab : tabs)
+                { tab.setX(x); tab.setWidth(Math.max(1, part - 4)); x += part; }
+                x -= part; // The layout toggle below is placed at x + part.
+            }
+            else
+            //#endif
             this.addRenderableWidget(halfmasa$bridge.button(Component.literal(halfmasa$order.getDisplayName()), button -> {
                 Configs.CONFLUX_MAP_WAYPOINT_ORDER.setOptionListValue(halfmasa$order.cycle(true));
                 halfmasa$scroll = 0; new Configs().save(); halfmasa$refresh();
@@ -130,6 +239,9 @@ public abstract class ConfluxMapCombinedWaypointListMixin extends Screen
                         if (halfmasa$rows.get(cell.index()).sameIdentity(halfmasa$restoreHover))
                         { halfmasa$openPanel(cell); break; }
             }
+            //#if MC >= 1.21.1
+            halfmasa$rebuildChecks();
+            //#endif
             halfmasa$restoreHover = null;
         }
         catch (ReflectiveOperationException | LinkageError exception) { halfmasa$contractFailure(exception); }
@@ -149,8 +261,16 @@ public abstract class ConfluxMapCombinedWaypointListMixin extends Screen
     private void halfmasa$settingsChanged(CallbackInfo ci)
     {
         try {
+        //#if MC >= 1.21.1
+        halfmasa$restoreMemory();
+        if (halfmasa$bridge != null) halfmasa$bridge.refreshPublicationButtons();
+        //#endif
         if (halfmasa$active != halfmasa$enabled() || halfmasa$active &&
-                (halfmasa$compact != Configs.CONFLUX_MAP_WAYPOINT_COMPACT.getBooleanValue() ||
+                (
+                 //#if MC >= 1.21.1
+                 halfmasa$merged != Configs.CONFLUX_MAP_SHOW_BOTH_WAYPOINTS.getBooleanValue() ||
+                 //#endif
+                 halfmasa$compact != Configs.CONFLUX_MAP_WAYPOINT_COMPACT.getBooleanValue() ||
                  halfmasa$dimension != Configs.CONFLUX_MAP_WAYPOINT_DIMENSION.getBooleanValue() ||
                  halfmasa$distance != Configs.CONFLUX_MAP_WAYPOINT_DISTANCE.getBooleanValue() ||
                  halfmasa$order != Configs.CONFLUX_MAP_WAYPOINT_ORDER.getOptionListValue() ||
@@ -186,7 +306,11 @@ public abstract class ConfluxMapCombinedWaypointListMixin extends Screen
                 halfmasa$bridge.fill(draw, cell.x(), cell.y() + 1, cell.x() + cell.width(), cell.y() + cell.height() - 1,
                         hovered ? 0x55333333 : 0x33202020);
                 halfmasa$bridge.marker(draw, row, cell.x() + 11F, cell.y() + 11F, hovered);
-                int available = Math.max(0, cell.width() - 28);
+                int available = Math.max(0, cell.width() - 28
+                        //#if MC >= 1.21.1
+                        - (row.local() != null && cell.width() >= 48 ? 24 : 0)
+                        //#endif
+                        );
                 halfmasa$bridge.text(draw, this.font.plainSubstrByWidth(row.name(), available), cell.x() + 23F, cell.y() + 5F, 0xFFFFFFFF);
                 if (halfmasa$dimension || halfmasa$distance)
                 {
@@ -195,6 +319,9 @@ public abstract class ConfluxMapCombinedWaypointListMixin extends Screen
                     halfmasa$bridge.text(draw, this.font.plainSubstrByWidth(info, available), cell.x() + 23F, cell.y() + 16F, 0xFFAAAAAA);
                 }
             }
+            //#if MC >= 1.21.1
+            halfmasa$bridge.renderActions(draw, halfmasa$checks, mx, my, partialTick);
+            //#endif
             if (halfmasa$rows.isEmpty()) halfmasa$bridge.text(draw, Component.translatable("halfmasa.conflux_map.dual_waypoints.empty").getString(),
                     halfmasa$layout.left() + 6F, halfmasa$layout.top() + 6F, 0xFFAAAAAA);
             if (halfmasa$layout.maxScroll() > 0 && halfmasa$layout.height() > 0)
@@ -301,6 +428,16 @@ public abstract class ConfluxMapCombinedWaypointListMixin extends Screen
                 cir.setReturnValue(true);
                 return;
             }
+            //#if MC >= 1.21.1
+            // Popup actions have priority; card checkboxes never trigger another row action.
+            for (var check : List.copyOf(halfmasa$checks))
+                //#if MC >= 1.21.10
+                if (check.mouseClicked(event, doubleClick))
+                //#else
+                //$$ if (check.mouseClicked(mouseX, mouseY, button))
+                //#endif
+            { this.setFocused(check); this.setDragging(true); cir.setReturnValue(true); return; }
+            //#endif
             if (halfmasa$layout.contains(mouseX, mouseY)) cir.setReturnValue(true);
         }
         catch (ReflectiveOperationException | LinkageError exception) { halfmasa$contractFailure(exception); }
@@ -312,7 +449,11 @@ public abstract class ConfluxMapCombinedWaypointListMixin extends Screen
         try
         {
             if (halfmasa$bridge.dropdownOpen() || !halfmasa$layout.contains(mx, my)) return;
-            halfmasa$closePanel(); halfmasa$scroll -= (int)Math.signum(vertical); halfmasa$relayout(); cir.setReturnValue(true);
+            halfmasa$closePanel(); halfmasa$scroll -= (int)Math.signum(vertical); halfmasa$relayout();
+            //#if MC >= 1.21.1
+            halfmasa$rebuildChecks();
+            //#endif
+            cir.setReturnValue(true);
         }
         catch (ReflectiveOperationException exception) { halfmasa$contractFailure(exception); }
     }

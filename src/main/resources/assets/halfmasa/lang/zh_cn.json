@@ -1,4 +1,18 @@
 {
+  "halfmasa.config.ported.name.confluxMapRememberList": "记住路径点列表界面",
+  "halfmasa.config.ported.prettyName.confluxMapRememberList": "记住路径点列表界面",
+  "halfmasa.config.ported.comment.confluxMapRememberList": "默认开启。按服务器和世界保存关闭时的页签、维度筛选、路径点集、搜索及滚动位置，重新打开时优先恢复。首次打开使用原默认设置；失效的分组、维度和公共页签会安全回退。不会恢复批量勾选或待确认操作。",
+
+  "halfmasa.config.ported.name.confluxMapQuickPublish": "快捷发布公共路径点",
+  "halfmasa.config.ported.prettyName.confluxMapQuickPublish": "快捷发布公共路径点",
+  "halfmasa.config.ported.comment.confluxMapQuickPublish": "默认关闭。在紧凑路径点悬停栏增加“设置为公共路径点”，发布公共副本并保留本地点。需要服务端支持和发布权限；不会覆盖原分组。",
+  "halfmasa.conflux_map.publish": "设置为公共路径点",
+  "halfmasa.conflux_map.publish_hint": "发布公共副本，保留原本地点及其分组。",
+  "halfmasa.conflux_map.published": "已公开",
+  "halfmasa.conflux_map.publishing": "发布中…",
+  "halfmasa.conflux_map.publish_unavailable": "无法发布：Conflux Map 接口不可用，请查看日志。",
+  "halfmasa.conflux_map.select": "选择路径点（批量操作）；与悬停栏勾选同步。",
+
   "halfmasa.config.ported.comment.keepConfigPositionExpanded.screen": "展开或折叠搜索和位置、选中栏位、创造界面位置记忆的三个子配置。",
   "halfmasa.config.ported.name.keepScreenPosition": "保持界面位置",
   "halfmasa.config.ported.prettyName.keepScreenPosition": "保持界面位置",
@@ -47,7 +61,7 @@
   "halfmasa.config.ported.comment.confluxMapWaypointOrder": "默认服务端路径点在前、个人路径点在后。可切换优先顺序，组内沿用原有距离排序。",
   "halfmasa.config.ported.name.confluxMapWaypointCompact": "路径点简洁紧凑模式",
   "halfmasa.config.ported.prettyName.confluxMapWaypointCompact": "路径点简洁紧凑模式",
-  "halfmasa.config.ported.comment.confluxMapWaypointCompact": "默认关闭。使用原生风格连续网格；可勾选显示维度与距离。悬停展开详细信息及原生操作面板；关闭后保留原生列表风格。",
+  "halfmasa.config.ported.comment.confluxMapWaypointCompact": "默认关闭。独立于“同时显示本地路径点与服务端路径点”，关闭合并时紧凑显示当前页签。使用原生风格连续网格；可勾选显示维度与距离。悬停展开详细信息及原生操作面板；关闭后保留原生列表风格。",
   "halfmasa.option.conflux_map_waypoint_order.server_first": "服务端优先",
   "halfmasa.option.conflux_map_waypoint_order.personal_first": "个人优先",
   "halfmasa.conflux_map.compact_on": "紧凑网格：开启",
