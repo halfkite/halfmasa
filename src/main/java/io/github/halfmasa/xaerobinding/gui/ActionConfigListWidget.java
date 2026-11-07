@@ -17,12 +17,32 @@ public final class ActionConfigListWidget extends WidgetListConfigOptions
     @Override
     protected Collection<ConfigOptionWrapper> getAllEntries()
     {
+        //#if MC >= 1.21.1
+        if (this.expansionProvider instanceof io.github.halfmasa.xaerobinding.favorites.MasaFavoritesExpansionProvider favorites)
+            favorites.setSearchQuery(this.widgetSearchBar.getFilter());
+        //#endif
         Collection<ConfigOptionWrapper> prepared = this.expansionProvider.prepareEntries(
                 super.getAllEntries(), this.hasFilter());
-        return prepared.stream()
+        List<ConfigOptionWrapper> visible = prepared.stream()
                 .filter(entry -> entry.getConfig() == null ||
                         !this.expansionProvider.isInlineCompanion(entry.getConfig()))
                 .toList();
+        //#if MC >= 1.21.1
+        if (!(this.parent instanceof io.github.halfmasa.xaerobinding.favorites.MasaFavoritesScreen))
+            return io.github.halfmasa.xaerobinding.favorites.MasaFavoritesOrder.sort(
+                    visible, this.parent.getModId(), this.expansionProvider);
+        //#endif
+        return visible;
+    }
+
+    @Override
+    protected java.util.Comparator<ConfigOptionWrapper> getComparator()
+    {
+        //#if MC >= 1.21.1
+        if (this.expansionProvider instanceof io.github.halfmasa.xaerobinding.favorites.MasaFavoritesExpansionProvider favorites)
+            return favorites.comparator();
+        //#endif
+        return super.getComparator();
     }
 
     @Override
@@ -35,11 +55,32 @@ public final class ActionConfigListWidget extends WidgetListConfigOptions
             return strings;
         }
 
+        //#if MC >= 1.21.1
+        if (this.parent instanceof io.github.halfmasa.xaerobinding.favorites.MasaFavoritesScreen)
+        {
+            var entryInfo = io.github.halfmasa.xaerobinding.favorites.MasaConfigCatalog.lookup(config);
+            if (entryInfo != null)
+            {
+                strings.add(entryInfo.modId().toLowerCase(java.util.Locale.ROOT));
+                net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer(entryInfo.modId()).ifPresent(mod ->
+                        strings.add(mod.getMetadata().getName().toLowerCase(java.util.Locale.ROOT)));
+            }
+        }
+        //#endif
         IConfigBase parent = this.expansionProvider.getExpansionParent(config);
-        if (parent != null)
+        //#if MC >= 1.21.1
+        java.util.Set<IConfigBase> visited = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        while (parent != null && visited.add(parent))
         {
             addSearchStrings(strings, parent);
+            parent = this.expansionProvider.getExpansionParent(parent);
         }
+        //#else
+        //$$ if (parent != null)
+        //$$ {
+        //$$     addSearchStrings(strings, parent);
+        //$$ }
+        //#endif
         for (IConfigBase child : this.expansionProvider.getExpansionChildren(config))
         {
             addSearchStrings(strings, child);

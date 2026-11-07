@@ -32,6 +32,16 @@ public class DragManager<T, E extends ObjectSelectionList.Entry<?>> {
         this.dragList = dragList;
     }
 
+    /** Cancel without committing a move when another controller takes ownership. */
+    public void cancelDrag() {
+        if (selectedItem == null) return;
+        selectedItem.draggable_lists$setBeingDragged(false);
+        selectedItem = null;
+        softScrollingTimer = 0;
+        dragList.draggable_lists$setDragging(false);
+        Cursor.reset();
+    }
+
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         dragList.draggable_lists$setDragging(false);
         if (selectedItem == null) return false;

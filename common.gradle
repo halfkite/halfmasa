@@ -8,6 +8,12 @@ apply plugin: unobfuscated ? 'net.fabricmc.fabric-loom' : 'net.fabricmc.fabric-l
 apply plugin: 'com.replaymod.preprocess'
 apply plugin: 'maven-publish'
 
+final boolean widenServerEntry = mcVersion >= 1_21_10 && mcVersion < 26_02_00
+final String serverEntryWidener = unobfuscated ? 'halfmasa-official.accesswidener' : 'halfmasa.accesswidener'
+if (widenServerEntry) {
+    loom.accessWidenerPath = rootProject.file("src/main/resources/${serverEntryWidener}")
+}
+
 repositories {
     maven { url = 'https://masa.dy.fi/maven/sakura-ryoko' }
     maven { url = 'https://maven.fallenbreath.me/releases' }
@@ -30,9 +36,14 @@ dependencies {
             : "maven.modrinth:GcWjdA9I:${project.malilib_modrinth_version_id}"
     def xaeroMinimap = "maven.modrinth:xaeros-minimap:${project.xaero_minimap_version}"
     def xaeroWorldMap = "maven.modrinth:xaeros-world-map:${project.xaero_world_map_version}"
+    def jadeVersions = ['1.21.1': 'adpNvTZS', '1.21.3': 'pGE7hUKk', '1.21.4': 'sSHUBFoq',
+            '1.21.5': 'VNSIKHbV', '1.21.8': 'o3aatc5Q', '1.21.10': 'qC0qUqL5',
+            '1.21.11': 'swJhAyak', '26.1.2': 'fW2xykin', '26.2': 'ue8CO97w', '26.3': '71CTWqdE']
+    def jade = "maven.modrinth:jade:${jadeVersions[project.name]}"
     if (unobfuscated) {
         implementation loader
         implementation malilib
+        compileOnly jade // Optional at runtime; match each Minecraft version's Jade protocol.
         compileOnly "maven.modrinth:modmenu:${project.mod_menu_version}"
         compileOnly xaeroMinimap
         compileOnly xaeroWorldMap
@@ -127,14 +138,23 @@ processResources {
             minecraft_dependency: project.minecraft_dependency,
             malilib_dependency: project.malilib_dependency,
             fabric_loader_dependency: ">=${loaderVersion}",
+            access_widener_path: serverEntryWidener,
             compatibility_level: unobfuscated ? 'JAVA_25' : 'JAVA_21'
     ]
     inputs.properties(properties)
+    exclude widenServerEntry ? (unobfuscated ? 'halfmasa.accesswidener' : 'halfmasa-official.accesswidener') : '*.accesswidener'
     // Compatibility filters are part of the output, even when resource sources did not change.
     inputs.file(rootProject.file('common.gradle'))
-    filesMatching('fabric.mod.json') { expand properties }
+    filesMatching('fabric.mod.json') {
+        if (!widenServerEntry) filter { line -> line.contains('"accessWidener"') ? null : line }
+        expand properties
+    }
     filesMatching('halfmasa.mixins.json') {
         filter { line ->
+            if (project.mcVersion < 1_21_01 && line.contains('"MasaFavorites')) return null
+            if (project.mcVersion < 1_21_01 && line.contains('"BetterMultiplayer')) return null
+            if (project.mcVersion < 1_21_01 && line.contains('"AutoOpenChat')) return null
+            if (project.mcVersion < 26_01_00 && line.contains('"JadeBarrel')) return null
             if (project.mcVersion < 1_21_01 && line.contains('"ConfluxMapSurfaceTeleportMixin"')) return null
             if (line.contains('"MiniHudPreviewLegacy') && (project.mcVersion < 1_21_01 || project.mcVersion >= 1_21_11)) return null
             if (line.contains('"MiniHudPreview') && !line.contains('"MiniHudPreviewLegacy') && !line.contains('"MiniHudPreviewLifecycle') && project.mcVersion < 1_21_11) return null
@@ -215,6 +235,13 @@ java {
 sourceSets {
     main {
         java {
+            if (project.mcVersion >= 26_03_00) {
+                exclude 'io/github/halfmasa/xaerobinding/better_multiplayer/folder/ServerKey.java'
+            }
+            if (project.mcVersion < 1_21_01) {
+                exclude 'io/github/halfmasa/xaerobinding/better_multiplayer/**'
+                exclude 'io/github/halfmasa/xaerobinding/mixin/BetterMultiplayer*.java'
+            }
             if (project.mcVersion >= 1_21_11) {
                 exclude 'io/github/halfmasa/xaerobinding/feature/minihud/Legacy*.java'
                 exclude 'io/github/halfmasa/xaerobinding/mixin/MiniHudPreviewLegacy*.java'

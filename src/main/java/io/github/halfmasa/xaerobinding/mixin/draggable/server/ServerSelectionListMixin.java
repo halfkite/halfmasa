@@ -46,6 +46,13 @@ public abstract class ServerSelectionListMixin extends ObjectSelectionList<Serve
     @Unique
     private final DragManager<ServerData, ServerSelectionList.OnlineServerEntry> draggable_lists$dragManager = new DragManager<>(this);
 
+    //#if MC >= 1.21.1
+    @Unique private boolean halfmasa$legacyDrag() {
+        return io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.active()
+                && !io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.folders();
+    }
+    //#endif
+
     public ServerSelectionListMixin(Minecraft minecraftClient, int i, int j, int k, int l, int m) {
         super(minecraftClient, i, j, k, l);
     }
@@ -57,6 +64,9 @@ public abstract class ServerSelectionListMixin extends ObjectSelectionList<Serve
     //$$ @Override
     //$$ protected void renderListItems(GuiGraphics guiGraphics, int mouseX, int mouseY, float tickDelta) {
     //#endif
+        //#if MC >= 1.21.1
+        if (!halfmasa$legacyDrag()) draggable_lists$dragManager.cancelDrag();
+        //#endif
         if (isDragging()) {
             draggable_lists$dragManager.renderListItems(guiGraphics, mouseX, mouseY, tickDelta);
         } else {
@@ -71,24 +81,36 @@ public abstract class ServerSelectionListMixin extends ObjectSelectionList<Serve
     //#if MC >= 1.21.10
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
+        //#if MC >= 1.21.1
+        if (((io.github.halfmasa.xaerobinding.better_multiplayer.folder.ServerFolderWidget) this).halfmasa$folderReleased(event.x(),event.y(),event.button(),event.hasShiftDown())) return true;
+        if (!halfmasa$legacyDrag()) { draggable_lists$dragManager.cancelDrag(); return super.mouseReleased(event); }
+        //#endif
         if (draggable_lists$dragManager.mouseReleased(event.x(), event.y(), event.button())) return true;
         return super.mouseReleased(event);
     }
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        //#if MC >= 1.21.1
+        if (((io.github.halfmasa.xaerobinding.better_multiplayer.folder.ServerFolderWidget) this).halfmasa$folderDragged(event.x(),event.y(),event.button(),event.hasShiftDown(),deltaX,deltaY)) return true;
+        if (!halfmasa$legacyDrag()) { draggable_lists$dragManager.cancelDrag(); return super.mouseDragged(event, deltaX, deltaY); }
+        //#endif
         if ((io.github.halfmasa.xaerobinding.config.Configs.DRAGGABLE_LISTS.getBooleanValue() && (((io.github.halfmasa.xaerobinding.config.DragMode) io.github.halfmasa.xaerobinding.config.Configs.DRAG_SERVER_MODE.getOptionListValue()) == io.github.halfmasa.xaerobinding.config.DragMode.ENABLED || ((io.github.halfmasa.xaerobinding.config.DragMode) io.github.halfmasa.xaerobinding.config.Configs.DRAG_SERVER_MODE.getOptionListValue()) == io.github.halfmasa.xaerobinding.config.DragMode.REQUIRES_MODIFIER && event.hasShiftDown())) && draggable_lists$dragManager.mouseDragged(event.x(), event.y(), event.button(), deltaX, deltaY)) return true;
         return super.mouseDragged(event, deltaX, deltaY);
     }
     //#else
     //$$ @Override
     //$$ public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    //$$     if (((io.github.halfmasa.xaerobinding.better_multiplayer.folder.ServerFolderWidget) this).halfmasa$folderReleased(mouseX,mouseY,button,net.minecraft.client.gui.screens.Screen.hasShiftDown())) return true;
+    //$$     if (!halfmasa$legacyDrag()) { draggable_lists$dragManager.cancelDrag(); return super.mouseReleased(mouseX,mouseY,button); }
     //$$     if (draggable_lists$dragManager.mouseReleased(mouseX, mouseY, button)) return true;
     //$$     return super.mouseReleased(mouseX, mouseY, button);
     //$$ }
     //$$
     //$$ @Override
     //$$ public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+    //$$     if (((io.github.halfmasa.xaerobinding.better_multiplayer.folder.ServerFolderWidget) this).halfmasa$folderDragged(mouseX,mouseY,button,net.minecraft.client.gui.screens.Screen.hasShiftDown(),deltaX,deltaY)) return true;
+    //$$     if (!halfmasa$legacyDrag()) { draggable_lists$dragManager.cancelDrag(); return super.mouseDragged(mouseX,mouseY,button,deltaX,deltaY); }
     //$$     if ((io.github.halfmasa.xaerobinding.config.Configs.DRAGGABLE_LISTS.getBooleanValue() && (((io.github.halfmasa.xaerobinding.config.DragMode) io.github.halfmasa.xaerobinding.config.Configs.DRAG_SERVER_MODE.getOptionListValue()) == io.github.halfmasa.xaerobinding.config.DragMode.ENABLED || ((io.github.halfmasa.xaerobinding.config.DragMode) io.github.halfmasa.xaerobinding.config.Configs.DRAG_SERVER_MODE.getOptionListValue()) == io.github.halfmasa.xaerobinding.config.DragMode.REQUIRES_MODIFIER && net.minecraft.client.gui.screens.Screen.hasShiftDown())) && draggable_lists$dragManager.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) return true;
     //$$     return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
     //$$ }
@@ -96,6 +118,9 @@ public abstract class ServerSelectionListMixin extends ObjectSelectionList<Serve
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        //#if MC >= 1.21.1
+        if (!halfmasa$legacyDrag()) return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+        //#endif
         if (draggable_lists$dragManager.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)) return true;
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
@@ -109,6 +134,9 @@ public abstract class ServerSelectionListMixin extends ObjectSelectionList<Serve
     //$$ public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
     //$$     super.renderWidget(guiGraphics, mouseX, mouseY, delta);
     //#endif
+        //#if MC >= 1.21.1
+        if (halfmasa$legacyDrag())
+        //#endif
         draggable_lists$dragManager.renderWidget(guiGraphics, mouseX, mouseY, delta);
     }
 

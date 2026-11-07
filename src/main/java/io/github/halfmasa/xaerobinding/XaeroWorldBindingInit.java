@@ -58,6 +58,9 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
     {
         ConfigManager.getInstance().registerConfigHandler(XaeroWorldBinding.MOD_ID, new Configs());
         //#if MC >= 1.21.1
+        io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerKeybinds.register();
+        //#endif
+        //#if MC >= 1.21.1
         var feeding = io.github.halfmasa.xaerobinding.feature.RangeFeedingService.getInstance();
         registerTrigger(Configs.RANGE_FEEDING_ONCE, feeding::requestSingleFeed);
         Configs.RANGE_FEEDING_HOLD.getKeybind().setCallback((action, key) -> {
@@ -119,6 +122,31 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
                 XaeroWorldBinding.MOD_ID,
                 XaeroWorldBinding.MOD_NAME,
                 HalfMasaConfigScreen::new));
+
+        //#if MC >= 1.21.1
+        TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.favorites.MasaFavoritesLayout.INSTANCE);
+        Configs.MASA_FAVORITES_POSITION.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.favorites.MasaFavoritesLayout.INSTANCE.requestRefresh());
+        Configs.MASA_FAVORITES_GLOBAL_SEARCH.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.favorites.MasaFavoritesLayout.INSTANCE.requestRefresh());
+        Configs.MASA_BETTER_SWITCHER.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.favorites.MasaFavoritesLayout.INSTANCE.requestRefresh());
+        Configs.MASA_SWITCHER_FAVORITES.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.favorites.MasaFavoritesLayout.INSTANCE.requestRefresh());
+        Configs.MASA_FAVORITES_SHOW_STARS.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.favorites.MasaFavoritesLayout.INSTANCE.requestRefresh());
+        Configs.MASA_FAVORITES.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.favorites.MasaFavoritesLayout.INSTANCE.requestRefresh());
+        Registry.CONFIG_SCREEN.registerConfigScreenFactory(new ModInfo(
+                io.github.halfmasa.xaerobinding.favorites.MasaFavoritesScreen.SCREEN_ID,
+                "Masa Favorites",
+                io.github.halfmasa.xaerobinding.favorites.MasaFavoritesScreen::new));
+        registerTrigger(Configs.OPEN_MASA_FAVORITES, () -> {
+            if (!Configs.MASA_FAVORITES.getBooleanValue()) return false;
+            GuiBase.openGui(new io.github.halfmasa.xaerobinding.favorites.MasaFavoritesScreen());
+            return true;
+        });
+        //#endif
 
         Configs.OPEN_TOOLS.getKeybind().setCallback((action, key) -> {
             GuiBase.openGui(new HalfMasaConfigScreen());
@@ -313,6 +341,15 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         //#endif
         TickHandler.getInstance().registerClientTickHandler(KeybindPieManager.getInstance());
         TickHandler.getInstance().registerClientTickHandler(ImeService.getInstance());
+        //#if MC >= 1.21.1
+        TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.AutoOpenChat.getInstance());
+        fi.dy.masa.malilib.event.WorldLoadHandler.getInstance().registerWorldLoadPostHandler(
+                io.github.halfmasa.xaerobinding.feature.AutoOpenChat.getInstance());
+        Configs.AUTO_OPEN_CHAT.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.AutoOpenChat.getInstance().clearPointer());
+        Configs.AUTO_OPEN_CHAT_RESTORE_POINTER.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.AutoOpenChat.getInstance().clearPointer());
+        //#endif
         TickHandler.getInstance().registerClientTickHandler(CooldownAutoAttack.getInstance());
         //#if MC >= 1.21.1
         TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.AutoEatService.getInstance());

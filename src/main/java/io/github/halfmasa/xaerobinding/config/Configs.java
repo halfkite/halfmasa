@@ -420,6 +420,30 @@ public final class Configs implements IConfigHandler
             "customConfigGroups", false).apply(PORTED_KEY);
     public static final ActionHotkey OPEN_CUSTOM_CONFIG_GROUPS = new ActionHotkey(
             "openCustomConfigGroups", "").applyTranslationKey(PORTED_KEY);
+    //#if MC >= 1.21.1
+    public static final ConfigBooleanHotkeyed MASA_FAVORITES = new ConfigBooleanHotkeyed(
+            "masaFavorites", true, "").apply(PORTED_KEY);
+    public static final ConfigBoolean MASA_FAVORITES_EXPANDED = new ConfigBoolean(
+            "masaFavoritesExpanded", false).apply(PORTED_KEY);
+    public static final ActionHotkey OPEN_MASA_FAVORITES = new ActionHotkey(
+            "openMasaFavorites", "").applyTranslationKey(PORTED_KEY);
+    public static final ConfigBoolean MASA_FAVORITES_SHOW_STARS = new ConfigBoolean(
+            "masaFavoritesShowStars", true).apply(PORTED_KEY);
+    public static final ConfigOptionList MASA_FAVORITES_POSITION = new ConfigOptionList(
+            "masaFavoritesPosition", io.github.halfmasa.xaerobinding.favorites.MasaFavoritePosition.RIGHT).apply(PORTED_KEY);
+    // Retain the old public field identity used by saved favorites; both fields refer to one option.
+    @Deprecated public static final ConfigOptionList MASA_FAVORITES_LEFT = MASA_FAVORITES_POSITION;
+    public static final ConfigBoolean MASA_FAVORITES_PIN = new ConfigBoolean(
+            "masaFavoritesPin", true).apply(PORTED_KEY);
+    public static final ConfigBoolean MASA_FAVORITES_GLOBAL_SEARCH = new ConfigBoolean(
+            "masaFavoritesGlobalSearch", true).apply(PORTED_KEY);
+    public static final ConfigBoolean MASA_BETTER_SWITCHER = new ConfigBoolean(
+            "masaBetterSwitcher", true).apply(PORTED_KEY);
+    public static final ConfigBoolean MASA_BETTER_SWITCHER_EXPANDED = new ConfigBoolean(
+            "masaBetterSwitcherExpanded", false).apply(PORTED_KEY);
+    public static final ConfigBoolean MASA_SWITCHER_FAVORITES = new ConfigBoolean(
+            "masaSwitcherFavorites", true).apply(PORTED_KEY);
+    //#endif
     public static final ConfigBoolean CONFIG_GROUPING_EXPANDED = new ConfigBoolean(
             "configGroupingExpanded", false).apply(PORTED_KEY);
     public static final ConfigGroupHeader CONFIG_GROUPING_GROUP = new ConfigGroupHeader(
@@ -703,6 +727,11 @@ public final class Configs implements IConfigHandler
             //$$ OPEN_KEYBIND_EDITOR,
             //$$ RELOAD_KEYBIND_DATA);
             //#endif
+    //#if MC >= 1.21.1
+    private static final List<IConfigBase> MASA_FAVORITES_CHILDREN = List.of(
+            OPEN_MASA_FAVORITES, MASA_FAVORITES_SHOW_STARS, MASA_FAVORITES_POSITION, MASA_FAVORITES_PIN, MASA_FAVORITES_GLOBAL_SEARCH, MASA_BETTER_SWITCHER);
+    private static final List<IConfigBase> MASA_SWITCHER_CHILDREN = List.of(MASA_SWITCHER_FAVORITES);
+    //#endif
     private static final List<IConfigBase> CONFIG_GROUPING_CHILDREN = List.of(
             TWEAKEROO_COLLAPSIBLE_CONFIG,
             CUSTOM_CONFIG_GROUPS,
@@ -820,6 +849,12 @@ public final class Configs implements IConfigHandler
             CONFIG_GROUPING_GROUP,
             CONFIG_GROUPING_EXPANDED),
             CONFIG_GROUPING_CHILDREN,
+            //#if MC >= 1.21.1
+            List.of(MASA_FAVORITES, MASA_FAVORITES_EXPANDED),
+            MASA_FAVORITES_CHILDREN,
+            List.of(MASA_BETTER_SWITCHER_EXPANDED),
+            MASA_SWITCHER_CHILDREN,
+            //#endif
 
             List.of(
             CLICK_AND_SEND,
@@ -989,8 +1024,25 @@ public final class Configs implements IConfigHandler
             ENTITY_GLOW_MODE_HOTKEY, ENTITY_GLOW_MODE, ENTITY_GLOW_ALL_COLOR, ENTITY_GLOW_RULE_EDITOR);
     private static final List<IConfigBase> BLOCK_GLOW_CHILDREN = List.of(BLOCK_GLOW_RULE_EDITOR);
 //#endif
+    //#if MC >= 1.21.1
+    public static final ConfigBooleanHotkeyed AUTO_OPEN_CHAT = new ConfigBooleanHotkeyed(
+            "autoOpenChat", false, "").apply(CLIENT_KEY);
+    public static final ConfigBoolean AUTO_OPEN_CHAT_EXPANDED = new ConfigBoolean(
+            "autoOpenChatExpanded", false).apply(CLIENT_KEY);
+    public static final ConfigBoolean AUTO_OPEN_CHAT_RESTORE_POINTER = new ConfigBoolean(
+            "autoOpenChatRestorePointer", true).apply(CLIENT_KEY);
+    public static final ConfigStringList AUTO_OPEN_CHAT_STOP_MESSAGES = new ConfigStringList(
+            "autoOpenChatStopMessages", ImmutableList.of()).apply(CLIENT_KEY);
+    //#endif
+
     public static final List<IConfigBase> CLIENT = Stream.of(
+            //#if MC >= 1.21.1
+            io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.ALL,
+            //#endif
             List.of(
+                    //#if MC >= 1.21.1
+                    AUTO_OPEN_CHAT, AUTO_OPEN_CHAT_EXPANDED, AUTO_OPEN_CHAT_RESTORE_POINTER, AUTO_OPEN_CHAT_STOP_MESSAGES,
+                    //#endif
                     DISABLE_PAUSED_ITEM_TRAJECTORY_PREDICTION,
 //#if MC >= 1.21.1
                     RANGE_FEEDING, RANGE_FEEDING_EXPANDED, RANGE_FEEDING_SKIP_BABIES, RANGE_FEEDING_HOLD,
@@ -1037,6 +1089,12 @@ public final class Configs implements IConfigHandler
                     CONFIG_GROUPING_GROUP,
                     CONFIG_GROUPING_EXPANDED),
             CONFIG_GROUPING_CHILDREN,
+            //#if MC >= 1.21.1
+            List.of(MASA_FAVORITES, MASA_FAVORITES_EXPANDED),
+            MASA_FAVORITES_CHILDREN,
+            List.of(MASA_BETTER_SWITCHER_EXPANDED),
+            MASA_SWITCHER_CHILDREN,
+            //#endif
 
             List.of(
                     CLICK_AND_SEND,
@@ -1063,7 +1121,15 @@ public final class Configs implements IConfigHandler
             "minihudContainerPreviewOptimization", false, "").apply("halfmasa.config.extensions");
     //#endif
 
+    //#if MC >= 26.1
+    public static final ConfigBooleanHotkeyed JADE_LARGE_BARREL = new ConfigBooleanHotkeyed(
+            "jadeLargeBarrel", false, "").apply("halfmasa.config.extensions");
+    //#endif
+
     public static final List<IConfigBase> EXTENSIONS = Stream.of(
+            //#if MC >= 26.1
+            List.<IConfigBase>of(JADE_LARGE_BARREL),
+            //#endif
             //#if MC >= 1.21.1
             List.<IConfigBase>of(MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION, MINIHUD_PREVIEW_INDEPENDENT),
             //#endif
@@ -1193,6 +1259,12 @@ public final class Configs implements IConfigHandler
             CONFIG_GROUPING_GROUP,
             CONFIG_GROUPING_EXPANDED),
             CONFIG_GROUPING_CHILDREN,
+            //#if MC >= 1.21.1
+            List.of(MASA_FAVORITES, MASA_FAVORITES_EXPANDED),
+            MASA_FAVORITES_CHILDREN,
+            List.of(MASA_BETTER_SWITCHER_EXPANDED),
+            MASA_SWITCHER_CHILDREN,
+            //#endif
             List.of(
             KEYBIND_PIE_MENU,
             KEYBIND_WHEEL_EXPANDED),
@@ -1238,6 +1310,12 @@ public final class Configs implements IConfigHandler
 
     public static final List<IHotkey> HOTKEYS = Stream.concat(
             Stream.of(
+                    //#if MC >= 1.21.1
+                    AUTO_OPEN_CHAT,
+                    //#endif
+                    //#if MC >= 26.1
+                    JADE_LARGE_BARREL,
+                    //#endif
                     //#if MC >= 1.21.1
                     MINIHUD_CONTAINER_PREVIEW_OPTIMIZATION,
                     //#endif
@@ -1349,6 +1427,10 @@ public final class Configs implements IConfigHandler
                     //#endif
 
                     OPEN_CUSTOM_CONFIG_GROUPS,
+                    //#if MC >= 1.21.1
+                    MASA_FAVORITES,
+                    OPEN_MASA_FAVORITES,
+                    //#endif
                     CLICK_AND_SEND,
                     CJK_LATIN_SPACING,
                     MAP_IN_SLOT,
@@ -1360,7 +1442,11 @@ public final class Configs implements IConfigHandler
                     CONDENSED_CREATIVE,
                     TRIAL_CREATIVE_TAB,
                     FILL_SAFETY),
-            PlantCenteringConfigs.HOTKEYS.stream()).toList();
+            //#if MC >= 1.21.1
+            Stream.concat(PlantCenteringConfigs.HOTKEYS.stream(), io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.HOTKEYS.stream())).toList();
+            //#else
+            //$$ PlantCenteringConfigs.HOTKEYS.stream()).toList();
+            //#endif
 
     @Override
     public void load()
@@ -1424,6 +1510,16 @@ public final class Configs implements IConfigHandler
         if (element != null && element.isJsonObject())
         {
             JsonObject root = element.getAsJsonObject();
+            //#if MC >= 1.21.1
+            for (String section : List.of("Generic", "Ported"))
+            {
+                JsonObject category = root.getAsJsonObject(section);
+                if (category != null && !category.has("masaFavoritesPosition") && category.has("masaFavoritesStarLeft"))
+                    category.addProperty("masaFavoritesPosition", category.get("masaFavoritesStarLeft").getAsBoolean() ? "left" : "right");
+            }
+            io.github.halfmasa.xaerobinding.feature.CustomConfigGroupStore.getInstance()
+                    .renameConfigReference("halfmasa", "masaFavoritesStarLeft", "masaFavoritesPosition");
+            //#endif
             //#if MC >= 1.21.1
             boolean migratedScreenPosition = migrateKeepScreenPosition(root);
             //#endif
@@ -1819,6 +1915,13 @@ public final class Configs implements IConfigHandler
 
     public static ConfigBoolean getExpansionConfig(IConfigBase config)
     {
+        //#if MC >= 1.21.1
+        if (config == io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.ENABLED)
+            return io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.EXPANDED;
+        //#endif
+    //#if MC >= 1.21.1
+        if (config == AUTO_OPEN_CHAT) return AUTO_OPEN_CHAT_EXPANDED;
+    //#endif
     //#if MC >= 1.21.1
         if (config == CUSTOM_ENTITY_RENDER_DISABLE) return ENTITY_RENDER_DISABLE_EXPANDED;
         if (config == AUTO_EAT) return AUTO_EAT_EXPANDED;
@@ -1840,6 +1943,10 @@ public final class Configs implements IConfigHandler
     //#endif
         if (config == KEYBIND_PIE_MENU) return KEYBIND_WHEEL_EXPANDED;
         if (config == CONFIG_GROUPING_GROUP) return CONFIG_GROUPING_EXPANDED;
+        //#if MC >= 1.21.1
+        if (config == MASA_FAVORITES) return MASA_FAVORITES_EXPANDED;
+        if (config == MASA_BETTER_SWITCHER) return MASA_BETTER_SWITCHER_EXPANDED;
+        //#endif
         if (config == KEYMAP_SETTINGS_GROUP) return KEYMAP_SETTINGS_EXPANDED;
         if (config == NIGHT_VISION_FADE) return NIGHT_VISION_FADE_EXPANDED;
         if (config == VOID_TRADING) return VOID_TRADING_EXPANDED;
@@ -1874,6 +1981,9 @@ public final class Configs implements IConfigHandler
     public static boolean isExpandedChild(IConfigBase config)
     {
         return
+                //#if MC >= 1.21.1
+                io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.CHILDREN.contains(config) ||
+                //#endif
     //#if MC >= 1.21.1
                 ENTITY_RENDER_DISABLE_CHILDREN.contains(config) ||
                 AUTO_EAT_CHILDREN.contains(config) ||
@@ -1894,6 +2004,10 @@ public final class Configs implements IConfigHandler
     //#endif
                 KEYBIND_PIE_SETTINGS.contains(config) ||
                 CONFIG_GROUPING_CHILDREN.contains(config) ||
+                //#if MC >= 1.21.1
+                MASA_FAVORITES_CHILDREN.contains(config) ||
+                MASA_SWITCHER_CHILDREN.contains(config) ||
+                //#endif
                 KEYMAP_SETTINGS_CHILDREN.contains(config) ||
                 config == NIGHT_VISION_FADE_SECONDS ||
                 isVoidTradingChild(config) ||
@@ -1923,6 +2037,13 @@ public final class Configs implements IConfigHandler
 
     public static IConfigBase getExpansionParent(IConfigBase config)
     {
+        //#if MC >= 1.21.1
+        if (io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.CHILDREN.contains(config))
+            return io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.ENABLED;
+        //#endif
+    //#if MC >= 1.21.1
+        if (config == AUTO_OPEN_CHAT_STOP_MESSAGES || config == AUTO_OPEN_CHAT_RESTORE_POINTER) return AUTO_OPEN_CHAT;
+    //#endif
     //#if MC >= 1.21.1
         if (ENTITY_RENDER_DISABLE_CHILDREN.contains(config)) return CUSTOM_ENTITY_RENDER_DISABLE;
         if (AUTO_EAT_CHILDREN.contains(config)) return AUTO_EAT;
@@ -1944,6 +2065,10 @@ public final class Configs implements IConfigHandler
     //#endif
         if (KEYBIND_PIE_SETTINGS.contains(config)) return KEYBIND_PIE_MENU;
         if (CONFIG_GROUPING_CHILDREN.contains(config)) return CONFIG_GROUPING_GROUP;
+        //#if MC >= 1.21.1
+        if (MASA_FAVORITES_CHILDREN.contains(config)) return MASA_FAVORITES;
+        if (MASA_SWITCHER_CHILDREN.contains(config)) return MASA_BETTER_SWITCHER;
+        //#endif
         if (KEYMAP_SETTINGS_CHILDREN.contains(config)) return KEYMAP_SETTINGS_GROUP;
         if (config == NIGHT_VISION_FADE_SECONDS) return NIGHT_VISION_FADE;
         if (isVoidTradingChild(config)) return VOID_TRADING;
@@ -1997,6 +2122,16 @@ public final class Configs implements IConfigHandler
                     .toList();
         }
         return configs.stream()
+                //#if MC >= 1.21.1
+                .filter(config -> config != io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.EXPANDED)
+                .filter(config -> !io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.CHILDREN.contains(config)
+                        || io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.EXPANDED.getBooleanValue())
+                //#endif
+    //#if MC >= 1.21.1
+                .filter(config -> config != AUTO_OPEN_CHAT_EXPANDED)
+                .filter(config -> config != AUTO_OPEN_CHAT_STOP_MESSAGES && config != AUTO_OPEN_CHAT_RESTORE_POINTER
+                        || AUTO_OPEN_CHAT_EXPANDED.getBooleanValue())
+    //#endif
     //#if MC >= 1.21.1
                 .filter(config -> config != AUTO_EAT_EXPANDED)
                 .filter(config -> config != RANGE_FEEDING_EXPANDED)
@@ -2045,6 +2180,12 @@ public final class Configs implements IConfigHandler
     //#endif
                 .filter(config -> !KEYBIND_PIE_SETTINGS.contains(config) || KEYBIND_WHEEL_EXPANDED.getBooleanValue())
                 .filter(config -> !CONFIG_GROUPING_CHILDREN.contains(config) || CONFIG_GROUPING_EXPANDED.getBooleanValue())
+                //#if MC >= 1.21.1
+                .filter(config -> config != MASA_FAVORITES_EXPANDED)
+                .filter(config -> config != MASA_BETTER_SWITCHER_EXPANDED)
+                .filter(config -> !MASA_FAVORITES_CHILDREN.contains(config) || MASA_FAVORITES_EXPANDED.getBooleanValue())
+                .filter(config -> !MASA_SWITCHER_CHILDREN.contains(config) || MASA_FAVORITES_EXPANDED.getBooleanValue() && MASA_BETTER_SWITCHER_EXPANDED.getBooleanValue())
+                //#endif
                 .filter(config -> !KEYMAP_SETTINGS_CHILDREN.contains(config) || KEYMAP_SETTINGS_EXPANDED.getBooleanValue())
                 .filter(config -> config != NIGHT_VISION_FADE_SECONDS || NIGHT_VISION_FADE_EXPANDED.getBooleanValue())
                 .filter(config -> !isVoidTradingChild(config) || VOID_TRADING_EXPANDED.getBooleanValue())
@@ -2157,6 +2298,21 @@ public final class Configs implements IConfigHandler
         java.util.ArrayList<IConfigBase> result = new java.util.ArrayList<>();
         for (IConfigBase config : PORTED)
         {
+            //#if MC >= 1.21.1
+            if (config == MASA_FAVORITES_EXPANDED || config == MASA_BETTER_SWITCHER_EXPANDED) continue;
+            if (config == MASA_FAVORITES)
+            {
+                result.add(config);
+                if (MASA_FAVORITES_EXPANDED.getBooleanValue())
+                {
+                    result.addAll(MASA_FAVORITES_CHILDREN);
+                    if (MASA_BETTER_SWITCHER_EXPANDED.getBooleanValue()) result.addAll(MASA_SWITCHER_CHILDREN);
+                }
+                continue;
+            }
+            if (MASA_FAVORITES_CHILDREN.contains(config)) continue;
+            if (MASA_SWITCHER_CHILDREN.contains(config)) continue;
+            //#endif
     //#if MC >= 1.21.1
             if (config == KEEP_CONFIG_POSITION_EXPANDED) continue;
     //#endif
@@ -2342,6 +2498,10 @@ public final class Configs implements IConfigHandler
         {
             return CONFIG_GROUPING_EXPANDED.getBooleanValue();
         }
+        //#if MC >= 1.21.1
+        if (MASA_FAVORITES_CHILDREN.contains(config)) return MASA_FAVORITES_EXPANDED.getBooleanValue();
+        if (MASA_SWITCHER_CHILDREN.contains(config)) return MASA_FAVORITES_EXPANDED.getBooleanValue() && MASA_BETTER_SWITCHER_EXPANDED.getBooleanValue();
+        //#endif
         if (KEYMAP_SETTINGS_CHILDREN.contains(config))
         {
             return KEYMAP_SETTINGS_EXPANDED.getBooleanValue();

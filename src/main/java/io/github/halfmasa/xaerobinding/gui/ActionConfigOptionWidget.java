@@ -55,6 +55,20 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
     private final ConfigExpansionProvider expansionProvider;
     private boolean inlineNumericLayout;
 
+    //#if MC >= 1.21.1
+    public static int getLeadingControlOverhang()
+    {
+        return Math.max(0, -EXPAND_BUTTON_LEFT_OFFSET);
+    }
+
+    public int getFavoriteGroupControlsWidth(IConfigBase config)
+    {
+        if (this.host instanceof io.github.halfmasa.xaerobinding.favorites.MasaFavoritesScreen ||
+                !Configs.CUSTOM_CONFIG_GROUPS.getBooleanValue() || !isCustomGroupCandidate(config)) return 0;
+        return 4 * GROUP_BUTTON_WIDTH + 3 * GROUP_BUTTON_GAP + 4;
+    }
+    //#endif
+
     public ActionConfigOptionWidget(
             int x,
             int y,
@@ -497,6 +511,9 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
 
     private void addCustomGroupControls(IConfigBase config, int y)
     {
+        //#if MC >= 1.21.1
+        if (this.host instanceof io.github.halfmasa.xaerobinding.favorites.MasaFavoritesScreen) return;
+        //#endif
         if (!Configs.CUSTOM_CONFIG_GROUPS.getBooleanValue() || !isCustomGroupCandidate(config))
         {
             return;
@@ -504,6 +521,11 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
 
         String source = this.getExpansionProvider().getConfigSource();
         int right = this.getX() + this.getWidth() - 4;
+        //#if MC >= 1.21.1
+        if (io.github.halfmasa.xaerobinding.favorites.MasaFavoriteButton.isShown(this.host) &&
+                !io.github.halfmasa.xaerobinding.favorites.MasaFavoritePosition.isLeft())
+            right -= io.github.halfmasa.xaerobinding.favorites.MasaFavoriteButton.SPACE;
+        //#endif
         int downX = right - GROUP_BUTTON_WIDTH;
         int upX = downX - GROUP_BUTTON_GAP - GROUP_BUTTON_WIDTH;
         int minusX = upX - GROUP_BUTTON_GAP - GROUP_BUTTON_WIDTH;

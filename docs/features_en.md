@@ -2,6 +2,16 @@
 
 # halfmasa Features and Configuration
 
+## Better Multiplayer Server List (All Project Targets)
+
+Includes address privacy, OBS status detection, latency and folders. Server rows retain vanilla height, with latency directly below the player count. Show compact icons when collapsed is enabled by default: collapsed folders show wrapping server icons with names and connection state inside each icon; hover to move left/right or join. Full details remain available in tooltips. See [usage and validation notes](better_multiplayer.md). This feature is synchronized and validated on all project targets: 1.21.1, 1.21.3, 1.21.4, 1.21.5, 1.21.8, 1.21.10, 1.21.11, 26.1.2, 26.2 and 26.3.
+
+## Masa Favorites (All Project Targets)
+
+Masa configuration rows have a favorite star on the right by default, optionally on the left. Favorites are pinned within the current category by default, keeping parent and child settings together. Expand the independent Better Masa Favorites option to use the Open Masa Favorites trigger button or bind a hotkey. The native MaLiLib mod switcher remains available and includes the favorites screen.
+
+The separate screen edits the original objects from halfmasa, MiniHUD, Litematica and Tweakeroo; each mod saves its own values. Removing a favorite saves membership immediately but keeps the row for this visit, allowing restoration with the empty star. A new visit updates membership. Favorites are stored separately in `config/halfmasa/masa-favorites.json`. See [implementation and validation notes](masa_favorites.md). The feature is synchronized and baseline-tested on all project targets.
+
 Version 1.7.0 backports range feeding, Auto Eat, Better Boss Bar, invisible block markers, animation controls, custom entity rendering filters, the combined Conflux Map list, creative material grouping, screen position memory and MiniHUD preview extensions to every project target. Vanilla preedit display settings apply to 26.1+; older targets retain the Windows JNI input method.
 
 Conflux Map 0.1.11-beta.1 requires Fabric Loader 0.19.0+ on 26.x; integration checks use 0.19.5. The standalone HalfMasa minimum remains defined by its mod metadata.
@@ -351,3 +361,23 @@ MiniHUD Container Preview Optimization is under Other Mod Extensions. It default
 ## MiniHUD independent preview
 
 MiniHUD Independent Preview defaults to off under Other Mod Extensions, with an unbound toggle hotkey. Enabling it keeps world-container previews available with the original MiniHUD preview key while its main rendering toggle is off. MiniHUD preview controls, background colors and target detection remain in use. When the main toggle is on, MiniHUD handles the preview once through its native path; when off, only the world-container preview is added and info lines remain disabled. Item, bundle, ender chest and map tooltip previews retain their settings. This toggle is independent of preview optimization and does nothing without MiniHUD.
+
+## Jade large barrel compatibility (26.1.2, 26.2, 26.3)
+
+Enable Jade Large Barrel Compatibility (`jadeLargeBarrel`) under Other Mod Extensions. It defaults to off with an unbound toggle hotkey. Use it on TIS `largeBarrel` servers where Jade only returns the targeted half. Install HalfMasa and Jade on the client; the server needs Jade, Carpet and TIS. Servux and server HalfMasa are not required.
+
+Alternates between the halves at Jade's existing request rate and combines identical items and components in the native preview. Supports all six facings, empty halves and large totals. The first complete preview needs two responses. World changes, disabling, removed or rotated barrels and expired responses invalidate the combined preview. Missing, locked and unopened-loot responses are excluded. Without Jade, these mixins do not apply.
+
+Disable this switch if another server integration already returns the complete 54-slot inventory, to avoid double counting. Without client TIS, the server rule cannot be detected automatically; enable only after confirming `largeBarrel` is active. Baseline verification uses Minecraft 26.3, Jade 26.3.5+fabric and TIS 1.82.4.
+
+26.2 (Jade 26.2.11) and 26.1.2 (Jade 26.1.9) use the same compensation. 1.21.1, 1.21.3, 1.21.4, 1.21.5, 1.21.8, 1.21.10 and 1.21.11 retain native Jade handling without an extra merge switch: their respective Jade 15.10.6, 16.0.4, 17.2.2, 18.2.0, 19.3.2, 20.0.5 and 21.1.6 builds already returned the full 54-slot inventory with TIS 1.82.4 in real-world checks. Another merge would duplicate counts. Checks used an integrated single-player server; remote servers need matching Jade, Carpet and TIS with `largeBarrel` enabled.
+
+## Automatically open chat
+
+Available for every project target: 1.21–1.21.1, 1.21.2–1.21.3, 1.21.4, 1.21.5, 1.21.8, 1.21.10, 1.21.11, 26.1.2, 26.2 and 26.3.
+
+Restore Pointer Position (`autoOpenChatRestorePointer`) is an enabled-by-default child option. Remembers the mouse position before chat closes and restores it once when automatic chat reopens. Other screens and later mouse movement remain unaffected. Clamps to the current window after resizing and skips restoration while unfocused. Disabling the child, stopping automatic chat or leaving the world clears the saved position. With the child off, vanilla pointer behavior applies.
+
+Under Client Settings, disabled by default with an unbound toggle hotkey. While alive in a world with no screen or loading overlay, opens chat through the native entry point. Existing inventory, container and settings screens remain open; automatic chat resumes after they close. Never sends content automatically.
+
+Ordinary submissions keep the feature active. Actually closing chat with Esc or submitting an entry in Stop Messages disables and saves the master switch; enable it again to restart. Esc dismissing command suggestions does not stop it, and interruption by another screen does not disable it. Expand the master to edit the initially empty list. Multiple entries and slash commands are supported, matched exactly and case-sensitively after vanilla whitespace and length normalization. Blank entries never match. Matching submissions still use native sending, history, drafts, chat restrictions and input methods. No opening in menus, while disconnected or dead, or during loading overlays. No server component is required.

@@ -37,6 +37,9 @@ public abstract class ServerIconCacheMixin
     //$$         int mouseX, int mouseY, boolean hovered, float partialTick, CallbackInfo ci)
     //#endif
     {
+        //#if MC >= 1.21.1
+        if (!io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.active()) return;
+        //#endif
         ServerIconCache.synchronize(this.serverData);
     }
 }

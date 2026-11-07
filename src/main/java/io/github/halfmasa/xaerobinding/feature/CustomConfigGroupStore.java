@@ -87,9 +87,35 @@ public final class CustomConfigGroupStore
     /** Migrates built-in groups once, preserving any configs already assigned by the user. */
     public synchronized boolean ensureDefaults(String source, List<GroupTemplate> templates)
     {
+        //#if MC >= 1.21.1
+        if (HALF_MASA_SOURCE.equals(normalizeSource(source)) && templates != null)
+        {
+            ensureLoaded();
+            String migration = HALF_MASA_SOURCE + "::favorites-independent-v1";
+            if (!this.initializedDefaultVersions.contains(migration))
+            {
+                for (GroupTemplate template : templates)
+                {
+                    if (!"builtin_halfmasa_masaFavorites".equals(template.id)) continue;
+                    for (Group group : this.groups)
+                        if ("builtin_halfmasa_configGroupingGroup".equals(group.id))
+                            group.children.removeIf(ref -> HALF_MASA_SOURCE.equals(sourceOf(ref)) &&
+                                    List.of("openMasaFavorites", "masaFavoritesStarLeft", "masaFavoritesPosition", "masaFavoritesPin").contains(nameOf(ref)));
+                    // Only migrate this feature; leave user groups and deleted unrelated defaults alone.
+                    ensureDefaults(source, List.of(template), "favorites-independent-v1");
+                    break;
+                }
+            }
+        }
+        //#endif
+        return ensureDefaults(source, templates, BUILT_IN_GROUPS_VERSION);
+    }
+
+    private boolean ensureDefaults(String source, List<GroupTemplate> templates, String version)
+    {
         ensureLoaded();
         String normalizedSource = normalizeSource(source);
-        String versionKey = normalizedSource + "::" + BUILT_IN_GROUPS_VERSION;
+        String versionKey = normalizedSource + "::" + version;
         if (templates == null || templates.isEmpty() ||
                 this.initializedDefaultVersions.contains(versionKey))
         {

@@ -13,6 +13,7 @@
     "modmenu": ["io.github.halfmasa.xaerobinding.compat.ModMenuIntegration"]
   },
   "mixins": ["halfmasa.mixins.json"],
+  "accessWidener": "${access_widener_path}",
   "depends": {
     "minecraft": "${minecraft_dependency}",
     "fabricloader": "${fabric_loader_dependency}",

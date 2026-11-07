@@ -82,6 +82,14 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
     public IConfigBase getInlineCompanion(IConfigBase config)
     {
         //#if MC >= 1.21.1
+        if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source)) {
+            if (config == io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.DETECTION_MODE)
+                return io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.CYCLE_DETECTION;
+            if (config == io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.ADDRESS_POSITION)
+                return io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.CYCLE_POSITION;
+        }
+        //#endif
+        //#if MC >= 1.21.1
         if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.ENTITY_RENDER_DISABLE_MODE)
             return Configs.ENTITY_RENDER_DISABLE_MODE_HOTKEY;
         if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.AUTO_EAT_SOURCE)
@@ -99,6 +107,11 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
     @Override
     public boolean isInlineCompanion(IConfigBase config)
     {
+        //#if MC >= 1.21.1
+        if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && (
+                config == io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.CYCLE_DETECTION ||
+                config == io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.CYCLE_POSITION)) return true;
+        //#endif
         //#if MC >= 1.21.1
         if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.ENTITY_RENDER_DISABLE_MODE_HOTKEY) return true;
         if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.AUTO_EAT_SOURCE_HOTKEY) return true;
@@ -207,6 +220,14 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
         Set<IConfigBase> emitted = Collections.newSetFromMap(new IdentityHashMap<>());
         for (ConfigOptionWrapper wrapper : source)
         {
+            //#if MC >= 1.21.1
+            if (isFavoritesFamily(wrapper.getConfig()))
+            {
+                if (wrapper.getConfig() == Configs.MASA_FAVORITES)
+                    appendFavorites(Configs.MASA_FAVORITES, result);
+                continue;
+            }
+            //#endif
             IConfigBase primaryConfig = wrapper.getConfig() == null
                     ? null : this.customPrimaryByConfig.get(wrapper.getConfig());
             if (primaryConfig == null)
@@ -234,6 +255,9 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
     @Override
     public IConfigBase getExpansionParent(IConfigBase config)
     {
+        //#if MC >= 1.21.1
+        if (isFavoritesFamily(config)) return Configs.getExpansionParent(config);
+        //#endif
         if (Configs.CUSTOM_CONFIG_GROUPS.getBooleanValue())
         {
             return this.customParents.get(config);
@@ -245,6 +269,9 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
     @Override
     public List<IConfigBase> getExpansionChildren(IConfigBase config)
     {
+        //#if MC >= 1.21.1
+        if (isFavoritesFamily(config)) return Configs.getExpansionChildren(config);
+        //#endif
         if (Configs.CUSTOM_CONFIG_GROUPS.getBooleanValue())
         {
             return this.customChildren.getOrDefault(config, List.of());
@@ -255,6 +282,9 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
     @Override
     public ConfigBoolean getExpansionConfig(IConfigBase config)
     {
+        //#if MC >= 1.21.1
+        if (isFavoritesFamily(config)) return Configs.getExpansionConfig(config);
+        //#endif
         if (Configs.CUSTOM_CONFIG_GROUPS.getBooleanValue())
         {
             return this.customExpansionConfigs.get(config);
@@ -274,6 +304,9 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
 
     private static boolean isGroupable(ConfigOptionWrapper wrapper)
     {
+        //#if MC >= 1.21.1
+        if (wrapper != null && isFavoritesFamily(wrapper.getConfig())) return false;
+        //#endif
         if (wrapper == null || wrapper.getConfig() instanceof ConfigGroupHeader)
         {
             return false;
@@ -281,4 +314,25 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
         IConfigBase config = wrapper.getConfig();
         return config != null && !config.getName().endsWith("Expanded");
     }
+
+    //#if MC >= 1.21.1
+    private static boolean isFavoritesFamily(IConfigBase config)
+    {
+        if (config == Configs.MASA_FAVORITES_EXPANDED || config == Configs.MASA_BETTER_SWITCHER_EXPANDED) return true;
+        while (config != null)
+        {
+            if (config == Configs.MASA_FAVORITES) return true;
+            config = Configs.getExpansionParent(config);
+        }
+        return false;
+    }
+
+    private static void appendFavorites(IConfigBase config, List<ConfigOptionWrapper> result)
+    {
+        result.add(new ConfigOptionWrapper(config));
+        ConfigBoolean expanded = Configs.getExpansionConfig(config);
+        if (expanded != null && expanded.getBooleanValue())
+            for (IConfigBase child : Configs.getExpansionChildren(config)) appendFavorites(child, result);
+    }
+    //#endif
 }

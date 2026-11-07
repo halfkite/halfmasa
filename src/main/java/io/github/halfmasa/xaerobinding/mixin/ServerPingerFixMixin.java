@@ -30,7 +30,11 @@ public abstract class ServerPingerFixMixin
     @Inject(method = "refreshEntries", at = @At("HEAD"))
     private void halfmasa_refreshPingerPool(CallbackInfo ci)
     {
-        if (!Configs.SERVER_PINGER_FIX.getBooleanValue())
+        if (!Configs.SERVER_PINGER_FIX.getBooleanValue()
+                //#if MC >= 1.21.1
+                || !io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.active()
+                //#endif
+                )
         {
             if (halfmasa_ownsPool)
             {

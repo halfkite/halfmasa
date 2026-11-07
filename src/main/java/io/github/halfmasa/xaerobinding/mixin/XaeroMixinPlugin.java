@@ -14,6 +14,14 @@ public final class XaeroMixinPlugin implements IMixinConfigPlugin
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName)
     {
+        if (mixinClassName.substring(mixinClassName.lastIndexOf('.') + 1).startsWith("JadeBarrel"))
+        {
+            //#if MC >= 26.1
+            return FabricLoader.getInstance().isModLoaded("jade");
+            //#else
+            //$$ return false;
+            //#endif
+        }
         //#if MC < 1.21.8
         //$$ if (mixinClassName.endsWith("BookEditScreenMixin") ||
                 //$$ mixinClassName.endsWith("BookEditDisplayCacheMixin"))
