@@ -1,0 +1,16 @@
+[23:04:04] [ERROR] [FabricLoader/]: Uncaught exception in thread "main"
+java.io.UncheckedIOException: java.nio.file.AccessDeniedException: C:\Users\28656\.gradle\caches\fabric-loom\26.3\minecraft-client.jar
+	at net.fabricmc.loader.impl.util.LoaderUtil.normalizeExistingPath0(LoaderUtil.java:56)
+	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1724)
+	at net.fabricmc.loader.impl.util.LoaderUtil.normalizeExistingPath(LoaderUtil.java:49)
+	at net.fabricmc.loader.impl.launch.knot.Knot.init(Knot.java:122)
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:66)
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)
+Caused by: java.nio.file.AccessDeniedException: C:\Users\28656\.gradle\caches\fabric-loom\26.3\minecraft-client.jar
+	at java.base/sun.nio.fs.WindowsException.translateToIOException(WindowsException.java:89)
+	at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:96)
+	at java.base/sun.nio.fs.WindowsLinkSupport.getRealPath(WindowsLinkSupport.java:280)
+	at java.base/sun.nio.fs.WindowsPath.toRealPath(WindowsPath.java:907)
+	at java.base/sun.nio.fs.WindowsPath.toRealPath(WindowsPath.java:42)
+	at net.fabricmc.loader.impl.util.LoaderUtil.normalizeExistingPath0(LoaderUtil.java:54)
+	... 5 more

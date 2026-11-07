@@ -1,0 +1,7 @@
+{
+  "checkupdate": true,
+  "check_pre_release": false,
+  "debug": {
+    "doPackageLogging": false
+  }
+}

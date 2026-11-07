@@ -1,0 +1,11 @@
+{
+  "enabled": false,
+  "requiredPermissionLevel": 4,
+  "consoleOrSinglePlayerOwnerOnly": true,
+  "outputDirectory": "config\\carpettisaddition\\lifetime\\records",
+  "maxOutputRecordCount": -1,
+  "maxOutputFileBytes": 104857600,
+  "maxTotalOutputFileCount": 500,
+  "maxTotalOutputFileBytes": 1073741824,
+  "sampleRate": 1.0
+}

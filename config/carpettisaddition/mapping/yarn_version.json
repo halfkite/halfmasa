@@ -1,0 +1,30 @@
+[
+  {
+    "minecraftVersion": "1.21.11",
+    "yarnVersion": "1.21.11+build.6"
+  },
+  {
+    "minecraftVersion": "1.21.10",
+    "yarnVersion": "1.21.10+build.3"
+  },
+  {
+    "minecraftVersion": "1.21.8",
+    "yarnVersion": "1.21.8+build.1"
+  },
+  {
+    "minecraftVersion": "1.21.5",
+    "yarnVersion": "1.21.5+build.1"
+  },
+  {
+    "minecraftVersion": "1.21.4",
+    "yarnVersion": "1.21.4+build.8"
+  },
+  {
+    "minecraftVersion": "1.21.3",
+    "yarnVersion": "1.21.3+build.2"
+  },
+  {
+    "minecraftVersion": "1.21.1",
+    "yarnVersion": "1.21.1+build.3"
+  }
+]

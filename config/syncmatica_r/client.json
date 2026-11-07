@@ -1,0 +1,16 @@
+{
+  "General": {
+    "hudEnabled": true,
+    "hudScale": 1.0,
+    "followClaims": false,
+    "warnOnForeignPlacement": true
+  },
+  "Hotkeys": {
+    "openMaterialCollections": {
+      "keys": ""
+    },
+    "openBuildManagement": {
+      "keys": ""
+    }
+  }
+}

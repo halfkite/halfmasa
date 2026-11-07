@@ -1,0 +1,430 @@
+{
+  "asa": {
+    "openGui": {
+      "keys": "Z,K"
+    },
+    "creeperWarner": {
+      "enabled": true,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "creeperWarner-Range": 8.0,
+    "remainItemOverlay": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "remainItemOverlay-yOffset": 0,
+    "remainItemOverlay-xOffset": 0,
+    "tabFilter": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enableTabFilterWhiteList": false,
+    "enableTabFilter-Prefix": false,
+    "triggerFakeKillAura": {
+      "keys": ""
+    },
+    "fakeKillAuraRange": 4.0,
+    "enableFakeKillAuraBlackList": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enableKillAuraWhiteList": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "lowHealthAutoSendMessageOrCmd": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "healthValve": 4.0,
+    "SendContent-Message": "!s",
+    "SendContent-Command": "spectator",
+    "SendContent-Mode": "自动",
+    "forceBlockMiningCoolDown": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "flatMining": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "canAlwaysDisconnect": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enableInventoryCleaner": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "inventoryCleanerSwitchMode": {
+      "keys": ""
+    },
+    "inventoryCleanerMode": "丢出物品",
+    "inventoryCleaner-SaveInventoryItem": {
+      "keys": ""
+    },
+    "enbaleInventoryCleanerWhiteList": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enbaleinventoryCleanerBlackList": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "mountLoggerOnMinihud": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enable-mountLoggerOnMinihudWhitelist": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enable-mountLoggerOnMinihudBlacklist": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "canOpenMutilPlayerScreenOnGaming": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enableCustomBlockBlockShape": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enableCustomBlockBlockShapeWhiteList": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enableCustomBlockBlockShapeBlackList": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enableCustomBlockBlockInteractionShape": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enableCustomBlockBlockInteractionShape-Whtelist": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enableCustomBlockBlockInteractionShape-Blacklist": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enableCustomLitematicaBlockReplace": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enableAutoBlockRestrok": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enableAutoBlockRestrok-Whitelist": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "enableAutoBlockRestrok-blackList": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "trigger-boxItemSplitter": {
+      "keys": ""
+    },
+    "forceUseFireWork": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "useSignRunCommand": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "spectatorTelePortMenu": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disableSubtitle": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disableConnectionTimedOut": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disableLevelLoadingScreen": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disablePlayerArmorRender": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disableTabBackGround": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disableContainerBackGround": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disablePacketKick": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disablePacketKick-ForceJoinServer": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disableNetworkProError": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disableProfiler": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disableScoreBoardBackGround": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disbaleItemEntityMulpose": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disableSubtitleBackGround": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disableEnsureScreen": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "disableClientLightUpdate": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "commandPm": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "commandPmExecutionCooldown": 10,
+    "commandPmPrefix": "bot_",
+    "commandAutoVault": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "optItemFrame": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "optItemFrame-FrameVisibility": "无物品时可见(平衡)",
+    "optSignText": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "optDirection": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "optMiniHud": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "optScoreBoard": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "optEntityLight": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "fastModelRender": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "asyncLitematicaLoad": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "asyncLitematicaLoadThreadAmount": 2,
+    "openFakeFetchGui": {
+      "keys": ""
+    },
+    "fakeFetchSupport": false,
+    "fakeAutoRefresh": false,
+    "middleClickLitematicBlockFetch": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "autoOpenFakeInv": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "autoOpenFakeInv-Mode": "右键交互",
+    "autoKillFake": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "autoActionCooldown": 100,
+    "fakeInvCache": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "fakeInvCache-clear": {
+      "keys": ""
+    },
+    "MaterialList-CaculateLMS": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "MaterialList-CaculateInv": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "tabFilterWhiteList": [],
+    "tabFilterBlockList": [],
+    "tabFilterPrefix": [],
+    "fakeKillAuraBlackList": [],
+    "killAuraWhiteList": [],
+    "inventoryCleanerWhiteList": [],
+    "inventoryCleanerBlackList": [],
+    "mountLoggerOnMinihudWhitelist": [],
+    "mountLoggerOnMinihudBlacklist": [],
+    "customBlockBlockShapeWhiteList": [],
+    "customBlockBlockShapeBlackList": [],
+    "customBlockBlockInteractionShape-Whitelist": [],
+    "customBlockBlockInteractionShape-Blacklist": [],
+    "customLitematicaBlockReplaceList": [],
+    "autoBlockRestrok-Whitelist": [],
+    "autoBlockRestrok-blackList": [],
+    "fakeInvCache-Whitelist": [],
+    "debug": {
+      "enabled": false,
+      "hotkey": {
+        "keys": ""
+      }
+    },
+    "触发调试": {
+      "keys": ""
+    }
+  }
+}
