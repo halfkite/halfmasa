@@ -14,6 +14,8 @@ import net.minecraft.util.FormattedCharSequence;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import io.github.halfmasa.xaerobinding.better_multiplayer.*;
 import io.github.halfmasa.xaerobinding.better_multiplayer.folder.*;
 import io.github.halfmasa.xaerobinding.better_multiplayer.privacy.CaptureDetectionManager;
@@ -96,16 +98,17 @@ public abstract class BetterMultiplayerEntryMixin extends ObjectSelectionList.En
     //#endif
     private int halfmasa$motdIndent(int x) { return x + halfmasa$indent(); }
     //#if MC >= 26.1
-    @Redirect(method = "extractContent", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/Font;split(Lnet/minecraft/network/chat/FormattedText;I)Ljava/util/List;"))
+    @WrapOperation(method = "extractContent", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/Font;split(Lnet/minecraft/network/chat/FormattedText;I)Ljava/util/List;"))
     //#else
     //#if MC >= 1.21.10
-    //$$ @Redirect(method = "renderContent", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/Font;split(Lnet/minecraft/network/chat/FormattedText;I)Ljava/util/List;"))
+    //$$ @WrapOperation(method = "renderContent", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/Font;split(Lnet/minecraft/network/chat/FormattedText;I)Ljava/util/List;"))
     //#else
-    //$$ @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/Font;split(Lnet/minecraft/network/chat/FormattedText;I)Ljava/util/List;"))
+    //$$ @WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/Font;split(Lnet/minecraft/network/chat/FormattedText;I)Ljava/util/List;"))
     //#endif
     //#endif
-    private java.util.List<FormattedCharSequence> halfmasa$fitMotd(Font font, net.minecraft.network.chat.FormattedText text, int width) {
-        var lines = font.split(text, Math.max(1, width - halfmasa$indent() - halfmasa$statusWidth()));
+    private java.util.List<FormattedCharSequence> halfmasa$fitMotd(Font font, net.minecraft.network.chat.FormattedText text, int width,
+                                                                    Operation<java.util.List<FormattedCharSequence>> original) {
+        var lines = original.call(font, text, Math.max(1, width - halfmasa$indent() - halfmasa$statusWidth()));
         return halfmasa$address() && lines.size() > 1 ? lines.subList(0, 1) : lines;
     }
     //#if MC >= 26.1

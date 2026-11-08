@@ -271,6 +271,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--artifact', type=Path, required=True)
     parser.add_argument('--version', default='26.3')
+    parser.add_argument('--extra-mod', action='append', type=Path, default=[], help='Additional mods for an isolated compatibility test')
+    parser.add_argument('--loader-version', help='Fabric Loader override for compatibility dependencies')
     parser.add_argument('--java-home', type=Path, default=Path('C:/Program Files/Java/jdk-25.0.3'))
     parser.add_argument('--timeout', type=int, default=180)
     args = parser.parse_args()
@@ -303,6 +305,8 @@ def main():
     game = directory / 'game'
     (game / 'mods').mkdir(parents=True)
     (game / 'config').mkdir()
+    for extra in args.extra_mod:
+        shutil.copy2(extra, game / 'mods' / extra.name)
     api_version = compat.api_version(args.version)
     api = next(p for p in (Path.home()/('.gradle/caches/modules-2/files-2.1/net.fabricmc.fabric-api/fabric-api/'+api_version)).glob('*/*.jar') if not p.name.endswith('-sources.jar'))
     shutil.copy2(api, game / 'mods' / api.name)
@@ -325,6 +329,7 @@ def main():
     log = log_path.read_text(encoding='utf-8', errors='replace')
     passed = code == 0 and 'MULTIPLAYER_PASS' in log and 'MULTIPLAYER_FAIL' not in log
     report = {'result': 'PASS' if passed else 'FAIL', 'version': args.version,
+        'extra_mods': [{'path': str(extra.resolve()), 'sha256': hashlib.sha256(extra.read_bytes()).hexdigest()} for extra in args.extra_mod],
         'artifact': str(args.artifact), 'sha256': hashlib.sha256(args.artifact.read_bytes()).hexdigest(),
         'duration_seconds': round(time.monotonic() - start, 1), 'exit_code': code, 'log': str(log_path),
         'checks': [line for line in log.splitlines() if 'MULTIPLAYER_' in line]}
