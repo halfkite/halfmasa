@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from test_java_compat import java_tools
 
 ROOT = Path(__file__).resolve().parents[2]
 HARNESS = r'''
@@ -266,7 +267,7 @@ class EntityAggregationTests(unittest.TestCase):
  @classmethod
  def setUpClass(cls):
   cls.temp=tempfile.TemporaryDirectory(prefix="halfmasa-aggregation-");cls.addClassCleanup(cls.temp.cleanup);work=Path(cls.temp.name)
-  home=Path(os.environ.get("JAVA_HOME","C:/Program Files/Java/jdk-25.0.3"));cls.java=str(home/"bin/java.exe")
+  cls.java, javac = java_tools()
   joml=next((Path.home()/".gradle/caches/modules-2/files-2.1/org.joml/joml/1.10.9").glob("*/*.jar"))
   cls.classpath=str(work)+os.pathsep+str(joml);sources=[]
   for name,code in STUBS.items():
@@ -276,7 +277,7 @@ class EntityAggregationTests(unittest.TestCase):
    path=work/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(code,encoding="utf-8");sources.append(path)
   for name in ["EntityRenderAggregation.java","AggregationLabelLayout.java"]:sources.append(ROOT/"src/main/java/io/github/halfmasa/xaerobinding/feature"/name)
   harness=work/"AggregationCheck.java";harness.write_text(HARNESS,encoding="utf-8");sources.append(harness)
-  result=subprocess.run([str(home/"bin/javac.exe"),"-encoding","UTF-8","-classpath",str(joml),"-d",str(work),*map(str,sources)],capture_output=True,text=True)
+  result=subprocess.run([javac,"-encoding","UTF-8","-classpath",str(joml),"-d",str(work),*map(str,sources)],capture_output=True,text=True)
   if result.returncode:raise AssertionError(result.stdout+result.stderr)
  def scenario(self,name):
   result=subprocess.run([self.java,"-classpath",self.classpath,"AggregationCheck",name],capture_output=True,text=True)

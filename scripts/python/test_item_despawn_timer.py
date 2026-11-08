@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from test_java_compat import java_tools
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = "io/github/halfmasa/xaerobinding"
@@ -117,8 +118,7 @@ class ItemDespawnTests(unittest.TestCase):
     def setUpClass(cls):
         cls.temp = tempfile.TemporaryDirectory()
         work = Path(cls.temp.name)
-        home = Path(os.environ.get("JAVA_HOME", "C:/Program Files/Java/jdk-25.0.3"))
-        cls.java = str(home / "bin/java.exe")
+        cls.java, javac = java_tools()
         cls.classpath = str(work)
         sources = []
         for name, code in STUBS.items():
@@ -130,7 +130,7 @@ class ItemDespawnTests(unittest.TestCase):
             sources.append(ROOT / "src/main/java" / PACKAGE / "feature" / name)
         harness = work / "DespawnCheck.java"
         harness.write_text(HARNESS, encoding="utf-8")
-        result = subprocess.run([str(home / "bin/javac.exe"), "-encoding", "UTF-8", "-d", str(work), *map(str, sources), str(harness)], capture_output=True, text=True)
+        result = subprocess.run([javac, "-encoding", "UTF-8", "-d", str(work), *map(str, sources), str(harness)], capture_output=True, text=True)
         if result.returncode:
             raise AssertionError(result.stdout + result.stderr)
 

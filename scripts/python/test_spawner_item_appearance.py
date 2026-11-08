@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from test_java_compat import java_tools
 
 ROOT = Path(__file__).resolve().parents[2]
 HARNESS = r'''
@@ -182,8 +183,11 @@ public class SpawnerAppearanceCheck {
 
 class SpawnerItemAppearanceTests(unittest.TestCase):
  def test_metadata_natural_copies_state_oracle_and_real_asset_codecs(self):
-  java = Path(os.environ.get("JAVA_HOME", "C:/Program Files/Java/jdk-25.0.3"))
-  classpath = os.environ.get("HALFMASA_MC_CLASSPATH") or (ROOT / "build/review/mc-test-classpath.txt").read_text(encoding="utf-8")
+  classpath_file = ROOT / "build/review/mc-test-classpath.txt"
+  if not os.environ.get("HALFMASA_MC_CLASSPATH") and not classpath_file.exists():
+   self.skipTest("Set HALFMASA_MC_CLASSPATH to Minecraft 26.3 and its libraries")
+  classpath = os.environ.get("HALFMASA_MC_CLASSPATH") or classpath_file.read_text(encoding="utf-8")
+  java, javac = java_tools()
   with tempfile.TemporaryDirectory(prefix="halfmasa-spawner-appearance-") as folder:
    work = Path(folder)
    harness = work / "SpawnerAppearanceCheck.java"
@@ -196,9 +200,9 @@ class SpawnerItemAppearanceTests(unittest.TestCase):
    model = work / "SpawnerItemModel.java"
    model.write_text('package io.github.halfmasa.xaerobinding.feature; public class SpawnerItemModel { public static void clearIfWorldChanged(net.minecraft.client.multiplayer.ClientLevel level) {} }', encoding="utf-8")
    sources = [ROOT / "src/main/java/io/github/halfmasa/xaerobinding/feature" / name for name in ("TrialCreativeItems.java", "SpawnerItemAppearance.java", "SpawnerPickCapture.java", "SpawnerItemPresentation.java", "CageNbt.java")]
-   result = subprocess.run([str(java / "bin/javac.exe"), "-encoding", "UTF-8", "-cp", classpath, "-d", folder, *map(str, sources), str(stub), str(tick), str(model), str(harness)], capture_output=True)
+   result = subprocess.run([javac, "-encoding", "UTF-8", "-cp", classpath, "-d", folder, *map(str, sources), str(stub), str(tick), str(model), str(harness)], capture_output=True)
    self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
-   result = subprocess.run([str(java / "bin/java.exe"), "-Dfile.encoding=UTF-8", "-cp", folder + os.pathsep + classpath, "SpawnerAppearanceCheck", str(ROOT)], cwd=folder, capture_output=True, timeout=60)
+   result = subprocess.run([java, "-Dfile.encoding=UTF-8", "-cp", folder + os.pathsep + classpath, "SpawnerAppearanceCheck", str(ROOT)], cwd=folder, capture_output=True, timeout=60)
    self.assertEqual(result.returncode, 0, (result.stdout + result.stderr).decode(errors="replace"))
    self.assertIn(b"SPAWNER_APPEARANCE_PASS", result.stdout)
 

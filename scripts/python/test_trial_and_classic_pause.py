@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from test_java_compat import java_tools
 
 ROOT = Path(__file__).resolve().parents[2]
 HARNESS = r"""
@@ -111,7 +112,7 @@ class TrialAndClassicPauseTests(unittest.TestCase):
  @classmethod
  def setUpClass(cls):
   cls.temp=tempfile.TemporaryDirectory(prefix="halfmasa-trial-pause-");cls.addClassCleanup(cls.temp.cleanup);cls.work=Path(cls.temp.name)
-  java_home=Path(os.environ.get("JAVA_HOME","C:/Program Files/Java/jdk-25.0.3"));cls.java=str(java_home/"bin/java.exe");javac=str(java_home/"bin/javac.exe")
+  cls.java,javac=java_tools()
   stubs={
    "net/fabricmc/loader/api/FabricLoader.java":"package net.fabricmc.loader.api; public class FabricLoader {public static boolean available;public static FabricLoader getInstance(){return new FabricLoader();}public boolean isModLoaded(String id){return available;}}",
    "io/github/halfmasa/xaerobinding/config/Configs.java":"package io.github.halfmasa.xaerobinding.config; public class Configs {public static final Toggle TRIAL_CREATIVE_TAB=new Toggle();public static class Toggle {public boolean value;public boolean getBooleanValue(){return value;}}}",
