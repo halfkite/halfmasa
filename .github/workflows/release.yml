@@ -245,7 +245,8 @@ jobs:
           fi
 
           export RCLONE_CONFIG_WEBDAV123_USER="$WEBDAV_USER"
-          export RCLONE_CONFIG_WEBDAV123_PASS="$(rclone obscure "$WEBDAV_PASSWORD")"
+          webdav_password_obscured="$(rclone obscure "$WEBDAV_PASSWORD")"
+          export RCLONE_CONFIG_WEBDAV123_PASS="$webdav_password_obscured"
           unset WEBDAV_PASSWORD
 
           # The WebDAV credential is scoped to the user's authorized folder;
