@@ -268,7 +268,10 @@ class EntityAggregationTests(unittest.TestCase):
  def setUpClass(cls):
   cls.temp=tempfile.TemporaryDirectory(prefix="halfmasa-aggregation-");cls.addClassCleanup(cls.temp.cleanup);work=Path(cls.temp.name)
   cls.java, javac = java_tools()
-  joml=next((Path.home()/".gradle/caches/modules-2/files-2.1/org.joml/joml/1.10.9").glob("*/*.jar"))
+  joml_candidates=list((Path.home()/".gradle/caches/modules-2/files-2.1/org.joml/joml/1.10.9").glob("*/*.jar"))
+  if not joml_candidates:
+   raise unittest.SkipTest("JOML 1.10.9 is not available in the Gradle cache")
+  joml=joml_candidates[0]
   cls.classpath=str(work)+os.pathsep+str(joml);sources=[]
   for name,code in STUBS.items():
    # The production Vec3 exposes fields as well as methods.
