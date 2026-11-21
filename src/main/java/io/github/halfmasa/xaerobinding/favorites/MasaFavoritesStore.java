@@ -44,6 +44,12 @@ public final class MasaFavoritesStore
         return this.favorites.contains(key);
     }
 
+    public synchronized boolean isEmpty()
+    {
+        this.load();
+        return this.favorites.isEmpty();
+    }
+
     /** Commit to disk before changing UI-visible membership. */
     public synchronized boolean setFavorite(String key, boolean favorite)
     {

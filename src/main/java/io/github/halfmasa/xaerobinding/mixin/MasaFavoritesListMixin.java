@@ -3,6 +3,7 @@ package io.github.halfmasa.xaerobinding.mixin;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import fi.dy.masa.malilib.gui.GuiConfigsBase;
 import fi.dy.masa.malilib.gui.GuiConfigsBase.ConfigOptionWrapper;
 import fi.dy.masa.malilib.gui.widgets.WidgetListConfigOptions;
@@ -27,7 +28,10 @@ public abstract class MasaFavoritesListMixin
     @Inject(method = "getAllEntries", at = @At("RETURN"), cancellable = true)
     private void halfmasa$pinFavorites(CallbackInfoReturnable<Collection<ConfigOptionWrapper>> cir)
     {
-        if ((Object) this instanceof ActionConfigListWidget || this.parent instanceof MasaFavoritesScreen) return;
+        if (!Configs.MASA_FAVORITES.getBooleanValue() || this.parent instanceof MasaFavoritesScreen) return;
+        if (Configs.MASA_FAVORITES_SHOW_STARS.getBooleanValue() || Configs.MASA_FAVORITES_PIN.getBooleanValue())
+            MasaConfigCatalog.indexPage(this.parent);
+        if ((Object) this instanceof ActionConfigListWidget || !Configs.MASA_FAVORITES_PIN.getBooleanValue()) return;
         cir.setReturnValue(MasaFavoritesOrder.sort(cir.getReturnValue(), this.parent.getModId(), null));
     }
 
@@ -35,12 +39,14 @@ public abstract class MasaFavoritesListMixin
     private void halfmasa$sortedFavorites(CallbackInfoReturnable<Comparator<ConfigOptionWrapper>> cir)
     {
         if (!Configs.MASA_FAVORITES.getBooleanValue() || !Configs.MASA_FAVORITES_PIN.getBooleanValue() || (Object) this instanceof ActionConfigListWidget ||
-                this.parent instanceof MasaFavoritesScreen) return;
+                this.parent instanceof MasaFavoritesScreen || MasaFavoritesStore.get().isEmpty()) return;
         Comparator<ConfigOptionWrapper> original = cir.getReturnValue();
-        cir.setReturnValue(Comparator.<ConfigOptionWrapper, Boolean>comparing(wrapper -> {
-            var entry = MasaConfigCatalog.observe(this.parent.getModId(), wrapper.getConfig());
-            return entry == null || !MasaFavoritesStore.get().contains(entry.key());
-        }).thenComparing(original));
+        var unpinned = new IdentityHashMap<ConfigOptionWrapper, Boolean>();
+        cir.setReturnValue(Comparator.<ConfigOptionWrapper, Boolean>comparing(wrapper ->
+                unpinned.computeIfAbsent(wrapper, option -> {
+                    var entry = MasaConfigCatalog.observe(this.parent.getModId(), option.getConfig());
+                    return entry == null || !MasaFavoritesStore.get().contains(entry.key());
+                })).thenComparing(original));
     }
 }
 //#endif

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -43,23 +44,90 @@ public final class MasaGadgetCompat
     }
 
     private static List<ModInfo> gadgetPages;
+    private static final Map<String, ModInfo> PROVISIONAL_PAGES = new LinkedHashMap<>();
     private MasaGadgetCompat() { }
     public static boolean loaded() { return FabricLoader.getInstance().isModLoaded("masa_gadget_mod"); }
 
     public static List<ModInfo> pages()
     {
+        if (needsPageDiscovery()) gadgetPages = discoverModMenuPages(null);
+        return knownPages();
+    }
+
+    public static boolean needsPageDiscovery()
+    {
+        return gadgetPages == null && FabricLoader.getInstance().isModLoaded("modmenu") &&
+                (loaded() || FabricLoader.getInstance().isModLoaded("magiclib") ||
+                        FabricLoader.getInstance().isModLoaded("magiclib-malilib-extra"));
+    }
+
+    public static ModInfo registeredPage(String id)
+    {
+        for (var page : Registry.CONFIG_SCREEN.getAllModsWithConfigScreens())
+            if (modId(page).equals(id)) return page;
+        return null;
+    }
+
+    public static ModInfo registerCurrentPage(GuiConfigsBase screen)
+    {
+        String id = screen.getModId();
+        ModInfo page = registeredPage(id);
+        if (page != null) return page;
+        page = findCachedModMenuPage(id);
+        if (page != null) return page;
+        String name = FabricLoader.getInstance().getModContainer(id)
+                .map(owner -> owner.getMetadata().getName()).orElseGet(() -> fi.dy.masa.malilib.util.StringUtils.splitCamelCase(id));
+        page = new ModInfo(id, name, () -> screen);
+        PROVISIONAL_PAGES.put(id, page);
+        Registry.CONFIG_SCREEN.registerConfigScreenFactory(page);
+        return page;
+    }
+
+    private static ModInfo findCachedModMenuPage(String id)
+    {
+        if (gadgetPages != null)
+            for (var page : gadgetPages)
+                if (modId(page).equals(id)) return page;
+        return null;
+    }
+
+    static ModInfo pageForFavorite(String id)
+    {
+        ModInfo nativePage = registeredPage(id);
+        if (nativePage != null && nativePage != PROVISIONAL_PAGES.get(id)) return nativePage;
+        var optional = findCachedModMenuPage(id);
+        if (optional == null && needsPageDiscovery() && FabricLoader.getInstance().isModLoaded(id))
+            optional = discoverModMenuPages(id).stream().findFirst().orElse(null);
+        return optional != null ? optional : nativePage;
+    }
+
+    public static List<ModInfo> knownPages()
+    {
         Map<String, ModInfo> pages = new LinkedHashMap<>();
-        Registry.CONFIG_SCREEN.getAllModsWithConfigScreens().forEach(mod -> pages.put(io.github.halfmasa.xaerobinding.favorites.MasaGadgetCompat.modId(mod), mod));
-        if (loaded() || FabricLoader.getInstance().isModLoaded("magiclib") ||
-                FabricLoader.getInstance().isModLoaded("magiclib-malilib-extra"))
+        Registry.CONFIG_SCREEN.getAllModsWithConfigScreens().forEach(mod -> pages.put(modId(mod), mod));
+        if (gadgetPages != null)
         {
-            if (gadgetPages == null) gadgetPages = discoverModMenuPages();
-            gadgetPages.forEach(mod -> pages.putIfAbsent(io.github.halfmasa.xaerobinding.favorites.MasaGadgetCompat.modId(mod), mod));
+            for (var page : gadgetPages)
+            {
+                String id = modId(page);
+                if (pages.get(id) == PROVISIONAL_PAGES.get(id)) pages.put(id, page);
+                else pages.putIfAbsent(id, page);
+            }
         }
         return new ArrayList<>(pages.values());
     }
 
-    private static List<ModInfo> discoverModMenuPages()
+    private static boolean belongsTo(ModContainer provider, String mod)
+    {
+        while (provider != null)
+        {
+            if (mod.equals(provider.getMetadata().getId())) return true;
+            provider = provider.getContainingMod().orElse(null);
+        }
+        return false;
+    }
+
+    private static List<ModInfo> discoverModMenuPages(String target)
     {
         List<ModInfo> result = new ArrayList<>();
         if (!FabricLoader.getInstance().isModLoaded("modmenu")) return result;
@@ -70,6 +138,7 @@ public final class MasaGadgetCompat
             var create = Class.forName("com.terraformersmc.modmenu.api.ConfigScreenFactory").getMethod("create", Screen.class);
             for (var entry : FabricLoader.getInstance().getEntrypointContainers("modmenu", Object.class))
             {
+                if (target != null && !belongsTo(entry.getProvider(), target)) continue;
                 String mod = entry.getProvider().getMetadata().getId();
                 try
                 {
@@ -79,6 +148,7 @@ public final class MasaGadgetCompat
                     if (factory == null || !(create.invoke(factory, new Object[] {null}) instanceof GuiConfigsBase screen)) continue;
                     // Nested Mod Menu entrypoint providers may not own the actual config page.
                     String screenId = screen.getModId();
+                    if (target != null && !target.equals(screenId)) continue;
                     String screenName = FabricLoader.getInstance().getModContainer(screenId)
                             .map(owner -> owner.getMetadata().getName()).orElse(entry.getProvider().getMetadata().getName());
                     result.add(new ModInfo(screenId, screenName, () -> {

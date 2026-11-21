@@ -21,7 +21,6 @@ public final class MasaFavoritesSession
 
     public MasaFavoritesSession()
     {
-        MasaConfigCatalog.discover();
         this.snapshot = MasaFavoritesStore.get().snapshot().stream().map(MasaConfigCatalog::find)
                 .filter(java.util.Objects::nonNull).toList();
         this.snapshot.forEach(this::track);

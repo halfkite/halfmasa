@@ -6,10 +6,12 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.fabricmc.loader.api.FabricLoader;
 import fi.dy.masa.malilib.config.IConfigBase;
@@ -20,6 +22,7 @@ import fi.dy.masa.malilib.config.options.ConfigTypeWrapper;
 import fi.dy.masa.malilib.config.options.BooleanHotkeyGuiWrapper;
 import fi.dy.masa.malilib.config.options.ConfigBooleanHotkeyed;
 import fi.dy.masa.malilib.hotkeys.IHotkey;
+import fi.dy.masa.malilib.gui.GuiConfigsBase;
 import io.github.halfmasa.xaerobinding.XaeroWorldBinding;
 import io.github.halfmasa.xaerobinding.config.ConfigGroupHeader;
 import io.github.halfmasa.xaerobinding.config.Configs;
@@ -30,6 +33,12 @@ public final class MasaConfigCatalog
 {
     private static final Map<String, Entry> ENTRIES = new LinkedHashMap<>();
     private static final Map<IConfigBase, Entry> OBJECTS = new IdentityHashMap<>();
+    private static final Set<String> INDEXED_MODS = new HashSet<>();
+    private static final Set<String> INDEXED_MAGIC_MODS = new HashSet<>();
+    private static final Set<String> INDEXED_PACKAGES = new HashSet<>();
+    private static final Set<String> PROBED_PAGES = new HashSet<>();
+    private static final List<String> CONTAINERS = List.of("Configs", "Hotkeys", "FeatureToggle", "InfoToggle", "RendererToggle", "StructureToggle");
+    private static final List<String> MASA_MODS = List.of("minihud", "litematica", "tweakeroo", "itemscroller", "malilib");
     private static boolean discovered;
 
     private MasaConfigCatalog() { }
@@ -38,26 +47,44 @@ public final class MasaConfigCatalog
     {
         if (discovered) return;
         discovered = true;
-        scan("halfmasa", Configs.class);
-        for (IConfigBase config : Configs.ALL) observe("halfmasa", config);
-        scanOptional("malilib", "fi.dy.masa.malilib.MaLiLibConfigs");
-        for (String mod : List.of("minihud", "litematica", "tweakeroo", "itemscroller", "malilib"))
+        indexMod("halfmasa");
+        MASA_MODS.forEach(MasaConfigCatalog::indexMod);
+        indexMod("masa_gadget_mod");
+        indexMod("tweakermore");
+        scanMagicLib(null);
+        indexMod("lpctools");
+        MasaGadgetCompat.pages().forEach(MasaConfigCatalog::probePage);
+    }
+
+    public static void indexPage(GuiConfigsBase screen)
+    {
+        String mod = screen.getModId();
+        if (mod == null || mod.isBlank() || mod.equals(MasaFavoritesScreen.SCREEN_ID)) return;
+        indexMod(mod);
+        String packageName = screen.getClass().getPackageName();
+        int gui = packageName.indexOf(".gui");
+        if (gui >= 0) indexPackage(mod, packageName.substring(0, gui));
+    }
+
+    private static void indexPackage(String mod, String packageName)
+    {
+        if (INDEXED_PACKAGES.add(mod + ":" + packageName))
+            for (String name : CONTAINERS) scanOptional(mod, packageName + ".config." + name);
+    }
+
+    private static void indexMod(String mod)
+    {
+        if (mod == null || mod.isBlank() || !INDEXED_MODS.add(mod) || !FabricLoader.getInstance().isModLoaded(mod)) return;
+        if (mod.equals("halfmasa"))
         {
-            if (!FabricLoader.getInstance().isModLoaded(mod)) continue;
-            for (String container : List.of("Configs", "Hotkeys", "FeatureToggle", "InfoToggle", "RendererToggle", "StructureToggle"))
-            {
-                String name = "fi.dy.masa." + mod + ".config." + container;
-                try { scan(mod, Class.forName(name)); }
-                catch (ClassNotFoundException absent) { /* Not every mod defines every container. */ }
-                catch (LinkageError error) { XaeroWorldBinding.LOGGER.warn("Unable to discover {}", name, error); }
-            }
+            scan(mod, Configs.class);
+            for (IConfigBase config : Configs.ALL) observe(mod, config);
         }
-        if (FabricLoader.getInstance().isModLoaded("masa_gadget_mod"))
-            scanOptional("masa_gadget_mod", "com.plusls.MasaGadget.game.Configs");
-        if (FabricLoader.getInstance().isModLoaded("tweakermore"))
-            scanOptional("tweakermore", "me.fallenbreath.tweakermore.config.TweakerMoreConfigs");
-        scanMagicLib();
-        if (FabricLoader.getInstance().isModLoaded("lpctools"))
+        if (mod.equals("malilib")) scanOptional(mod, "fi.dy.masa.malilib.MaLiLibConfigs");
+        if (MASA_MODS.contains(mod)) indexPackage(mod, "fi.dy.masa." + mod);
+        if (mod.equals("masa_gadget_mod")) scanOptional(mod, "com.plusls.MasaGadget.game.Configs");
+        if (mod.equals("tweakermore")) scanOptional(mod, "me.fallenbreath.tweakermore.config.TweakerMoreConfigs");
+        if (mod.equals("lpctools"))
         {
             try
             {
@@ -67,28 +94,26 @@ public final class MasaConfigCatalog
             catch (ReflectiveOperationException | LinkageError error)
             { XaeroWorldBinding.LOGGER.warn("Unable to index LPCTools config tree", error); }
         }
-        for (var mod : MasaGadgetCompat.pages())
-        {
-            if (io.github.halfmasa.xaerobinding.favorites.MasaGadgetCompat.supplier(mod) == null || io.github.halfmasa.xaerobinding.favorites.MasaGadgetCompat.modId(mod).equals(MasaFavoritesScreen.SCREEN_ID)) continue;
-            try
-            {
-                var screen = io.github.halfmasa.xaerobinding.favorites.MasaGadgetCompat.supplier(mod).get();
-                if (!(screen instanceof fi.dy.masa.malilib.gui.GuiConfigsBase configs)) continue;
-                // Public config containers cover inactive categories too, without opening a GUI.
-                String packageName = screen.getClass().getPackageName();
-                int gui = packageName.indexOf(".gui");
-                if (gui >= 0)
-                    for (String name : List.of("Configs", "Hotkeys", "FeatureToggle", "InfoToggle", "RendererToggle", "StructureToggle"))
-                        scanOptional(io.github.halfmasa.xaerobinding.favorites.MasaGadgetCompat.modId(mod), packageName.substring(0, gui) + ".config." + name);
-                for (var wrapper : configs.getConfigs()) observe(io.github.halfmasa.xaerobinding.favorites.MasaGadgetCompat.modId(mod), wrapper.getConfig());
-            }
-            catch (RuntimeException | LinkageError error)
-            { XaeroWorldBinding.LOGGER.warn("Unable to index Masa config page {}", io.github.halfmasa.xaerobinding.favorites.MasaGadgetCompat.modId(mod), error); }
-        }
     }
 
-    private static void scanMagicLib()
+    private static void probePage(fi.dy.masa.malilib.util.data.ModInfo page)
     {
+        String mod = MasaGadgetCompat.modId(page);
+        var supplier = MasaGadgetCompat.supplier(page);
+        if (supplier == null || mod.equals(MasaFavoritesScreen.SCREEN_ID) || !PROBED_PAGES.add(mod)) return;
+        try
+        {
+            if (!(supplier.get() instanceof GuiConfigsBase screen)) return;
+            indexPage(screen);
+            for (var wrapper : screen.getConfigs()) observe(mod, wrapper.getConfig());
+        }
+        catch (RuntimeException | LinkageError error)
+        { XaeroWorldBinding.LOGGER.warn("Unable to index Masa config page {}", mod, error); }
+    }
+
+    private static void scanMagicLib(String mod)
+    {
+        if (mod != null && (discovered || !INDEXED_MAGIC_MODS.add(mod))) return;
         // The public global registry includes every category of all MagicLib config providers.
         try
         {
@@ -96,12 +121,17 @@ public final class MasaConfigCatalog
             Class<?> container = Class.forName("top.hendrixshen.magiclib.impl.malilib.config.ConfigContainer");
             Class<?> manager = Class.forName("top.hendrixshen.magiclib.api.malilib.config.MagicConfigManager");
             Object registry = global.getMethod("getInstance").invoke(null);
+            var getManager = container.getMethod("getConfigManager");
+            var getConfig = container.getMethod("getConfig");
+            var getIdentifier = manager.getMethod("getIdentifier");
             if (global.getMethod("getAllContainers").invoke(registry) instanceof Iterable<?> configs)
                 for (Object value : configs)
                 {
-                    Object owner = container.getMethod("getConfigManager").invoke(value);
-                    if (owner != null && container.getMethod("getConfig").invoke(value) instanceof IConfigBase config)
-                        observe((String) manager.getMethod("getIdentifier").invoke(owner), config);
+                    Object owner = getManager.invoke(value);
+                    if (owner == null) continue;
+                    String id = (String) getIdentifier.invoke(owner);
+                    if ((mod == null || mod.equals(id)) && getConfig.invoke(value) instanceof IConfigBase config)
+                        observe(id, config);
                 }
         }
         catch (ClassNotFoundException absent) { /* MagicLib is optional. */ }
@@ -196,16 +226,38 @@ public final class MasaConfigCatalog
 
     public static Entry observe(String mod, IConfigBase config)
     {
-        discover();
         if (config == null) return null;
-        Entry known = OBJECTS.get(canonical(config));
+        IConfigBase identity = canonical(config);
+        Entry known = OBJECTS.get(identity);
         if (known != null) return known;
-        return register(mod, "observed/" + canonical(config).getClass().getName() + "/" + config.getName(), config);
+        indexMod(mod);
+        known = OBJECTS.get(identity);
+        return known != null ? known : register(mod, "observed/" + identity.getClass().getName() + "/" + config.getName(), config);
     }
 
-    public static Entry lookup(IConfigBase config) { discover(); return config == null ? null : OBJECTS.get(canonical(config)); }
+    public static Entry lookup(IConfigBase config) { return config == null ? null : OBJECTS.get(canonical(config)); }
 
-    public static Entry find(String key) { discover(); return ENTRIES.get(key); }
+    public static Entry find(String key)
+    {
+        if (key == null) return null;
+        Entry known = ENTRIES.get(key);
+        int separator = key.indexOf(':');
+        if (known != null || separator <= 0 || key.startsWith("screen:")) return known;
+        String mod = key.substring(0, separator);
+        indexMod(mod);
+        if (!ENTRIES.containsKey(key)) scanMagicLib(mod);
+        if (!ENTRIES.containsKey(key) && !PROBED_PAGES.contains(mod))
+        {
+            var page = MasaGadgetCompat.pageForFavorite(mod);
+            if (page != null) probePage(page);
+        }
+        return ENTRIES.get(key);
+    }
+
+    static List<Entry> indexedEntries(String mod)
+    {
+        return ENTRIES.values().stream().filter(entry -> entry.modId().equals(mod)).toList();
+    }
     public static List<Entry> entries() { discover(); return new ArrayList<>(ENTRIES.values()); }
 
     public record Entry(String key, String modId, IConfigBase identity, IConfigBase editable) { }

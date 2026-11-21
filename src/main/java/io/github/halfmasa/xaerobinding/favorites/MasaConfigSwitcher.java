@@ -24,14 +24,23 @@ public final class MasaConfigSwitcher extends WidgetDropDownList<ModInfo>
 {
     private static final int STAR_SPACE = 16;
     private final List<ModInfo> nativeOrder;
+    private final Runnable discoverOnOpen;
 
     public MasaConfigSwitcher(int right, int y, int nativeWidth, int rowHeight, List<ModInfo> mods, ModInfo selected)
+    {
+        this(right, y, nativeWidth, rowHeight, mods, selected, null);
+    }
+
+    public MasaConfigSwitcher(int right, int y, int nativeWidth, int rowHeight, List<ModInfo> mods, ModInfo selected, Runnable discoverOnOpen)
     {
         super(Math.max(6, right - requiredWidth(nativeWidth, mods)), y, requiredWidth(nativeWidth, mods), rowHeight,
                 Math.max(rowHeight, GuiUtils.getScaledWindowHeight() - y - rowHeight - 6), Math.max(1, mods.size()), ordered(mods));
         this.nativeOrder = List.copyOf(mods);
+        this.discoverOnOpen = discoverOnOpen;
         this.setSelectedEntry(selected);
     }
+
+    public void open() { this.isOpen = true; }
 
     public static boolean enabled() { return Configs.MASA_FAVORITES.getBooleanValue() && Configs.MASA_BETTER_SWITCHER.getBooleanValue(); }
     public static boolean canFavorite() { return enabled() && Configs.MASA_SWITCHER_FAVORITES.getBooleanValue(); }
@@ -99,10 +108,12 @@ public final class MasaConfigSwitcher extends WidgetDropDownList<ModInfo>
             return true;
         }
         //#if MC >= 1.21.10
-        return super.onMouseClickedImpl(click, doubleClick);
+        boolean handled = super.onMouseClickedImpl(click, doubleClick);
         //#else
-        //$$ return super.onMouseClickedImpl(mouseX,mouseY,button);
+        //$$ boolean handled = super.onMouseClickedImpl(mouseX,mouseY,button);
         //#endif
+        if (handled && this.isOpen && this.discoverOnOpen != null) this.discoverOnOpen.run();
+        return handled;
     }
 
     @Override

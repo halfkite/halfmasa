@@ -22,7 +22,9 @@ import io.github.halfmasa.xaerobinding.gui.TweakerooConfigExpansionProvider;
 public final class MasaFavoritesExpansionProvider implements ConfigExpansionProvider
 {
     private final List<MasaConfigCatalog.Entry> roots;
-    private final List<MasaConfigCatalog.Entry> searchRoots;
+    private final MasaFavoritesSession session;
+    private final Map<String, ConfigExpansionProvider> sources = new LinkedHashMap<>();
+    private List<MasaConfigCatalog.Entry> searchRoots;
     private final Map<IConfigBase, Integer> displayOrder = new IdentityHashMap<>();
     private String query;
     private Set<String> queryFavorites = Set.of();
@@ -49,38 +51,52 @@ public final class MasaFavoritesExpansionProvider implements ConfigExpansionProv
 
     public MasaFavoritesExpansionProvider(MasaFavoritesSession session)
     {
-        Map<String, ConfigExpansionProvider> sources = new LinkedHashMap<>();
+        this.session = session;
+        this.indexBranches(session.snapshot());
+        // A separately favorited child is represented inside its favorited parent's subtree.
+        Set<IConfigBase> favorites = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
+        session.snapshot().forEach(entry -> favorites.add(entry.editable()));
+        this.roots = session.snapshot().stream().filter(entry -> !this.hasFavoriteAncestor(entry.editable(), favorites)).toList();
+    }
+
+    private void indexBranches(List<MasaConfigCatalog.Entry> entries)
+    {
+        if (entries.stream().anyMatch(entry -> entry.modId().equals("halfmasa")))
+            this.sources.computeIfAbsent("halfmasa", ignored -> halfMasaSource());
+        if (entries.stream().anyMatch(entry -> entry.modId().equals("tweakeroo")))
+            this.sources.computeIfAbsent("tweakeroo", ignored -> tweakerooSource());
+        for (var entry : entries)
+        {
+            var source = this.sources.get(entry.modId());
+            if (source != null) this.addBranch(entry, source, new HashSet<>());
+        }
+    }
+
+    private static ConfigExpansionProvider halfMasaSource()
+    {
         HalfMasaConfigExpansionProvider half = new HalfMasaConfigExpansionProvider("halfmasa");
         half.prepareEntries(ConfigOptionWrapper.createFor(Configs.ALL), true);
-        sources.put("halfmasa", new ConfigExpansionProvider()
+        return new ConfigExpansionProvider()
         {
             @Override public List<IConfigBase> getExpansionChildren(IConfigBase config)
             {
                 return java.util.stream.Stream.concat(Configs.getExpansionChildren(config).stream(),
                         half.getExpansionChildren(config).stream()).distinct().toList();
             }
-        });
-        if (MasaConfigCatalog.entries().stream().anyMatch(entry -> entry.modId().equals("tweakeroo")))
-        {
-            TweakerooConfigExpansionProvider tweakeroo = new TweakerooConfigExpansionProvider();
-            tweakeroo.prepareEntries(MasaConfigCatalog.entries().stream().filter(entry -> entry.modId().equals("tweakeroo"))
-                    .map(entry -> new ConfigOptionWrapper(entry.editable())).toList(), true);
-            sources.put("tweakeroo", tweakeroo);
-        }
-        for (var entry : MasaConfigCatalog.entries())
-            this.addBranch(session, entry, sources.get(entry.modId()), new HashSet<>());
-        // A separately favorited child is represented inside its favorited parent's subtree.
-        Set<IConfigBase> favorites = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
-        session.snapshot().forEach(entry -> favorites.add(entry.editable()));
-        this.roots = session.snapshot().stream().filter(entry -> !this.hasFavoriteAncestor(entry.editable(), favorites)).toList();
-        this.searchRoots = MasaConfigCatalog.entries().stream().filter(entry -> !this.parents.containsKey(entry.editable())).toList();
+        };
     }
 
-    private void addBranch(MasaFavoritesSession session, MasaConfigCatalog.Entry entry,
-            ConfigExpansionProvider source, Set<String> path)
+    private static ConfigExpansionProvider tweakerooSource()
     {
-        session.track(entry);
-        if (source == null || !path.add(entry.key())) return;
+        TweakerooConfigExpansionProvider tweakeroo = new TweakerooConfigExpansionProvider();
+        tweakeroo.prepareEntries(MasaConfigCatalog.indexedEntries("tweakeroo").stream()
+                .map(entry -> new ConfigOptionWrapper(entry.editable())).toList(), true);
+        return tweakeroo;
+    }
+
+    private void addBranch(MasaConfigCatalog.Entry entry, ConfigExpansionProvider source, Set<String> path)
+    {
+        if (!path.add(entry.key())) return;
         IConfigBase original = entry.modId().equals("halfmasa") ? entry.identity() : entry.editable();
         List<IConfigBase> branch = new ArrayList<>();
         for (IConfigBase child : source.getExpansionChildren(original))
@@ -89,7 +105,7 @@ public final class MasaFavoritesExpansionProvider implements ConfigExpansionProv
             if (resolved == null || path.contains(resolved.key())) continue;
             branch.add(resolved.editable());
             this.parents.putIfAbsent(resolved.editable(), entry.editable());
-            this.addBranch(session, resolved, source, path);
+            this.addBranch(resolved, source, path);
         }
         if (!branch.isEmpty())
         {
@@ -116,8 +132,17 @@ public final class MasaFavoritesExpansionProvider implements ConfigExpansionProv
         List<MasaConfigCatalog.Entry> active = this.roots;
         if (searchActive && this.globalSearch)
         {
-            active = new ArrayList<>(this.searchRoots);
-            active.sort(java.util.Comparator.comparing(entry -> !this.branchFavorite(entry.editable(), new HashSet<>())));
+            if (this.searchRoots == null)
+            {
+                this.indexBranches(MasaConfigCatalog.entries());
+                this.searchRoots = MasaConfigCatalog.entries().stream().filter(entry -> !this.parents.containsKey(entry.editable())).toList();
+            }
+            List<MasaConfigCatalog.Entry> pinned = new ArrayList<>();
+            List<MasaConfigCatalog.Entry> remaining = new ArrayList<>();
+            for (var entry : this.searchRoots)
+                (this.branchFavorite(entry.editable(), new HashSet<>()) ? pinned : remaining).add(entry);
+            pinned.addAll(remaining);
+            active = pinned;
         }
         for (var root : active) this.append(root.editable(), visible, emitted);
         this.displayOrder.clear();
@@ -136,6 +161,8 @@ public final class MasaFavoritesExpansionProvider implements ConfigExpansionProv
     private void append(IConfigBase config, List<ConfigOptionWrapper> visible, Set<IConfigBase> emitted)
     {
         if (!emitted.add(config)) return;
+        var entry = MasaConfigCatalog.lookup(config);
+        if (entry != null) this.session.track(entry);
         visible.add(new ConfigOptionWrapper(config));
         ConfigBoolean expanded = this.expansion.get(config);
         if (expanded != null && expanded.getBooleanValue())

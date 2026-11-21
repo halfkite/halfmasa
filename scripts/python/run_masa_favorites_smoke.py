@@ -44,6 +44,68 @@ public class FavoritesSmoke implements ClientModInitializer {
  }
  static void check(boolean condition,String name){if(!condition)throw new AssertionError(name);System.out.println("FAVORITES_CHECK "+name);}
  public void onInitializeClient(){}
+ static class ConfigProbe extends GuiConfigsBase {
+  ConfigProbe(){super(10,50,"halfmasa_perf_b",null,"Performance probe");}
+  public List<ConfigOptionWrapper> getConfigs(){return List.of();}
+ }
+ static void measureMenuOpen(Minecraft mc)throws Exception{
+  var registry=fi.dy.masa.malilib.registry.Registry.CONFIG_SCREEN;
+  if(Boolean.getBoolean("favorites.restart"))return;
+  int[] factories={0};
+  var original=registry.getAllModsWithConfigScreens().stream().filter(page->MasaGadgetCompat.modId(page).equals("halfmasa")).findFirst().orElseThrow();
+  var probe=new fi.dy.masa.malilib.util.data.ModInfo("halfmasa_perf_b","Performance probe",()->{factories[0]++;return new ConfigProbe();});
+  registry.registerConfigScreenFactory(probe);
+  try {
+   for(int sample=0;sample<6;sample++){
+    factories[0]=0;
+    long start=System.nanoTime();
+    MinecraftClientCompat.setScreen(mc,new HalfMasaConfigScreen());
+    long elapsed=System.nanoTime()-start;
+    boolean discovered=field(MasaConfigCatalog.class,"discovered").getBoolean(null);
+    System.out.printf(Locale.ROOT,"FAVORITES_MENU_OPEN %d %.3fms factories=%d discovered=%s%n",sample,elapsed/1_000_000.0,factories[0],discovered);
+    if(Boolean.getBoolean("favorites.verifyMenuCost"))check(!discovered&&factories[0]==0,"ordinary page opens without global discovery or unrelated factory");
+    MinecraftClientCompat.setScreen(mc,title);
+   }
+  }finally{
+   ((Map<?,?>)field(registry.getClass(),"modsMap").get(registry)).remove("halfmasa_perf_b");
+   registry.registerConfigScreenFactory(original);
+  }
+ }
+ static void checkLazyDiscovery(Minecraft mc)throws Exception{
+  var discovered=field(MasaConfigCatalog.class,"discovered");
+  if(Boolean.getBoolean("favorites.restart")){
+   var expected=com.google.gson.JsonParser.parseString(Files.readString(Path.of("build/favorites-expected.json"))).getAsJsonObject();
+   var visit=new MasaFavoritesScreen();
+   check(visit.getConfigs().size()==expected.size()&&!discovered.getBoolean(null),"saved favorites reopen without global config discovery");
+   return;
+  }
+  var visit=new MasaFavoritesScreen();
+  MinecraftClientCompat.setScreen(mc,visit);
+  check(visit.getConfigs().isEmpty()&&!discovered.getBoolean(null),"empty favorites visit avoids global config discovery");
+  MinecraftClientCompat.setScreen(mc,title);
+  if(net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("magiclib")){
+   var magic=(GuiConfigsBase)Class.forName("top.hendrixshen.magiclib.game.malilib.ConfigGui").getConstructor().newInstance();
+   MinecraftClientCompat.setScreen(mc,magic);
+   var cache=field(MasaGadgetCompat.class,"gadgetPages");
+   check(cache.get(null)==null&&!discovered.getBoolean(null),"first MagicLib config open avoids optional factory discovery");
+   var switcher=field(GuiConfigsBase.class,"modSwitchWidget");
+   click((WidgetBase)switcher.get(magic));
+   var expanded=switcher.get(magic);
+   check(field(WidgetDropDownList.class,"isOpen").getBoolean(expanded)&&cache.get(null)!=null,
+    "opening the dropdown discovers optional pages and opens without another click");
+   var mods=(List<fi.dy.masa.malilib.util.data.ModInfo>)field(WidgetDropDownList.class,"entries").get(expanded);
+   check(mods.stream().filter(page->MasaGadgetCompat.modId(page).equals(magic.getModId())).count()==1,"lazy discovery deduplicates nested MagicLib entrypoint");
+   MinecraftClientCompat.setScreen(mc,title);
+  }
+  visit=new MasaFavoritesScreen();
+  MinecraftClientCompat.setScreen(mc,visit);
+  var search=list(visit).getSearchBarWidget();search.setSearchOpen(true);
+  var box=(GuiTextFieldGeneric)field(WidgetSearchBar.class,"searchBox").get(search);
+  box.setValueWrapper("halfmasa");list(visit).refreshEntries();
+  check(discovered.getBoolean(null)&&!list(visit).getCurrentEntries().isEmpty(),"non-empty global search builds catalog on demand");
+  box.setValueWrapper("");search.setSearchOpen(false);list(visit).refreshEntries();
+  MinecraftClientCompat.setScreen(mc,title);
+ }
  static Field field(Class<?> c,String name)throws NoSuchFieldException{while(c!=null){try{var f=c.getDeclaredField(name);f.setAccessible(true);return f;}catch(NoSuchFieldException e){c=c.getSuperclass();}}throw new NoSuchFieldException(name);}
  static WidgetListConfigOptions list(GuiConfigsBase s){return (WidgetListConfigOptions)((GuiListBaseAccessor)(Object)s).halfmasa$getListWidget();}
  static List<WidgetConfigOption> rows(GuiConfigsBase s)throws Exception{return (List<WidgetConfigOption>)field(WidgetListBase.class,"listWidgets").get(list(s));}
@@ -76,6 +138,8 @@ public class FavoritesSmoke implements ClientModInitializer {
   try{
    if(stage==0){if(!(MinecraftClientCompat.getScreen(mc) instanceof TitleScreen)||mc.gui.overlay()!=null)return;
     title=(TitleScreen)MinecraftClientCompat.getScreen(mc);
+    if(Boolean.getBoolean("favorites.measureMenu"))measureMenuOpen(mc);
+    if(Boolean.getBoolean("favorites.verifyMenuCost"))checkLazyDiscovery(mc);
     if(Boolean.getBoolean("favorites.lpctoolsLayout")){
      Configs.MASA_FAVORITES_POSITION.setOptionListValue(MasaFavoritePosition.RIGHT);
      Object page=Class.forName("lpctools.LPCTools").getField("page").get(null);
@@ -375,6 +439,8 @@ def main():
     parser.add_argument('--base-only', action='store_true', help='Test halfmasa without optional Masa mods')
     parser.add_argument('--malilib', type=Path, help='Use the MaLiLib version required by optional test mods')
     parser.add_argument('--timeout', type=int, default=180)
+    parser.add_argument('--measure-menu', action='store_true')
+    parser.add_argument('--verify-menu-cost', action='store_true')
     args = parser.parse_args()
 
     args.artifact = args.artifact.resolve()
@@ -453,6 +519,10 @@ def main():
                 shutil.copy2(args.malilib, game / 'mods' / args.malilib.name)
             command[1:1] = ['-Djava.awt.headless=true', '-Dsun.java2d.d3d=false', '-XX:ActiveProcessorCount=2', '-XX:TieredStopAtLevel=1']
         run_command = command[:]
+        if args.measure_menu or args.verify_menu_cost:
+            run_command.insert(1, '-Dfavorites.measureMenu=true')
+        if args.verify_menu_cost:
+            run_command.insert(1, '-Dfavorites.verifyMenuCost=true')
         if args.gadget_fixture:
             run_command.insert(1, '-Dfavorites.gadgetFixture=true')
         if args.lpctools_layout:

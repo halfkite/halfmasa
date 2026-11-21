@@ -24,6 +24,7 @@ public final class MasaFavoritesOrder
             ConfigExpansionProvider provider)
     {
         if (!Configs.MASA_FAVORITES.getBooleanValue() || !Configs.MASA_FAVORITES_PIN.getBooleanValue()) return List.copyOf(entries);
+        if (MasaFavoritesStore.get().isEmpty()) return List.copyOf(entries);
         List<ConfigOptionWrapper> result = new ArrayList<>();
         Map<IConfigBase, List<ConfigOptionWrapper>> blocks = new LinkedHashMap<>();
         for (var entry : entries)
@@ -35,12 +36,15 @@ public final class MasaFavoritesOrder
                 continue;
             }
             IConfigBase root = entry.getConfig();
-            Set<IConfigBase> seen = Collections.newSetFromMap(new IdentityHashMap<>());
-            while (provider != null && seen.add(root))
+            if (provider != null)
             {
-                IConfigBase parent = provider.getExpansionParent(root);
-                if (parent == null) break;
-                root = parent;
+                Set<IConfigBase> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+                while (seen.add(root))
+                {
+                    IConfigBase parent = provider.getExpansionParent(root);
+                    if (parent == null) break;
+                    root = parent;
+                }
             }
             blocks.computeIfAbsent(root, ignored -> new ArrayList<>()).add(entry);
         }
@@ -51,15 +55,16 @@ public final class MasaFavoritesOrder
     private static void flush(List<ConfigOptionWrapper> result, Map<IConfigBase, List<ConfigOptionWrapper>> blocks,
             String mod, ConfigExpansionProvider provider)
     {
-        for (boolean pinned : new boolean[] {true, false})
-            for (var block : blocks.entrySet())
-            {
-                boolean favorite = isFavorite(mod, block.getKey());
-                if (provider != null)
-                    favorite |= provider.getExpansionChildren(block.getKey()).stream().anyMatch(config -> isFavorite(mod, config));
-                favorite |= block.getValue().stream().anyMatch(entry -> isFavorite(mod, entry.getConfig()));
-                if (favorite == pinned) result.addAll(block.getValue());
-            }
+        List<ConfigOptionWrapper> remaining = new ArrayList<>();
+        for (var block : blocks.entrySet())
+        {
+            IConfigBase root = block.getKey();
+            boolean favorite = isFavorite(mod, root) ||
+                    (provider != null && provider.getExpansionChildren(root).stream().anyMatch(config -> isFavorite(mod, config))) ||
+                    block.getValue().stream().map(ConfigOptionWrapper::getConfig).anyMatch(config -> config != root && isFavorite(mod, config));
+            (favorite ? result : remaining).addAll(block.getValue());
+        }
+        result.addAll(remaining);
         blocks.clear();
     }
 
