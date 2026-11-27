@@ -1,5 +1,7 @@
 package io.github.halfmasa.xaerobinding.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import java.nio.file.Path;
 
 import net.minecraft.ChatFormatting;
@@ -35,6 +37,9 @@ public final class CustomSavesPathScreen extends Screen
     private PathList list;
     private Button editButton;
     private Button deleteButton;
+    //#if MC >= 1.21.1
+    private Button noteButton;
+    //#endif
     private Component error;
 
     public CustomSavesPathScreen(Screen parent)
@@ -62,6 +67,12 @@ public final class CustomSavesPathScreen extends Screen
         this.addRenderableWidget(Button.builder(CommonComponents.GUI_BACK, button -> this.onClose())
                 .bounds(this.width / 2 + 82, this.height - 36, 76, 20)
                 .build());
+        //#if MC >= 1.21.1
+        this.noteButton = this.addRenderableWidget(Button.builder(Component.translatable("halfmasa.world_folders.note"), button -> {
+            var option = this.list.getSelectedOption();
+            if (option != null && !option.invalid()) WorldFolderScreen.editRoot(this, option.path());
+        }).bounds(this.width - 68, 11, 60, 20).build());
+        //#endif
         this.updateSelectionButtons();
     }
 
@@ -105,7 +116,7 @@ public final class CustomSavesPathScreen extends Screen
         }
     }
 
-    private void select(Path path)
+    private void select(Path path, String folder)
     {
         if (!CustomSavesPath.switchTo(path))
         {
@@ -113,6 +124,9 @@ public final class CustomSavesPathScreen extends Screen
             return;
         }
 
+        //#if MC >= 1.21.1
+        io.github.halfmasa.xaerobinding.feature.WorldFolders.getInstance().select(path, folder);
+        //#endif
         CustomSavesPath.refreshWorldList((net.minecraft.client.gui.screens.worldselection.SelectWorldScreen) this.parent);
         MinecraftClientCompat.setScreen(this.minecraft, this.parent);
     }
@@ -121,6 +135,12 @@ public final class CustomSavesPathScreen extends Screen
     {
         CustomSavesPath.PathOption option = this.list.getSelectedOption();
         boolean editable = option != null && !option.defaultPath();
+        //#if MC >= 1.21.1
+        PathEntry selected = this.list.getSelected();
+        boolean root = selected != null && selected.folder == null;
+        editable &= root;
+        if (this.noteButton != null) this.noteButton.active = root && option != null && !option.invalid();
+        //#endif
         if (this.editButton != null)
         {
             this.editButton.active = editable;
@@ -185,6 +205,21 @@ public final class CustomSavesPathScreen extends Screen
                 {
                     initialSelection = entry;
                 }
+                //#if MC >= 1.21.1
+                if (io.github.halfmasa.xaerobinding.config.Configs.WORLD_SAVE_FOLDERS.getBooleanValue() && !option.invalid())
+                {
+                    var store = io.github.halfmasa.xaerobinding.feature.WorldFolders.getInstance();
+                    String selected = store.selectedFolder(option.path());
+                    for (var folder : store.folders(option.path()))
+                    {
+                        boolean active = entry.current && folder.id().equals(selected);
+                        PathEntry child = new PathEntry(this.screen, option, active);
+                        child.folder = folder;
+                        this.addEntry(child);
+                        if (active) initialSelection = child;
+                    }
+                }
+                //#endif
             }
             super.setSelected(initialSelection);
         }
@@ -216,6 +251,9 @@ public final class CustomSavesPathScreen extends Screen
         private final CustomSavesPath.PathOption option;
         private final boolean current;
         private long lastClickTime;
+        //#if MC >= 1.21.1
+        private io.github.halfmasa.xaerobinding.feature.WorldFolders.Folder folder;
+        //#endif
 
         private PathEntry(CustomSavesPathScreen screen, CustomSavesPath.PathOption option, boolean current)
         {
@@ -246,7 +284,7 @@ public final class CustomSavesPathScreen extends Screen
 
         private boolean halfmasa$mouseClicked(double mouseX, double mouseY, int button)
         {
-            if (button != 0)
+            if (button != InputConstants.MOUSE_BUTTON_LEFT)
             {
                 return false;
             }
@@ -257,7 +295,11 @@ public final class CustomSavesPathScreen extends Screen
             this.lastClickTime = clickTime;
             if (doubleClick && this.option.available() && !this.option.invalid())
             {
-                this.screen.select(this.option.path());
+                //#if MC >= 1.21.1
+                this.screen.select(this.option.path(), this.folder == null ? null : this.folder.id());
+                //#else
+                //$$ this.screen.select(this.option.path(), null);
+                //#endif
             }
             return true;
         }
@@ -319,11 +361,31 @@ public final class CustomSavesPathScreen extends Screen
 
         private Component getLabel()
         {
-            if (this.option.defaultPath())
+            //#if MC >= 1.21.1
+            boolean showPaths = io.github.halfmasa.xaerobinding.config.Configs.WORLD_SAVE_SHOW_PATHS.getBooleanValue();
+            if (this.option.invalid())
             {
-                return Component.translatable("halfmasa.custom_saves.default", this.option.path());
+                return showPaths ? Component.literal(this.option.configuredValue())
+                        : Component.translatable("halfmasa.custom_saves.invalid");
             }
-            return Component.literal(this.option.invalid() ? this.option.configuredValue() : this.option.path().toString());
+            Path path = this.option.path();
+            String name = this.folder == null
+                    ? (this.option.defaultPath() ? Component.translatable("halfmasa.world_folders.default").getString()
+                            : path.getFileName() == null ? Component.translatable("halfmasa.world_folders.root").getString()
+                            : path.getFileName().toString())
+                    : "    ↳ " + this.folder.name();
+            String note = this.folder == null ? io.github.halfmasa.xaerobinding.feature.WorldFolders.getInstance().note(path)
+                    : this.folder.note();
+            String details = note.isBlank() ? "" : "   " + note;
+            if (showPaths) details += "   " + path + (this.folder == null ? "" : " › " + this.folder.name());
+            return Component.literal(name + details);
+            //#else
+            //$$ if (this.option.defaultPath())
+            //$$ {
+            //$$     return Component.translatable("halfmasa.custom_saves.default", this.option.path());
+            //$$ }
+            //$$ return Component.literal(this.option.invalid() ? this.option.configuredValue() : this.option.path().toString());
+            //#endif
         }
     }
 }

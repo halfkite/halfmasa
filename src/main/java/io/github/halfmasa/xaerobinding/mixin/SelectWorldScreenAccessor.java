@@ -10,4 +10,9 @@ public interface SelectWorldScreenAccessor
 {
     @Accessor("list")
     WorldSelectionList halfmasa$getWorldList();
+
+    //#if MC >= 1.21.1
+    @Accessor("searchBox")
+    net.minecraft.client.gui.components.EditBox halfmasa$getSearchBox();
+    //#endif
 }

@@ -82,6 +82,14 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
     public IConfigBase getInlineCompanion(IConfigBase config)
     {
         //#if MC >= 1.21.1
+        if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source))
+        {
+            if (config == Configs.ITEM_AGGREGATION_COUNT_DISPLAY) return Configs.ITEM_AGGREGATION_COUNT_DISPLAY_HOTKEY;
+            if (config == Configs.ENTITY_AGGREGATION_COUNT_DISPLAY) return Configs.ENTITY_AGGREGATION_COUNT_DISPLAY_HOTKEY;
+            if (config == Configs.ITEM_DESPAWN_DISPLAY) return Configs.ITEM_DESPAWN_DISPLAY_HOTKEY;
+        }
+        //#endif
+        //#if MC >= 1.21.1
         if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source)) {
             if (config == io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.DETECTION_MODE)
                 return io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.CYCLE_DETECTION;
@@ -90,8 +98,10 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
         }
         //#endif
         //#if MC >= 1.21.1
-        if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.ENTITY_RENDER_DISABLE_MODE)
-            return Configs.ENTITY_RENDER_DISABLE_MODE_HOTKEY;
+        //#if MC < 1.21.1
+        //$$ if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.ENTITY_RENDER_DISABLE_MODE)
+        //$$     return Configs.ENTITY_RENDER_DISABLE_MODE_HOTKEY;
+        //#endif
         if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.AUTO_EAT_SOURCE)
             return Configs.AUTO_EAT_SOURCE_HOTKEY;
         //#endif
@@ -108,12 +118,20 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
     public boolean isInlineCompanion(IConfigBase config)
     {
         //#if MC >= 1.21.1
+        if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) &&
+                (config == Configs.ITEM_AGGREGATION_COUNT_DISPLAY_HOTKEY
+                        || config == Configs.ENTITY_AGGREGATION_COUNT_DISPLAY_HOTKEY
+                        || config == Configs.ITEM_DESPAWN_DISPLAY_HOTKEY)) return true;
+        //#endif
+        //#if MC >= 1.21.1
         if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && (
                 config == io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.CYCLE_DETECTION ||
                 config == io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.CYCLE_POSITION)) return true;
         //#endif
         //#if MC >= 1.21.1
-        if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.ENTITY_RENDER_DISABLE_MODE_HOTKEY) return true;
+        //#if MC < 1.21.1
+        //$$ if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.ENTITY_RENDER_DISABLE_MODE_HOTKEY) return true;
+        //#endif
         if (CustomConfigGroupStore.HALF_MASA_SOURCE.equals(this.source) && config == Configs.AUTO_EAT_SOURCE_HOTKEY) return true;
         //#endif
         //#if MC >= 1.21.1

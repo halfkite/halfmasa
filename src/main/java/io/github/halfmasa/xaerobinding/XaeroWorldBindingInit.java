@@ -160,20 +160,18 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         });
         Configs.ENTITY_GLOW_RULE_EDITOR.setAction(0, () -> {
             MinecraftClientCompat.setScreen(Minecraft.getInstance(),
-                    new EntityGlowRulesScreen(MinecraftClientCompat.getScreen(Minecraft.getInstance())));
+                    new EntityGlowRulesScreen(MinecraftClientCompat.getScreen(Minecraft.getInstance()), false));
             return true;
         });
         Configs.ENTITY_GLOW_RULES.setValueChangeCallback(config -> {
             EntityGlowService.reload();
-            BlockGlowService.getInstance().reload();
         });
         Configs.BLOCK_GLOW_RULE_EDITOR.setAction(0, () -> {
             MinecraftClientCompat.setScreen(Minecraft.getInstance(),
-                    new EntityGlowRulesScreen(MinecraftClientCompat.getScreen(Minecraft.getInstance())));
+                    new EntityGlowRulesScreen(MinecraftClientCompat.getScreen(Minecraft.getInstance()), true));
             return true;
         });
         Configs.BLOCK_GLOW_RULES.setValueChangeCallback(config -> {
-            EntityGlowService.reload();
             BlockGlowService.getInstance().reload();
         });
         BlockGlowService.getInstance().reload();
@@ -291,6 +289,10 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
                 io.github.halfmasa.xaerobinding.feature.ConfigRenderingRefresh.refreshTranslations());
         Configs.CJK_LATIN_SPACING_TRANSLATIONS.setValueChangeCallback(config ->
                 io.github.halfmasa.xaerobinding.feature.ConfigRenderingRefresh.refreshTranslations());
+        //#if MC >= 1.21.1
+        Configs.CHINESE_MOD_LANGUAGE_FALLBACK.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.feature.ConfigRenderingRefresh.refreshTranslations());
+        //#endif
         //#else
         //$$ Configs.CJK_LATIN_SPACING.setValueChangeCallback(config -> {
         //$$     if (Configs.isConfigLoaded()) Minecraft.getInstance().reloadResourcePacks();
@@ -306,6 +308,14 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         Configs.DISABLE_NON_SOURCE_FLUID_RENDERING.setValueChangeCallback(config ->
                 io.github.halfmasa.xaerobinding.feature.ConfigRenderingRefresh.refreshFluids());
         Configs.ENTITY_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearEntities());
+        //#if MC >= 1.21.1
+        registerLabelDisplayHotkey(Configs.ENTITY_AGGREGATION_COUNT_DISPLAY_HOTKEY,
+                Configs.ENTITY_AGGREGATION_COUNT_DISPLAY, "halfmasa.message.entity_aggregation_count_display");
+        registerLabelDisplayHotkey(Configs.ITEM_AGGREGATION_COUNT_DISPLAY_HOTKEY,
+                Configs.ITEM_AGGREGATION_COUNT_DISPLAY, "halfmasa.message.item_aggregation_count_display");
+        registerLabelDisplayHotkey(Configs.ITEM_DESPAWN_DISPLAY_HOTKEY,
+                Configs.ITEM_DESPAWN_DISPLAY, "halfmasa.message.item_despawn_display");
+        //#endif
         //#if MC >= 1.21.1
         Configs.ITEM_RENDER_AGGREGATION.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearItems());
         Configs.ENTITY_AGGREGATION_SEPARATE_SIZES.setValueChangeCallback(config -> EntityRenderAggregation.getInstance().clearEntities());
@@ -337,8 +347,16 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         Configs.ITEM_MANAGER_RECIPE_HISTORY_POSITION.setValueChangeCallback(config -> ItemManagerHistoryOverlay.resetBounds());
         InputEventHandler.getKeybindManager().registerKeybindProvider(this);
         //#if MC >= 1.21.1
+        TickHandler.getInstance().registerClientTickHandler(
+                io.github.halfmasa.xaerobinding.feature.FluidTransparency.INSTANCE);
+        //#endif
+        //#if MC >= 1.21.1
         GlowRuleHotkeys.reload();
         //#endif
+    //#if MC >= 1.21.1
+        io.github.halfmasa.xaerobinding.feature.renderfilter.RenderFilterController.INSTANCE.register();
+        TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.renderfilter.RenderFilterController.INSTANCE);
+    //#endif
         TickHandler.getInstance().registerClientTickHandler(KeybindPieManager.getInstance());
         TickHandler.getInstance().registerClientTickHandler(ImeService.getInstance());
         //#if MC >= 1.21.1
@@ -352,6 +370,9 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         //#endif
         TickHandler.getInstance().registerClientTickHandler(CooldownAutoAttack.getInstance());
         //#if MC >= 1.21.1
+        //#if MC >= 1.21.1
+        TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.AutoKelpClearing.getInstance());
+        //#endif
         TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.AutoEatService.getInstance());
         TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.feature.RangeFeedingService.getInstance());
         //#endif
@@ -395,6 +416,26 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         manager.addHotkeysForCategory(XaeroWorldBinding.MOD_NAME, "halfmasa.hotkeys.glow_rules", GlowRuleHotkeys.getHotkeys());
         //#endif
     }
+
+    //#if MC >= 1.21.1
+    private static void registerLabelDisplayHotkey(fi.dy.masa.malilib.config.options.ConfigHotkey hotkey,
+            fi.dy.masa.malilib.config.options.ConfigOptionList option, String messageKey)
+    {
+        hotkey.getKeybind().setCallback((action, key) -> {
+            if (action != fi.dy.masa.malilib.hotkeys.KeyAction.PRESS) return false;
+            var next = option.getOptionListValue().cycle(true);
+            option.setOptionListValue(next);
+            new Configs().save();
+            Minecraft client = Minecraft.getInstance();
+            if (client.player != null)
+            {
+                MinecraftClientCompat.setOverlayMessage(client,
+                        net.minecraft.network.chat.Component.translatable(messageKey, next.getDisplayName()), false);
+            }
+            return true;
+        });
+    }
+    //#endif
 
     private static void registerTrigger(ActionHotkey config, BooleanSupplier action)
     {

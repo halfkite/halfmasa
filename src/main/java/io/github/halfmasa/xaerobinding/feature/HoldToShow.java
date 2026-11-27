@@ -16,6 +16,9 @@ public final class HoldToShow
 
     public static boolean isPassive(IHotkey hotkey)
     {
+    //#if MC >= 26.3
+        if (hotkey == Configs.BLOCK_RENDER_HOLD_SHOW_HOTKEY) return true;
+    //#endif
         return hotkey == Configs.BOSS_BAR_HOLD_KEY || hotkey == Configs.INVISIBLE_HOLD_KEY
                 || hotkey == Configs.ENTITY_RENDER_HOLD_SHOW_HOTKEY;
     }

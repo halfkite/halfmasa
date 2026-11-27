@@ -30,6 +30,26 @@ public abstract class BetterMultiplayerEntryMixin extends ObjectSelectionList.En
     //$$ public int getContentWidth(){return getWidth();} public int getContentRight(){return getX()+getWidth();}
     //#endif
     @Shadow @Final private ServerData serverData;
+    //#if MC >= 1.21.1
+    //#if MC >= 26.1
+    @Inject(method = "extractContent", at = @At("TAIL"))
+    private void halfmasa$favoriteStar(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
+            boolean hovered, float delta, CallbackInfo ci) {
+    //#elseif MC >= 1.21.10
+    //$$ @Inject(method = "renderContent", at = @At("TAIL"))
+    //$$ private void halfmasa$favoriteStar(GuiGraphics graphics, int mouseX, int mouseY,
+    //$$         boolean hovered, float delta, CallbackInfo ci) {
+    //#else
+    //$$ @Inject(method = "render", at = @At("TAIL"))
+    //$$ private void halfmasa$favoriteStar(GuiGraphics graphics, int index, int rowY, int rowX, int rowWidth,
+    //$$         int rowHeight, int mouseX, int mouseY, boolean hovered, float delta, CallbackInfo ci) {
+    //#endif
+        if (!BetterMultiplayerConfig.favorites()) return;
+        var manager = ServerFolderManager.getInstance();
+        io.github.halfmasa.xaerobinding.gui.PlayListStar.draw(graphics, getX(), getContentY(),
+                manager.isFavorite(manager.id(this.serverData)), mouseX, mouseY);
+    }
+    //#endif
     //#if MC >= 26.1
     @Shadow @Final private ServerSelectionList this$0;
     //#else

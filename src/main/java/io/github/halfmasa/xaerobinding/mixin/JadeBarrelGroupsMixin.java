@@ -1,4 +1,4 @@
-//#if MC >= 26.1
+//#if MC >= 1.21.1
 package io.github.halfmasa.xaerobinding.mixin;
 
 import java.util.List;

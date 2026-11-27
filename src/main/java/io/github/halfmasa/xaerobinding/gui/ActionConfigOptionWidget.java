@@ -26,6 +26,8 @@ import io.github.halfmasa.xaerobinding.config.ActionConfig;
 import io.github.halfmasa.xaerobinding.config.Configs;
 import io.github.halfmasa.xaerobinding.config.ConfigGroupHeader;
 import io.github.halfmasa.xaerobinding.feature.CustomConfigGroupStore;
+//#if MC >= 26.3
+//#endif
 //#if MC >= 1.21.1
 import fi.dy.masa.malilib.gui.GuiBase;
 //#if MC >= 1.21.11
@@ -313,6 +315,15 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
             //#endif
             int labelWidth, int configWidth, IConfigBase config, IHotkey companion)
     {
+        //#if MC >= 26.3
+        if (config == Configs.ITEM_AGGREGATION_COUNT_DISPLAY || config == Configs.ENTITY_AGGREGATION_COUNT_DISPLAY
+                || config == Configs.ITEM_DESPAWN_DISPLAY)
+        {
+            this.addOptionListHotkeyRow(x, y, labelWidth, configWidth,
+                    (fi.dy.masa.malilib.config.options.ConfigOptionList) config, companion);
+            return;
+        }
+        //#endif
         //#if MC >= 1.21.1
         if (config == Configs.ENTITY_RENDER_DISABLE_MODE)
         {
@@ -389,11 +400,13 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         //$$ int hotkeyWidth = Math.max(36, available - modeWidth - 2);
         //#endif
         ButtonGeneric modeButton;
-        //#if MC >= 1.21.1
-        if (config == Configs.AUTO_EAT_SOURCE) modeButton = new FoodSourceButton(controlsX, y + 1, modeWidth);
-        else
+        boolean forwardClicks = config == Configs.AUTO_EAT_SOURCE;
+        //#if MC >= 26.3
+        forwardClicks |= config == Configs.ITEM_AGGREGATION_COUNT_DISPLAY || config == Configs.ENTITY_AGGREGATION_COUNT_DISPLAY
+                || config == Configs.ITEM_DESPAWN_DISPLAY;
         //#endif
-        modeButton = new ConfigButtonOptionList(controlsX, y + 1, modeWidth, 20, config);
+        modeButton = forwardClicks ? new ForwardOptionButton(controlsX, y + 1, modeWidth, config)
+                : new ConfigButtonOptionList(controlsX, y + 1, modeWidth, 20, config);
         if (config == Configs.ENTITY_RENDER_DISABLE_MODE)
             modeButton.setHoverStrings(wrapComment(config.getComment(), Math.max(1,
                     this.mc.getWindow().getGuiScaledWidth() - 16)).split("\n"));
@@ -423,12 +436,15 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
     //#endif
 
     //#if MC >= 1.21.1
-    /** Source clicks and its hotkey share the specified forward order, independent of MaLiLib mouse direction. */
-    private static final class FoodSourceButton extends ButtonGeneric
+    /** Clicks follow the same forward order as the corresponding hotkey. */
+    private static final class ForwardOptionButton extends ButtonGeneric
     {
-        private FoodSourceButton(int x, int y, int width)
+        private final fi.dy.masa.malilib.config.options.ConfigOptionList config;
+
+        private ForwardOptionButton(int x, int y, int width, fi.dy.masa.malilib.config.options.ConfigOptionList config)
         {
             super(x, y, width, 20, "");
+            this.config = config;
             this.updateDisplayString();
         }
 
@@ -438,7 +454,7 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         //$$ @Override protected boolean onMouseClickedImpl(int mouseX, int mouseY, int button)
         //#endif
         {
-            Configs.AUTO_EAT_SOURCE.setOptionListValue(Configs.AUTO_EAT_SOURCE.getOptionListValue().cycle(true));
+            this.config.setOptionListValue(this.config.getOptionListValue().cycle(true));
             this.updateDisplayString();
             //#if MC >= 1.21.10
             return super.onMouseClickedImpl(event, activeGui);
@@ -449,7 +465,7 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
 
         @Override public void updateDisplayString()
         {
-            this.displayString = Configs.AUTO_EAT_SOURCE.getOptionListValue().getDisplayName();
+            this.displayString = this.config.getOptionListValue().getDisplayName();
         }
     }
     //#endif

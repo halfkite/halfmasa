@@ -70,14 +70,25 @@ public abstract class EntityRenderDispatcherAggregationMixin
         }
         //#endif
         Component label = EntityRenderAggregation.getInstance().getLabel(entity);
+        //#if MC >= 1.21.10
+        if ((Object) state instanceof io.github.halfmasa.xaerobinding.feature.ItemDespawnLabelState itemLabel
+                && itemLabel.halfmasa$getDespawnLabel() != null)
+        {
+            if (label != null)
+            {
+                var timer = itemLabel.halfmasa$getDespawnLabel();
+                itemLabel.halfmasa$setDespawnLabel(new io.github.halfmasa.xaerobinding.feature.ItemDespawnLabelState.Label(
+                        label.copy().append(" · ").append(timer.text()), halfmasa$aggregationAttachment(entity),
+                        timer.throughWalls()));
+                label = null;
+            }
+            EntityRenderAggregation.getInstance().trackLabel(entity, state);
+        }
+        //#endif
         if (label != null)
         {
-            boolean side = EntityRenderAggregation.isSideLabel(entity);
             state.nameTag = label;
-            state.nameTagAttachment = new Vec3(
-                    side ? entity.getBbWidth() * 0.5D + 0.35D : 0.0D,
-                    side ? entity.getBbHeight() * 0.5D : entity.getBbHeight() + 0.5D,
-                    0.0D);
+            state.nameTagAttachment = halfmasa$aggregationAttachment(entity);
             halfmasa_applyNeatName(state, label);
             //#if MC >= 1.21.1
             EntityRenderAggregation.getInstance().trackLabel(entity, state);
@@ -100,6 +111,13 @@ public abstract class EntityRenderDispatcherAggregationMixin
             if (color != null) state.outlineColor = color;
         }
         //#endif
+    }
+
+    private static Vec3 halfmasa$aggregationAttachment(Entity entity)
+    {
+        boolean side = EntityRenderAggregation.isSideLabel(entity);
+        return new Vec3(side ? entity.getBbWidth() * 0.5D + 0.35D : 0.0D,
+                side ? entity.getBbHeight() * 0.5D : entity.getBbHeight() + 0.5D, 0.0D);
     }
 
     /**

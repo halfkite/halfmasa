@@ -30,20 +30,35 @@ import net.minecraft.world.level.levelgen.presets.WorldPresets;
 import net.minecraft.world.phys.*;
 import snownee.jade.addon.universal.*;
 import snownee.jade.impl.BlockAccessorImpl;
+import snownee.jade.impl.BlockAccessorClientHandler;
+import snownee.jade.impl.ObjectDataCenter;
+import snownee.jade.api.*;
+import snownee.jade.api.view.ViewGroup;
 import io.github.halfmasa.xaerobinding.compat.MinecraftClientCompat;
+import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.feature.jade.JadeBarrelPreview;
+import io.github.halfmasa.xaerobinding.mixin.JadeBarrelStorageAccessor;
 public class JadeBarrelSmoke implements ClientModInitializer {
  static JadeBarrelSmoke instance;
- int stage, checks;
+ int stage, checks, sent, received;
+ CompoundTag lastNativeData;
+ long began, lastRequest;
+ final BlockAccessorClientHandler handler=new BlockAccessorClientHandler();
  volatile boolean complete;
  volatile Throwable failure;
  public void onInitializeClient(){instance=this;}
  public static void frame(Minecraft mc){if(instance!=null)instance.tick(mc);}
+ public static void observed(CompoundTag data){
+  if(instance!=null&&instance.stage>=3&&data!=null){instance.received++;instance.lastNativeData=data.copy();}
+ }
  void check(boolean ok,String why){if(!ok)throw new AssertionError(why);checks++;System.out.println("JADE_BARREL_CHECK "+why);}
+ @SuppressWarnings({"rawtypes","unchecked"})
  void tick(Minecraft mc){try{
   if(failure!=null)throw new AssertionError("server fixture",failure);
   if(stage==0){
    if(!(MinecraftClientCompat.getScreen(mc) instanceof TitleScreen)||mc.gui.overlay()!=null)return;
    snownee.jade.Jade.config().general().setDisplayTooltip(false);
+   check(!Configs.JADE_LARGE_BARREL.getBooleanValue(),"compatibility defaults to disabled");
    stage=1;
    mc.createWorldOpenFlows().createFreshLevel("jade-barrel-fixture",new LevelSettings("Jade Barrel Fixture",GameType.CREATIVE,
     new LevelSettings.DifficultySettings(Difficulty.PEACEFUL,false,false),true,WorldDataConfiguration.DEFAULT),
@@ -57,6 +72,8 @@ public class JadeBarrelSmoke implements ClientModInitializer {
     carpettisaddition.CarpetTISAdditionSettings.largeBarrel=true;
     var player=mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst();
     var level=player.level();var first=new BlockPos(0,100,0);var second=first.east();
+    player.getAbilities().flying=true;player.onUpdateAbilities();
+    player.teleportTo(0.5,102,3.5);player.setNoGravity(true);
     level.setBlock(first,Blocks.BARREL.defaultBlockState().setValue(BarrelBlock.FACING,Direction.WEST),3);
     level.setBlock(second,Blocks.BARREL.defaultBlockState().setValue(BarrelBlock.FACING,Direction.EAST),3);
     var a=(BarrelBlockEntity)level.getBlockEntity(first);var b=(BarrelBlockEntity)level.getBlockEntity(second);
@@ -71,10 +88,53 @@ public class JadeBarrelSmoke implements ClientModInitializer {
     if(nativeGroups!=null)for(var group:nativeGroups)for(var item:group.views){if(item.is(Items.STONE))stone+=item.getCount();if(item.is(Items.DIAMOND))diamond+=item.getCount();}
     check(stone==2&&(diamond==0||diamond==3),"native Jade inventory observed (stone="+stone+", diamond="+diamond+")");
     System.out.println("JADE_NATIVE_FULL="+(diamond==3));
-    System.out.println("JADE_BARREL_BASELINE_PASS checks="+checks);complete=true;
+    complete=true;
    }catch(Throwable t){failure=t;}});return;
   }
-  if(stage==2&&complete){stage=99;mc.stop();}
+  if(stage==2&&complete){
+   if(!NATIVE_FULL_EXPECTED){System.out.println("JADE_BARREL_BASELINE_PASS checks="+checks);stage=99;mc.stop();return;}
+   stage=3;began=System.currentTimeMillis();
+   Configs.JADE_LARGE_BARREL.setBooleanValue(true);
+  }
+  if(stage==3||stage==4){
+   long now=System.currentTimeMillis();
+   if(now-began>20000)throw new AssertionError("timed out waiting for live Jade preview with toggle "+(stage==3)
+    +" at player position "+mc.player.position()+" after "+sent+" requests and "+received+" replies, last="+lastNativeData);
+   var first=new BlockPos(0,100,0);
+   if(!mc.level.getBlockState(first).is(Blocks.BARREL)||!mc.level.getBlockState(first.east()).is(Blocks.BARREL))return;
+   var accessor=new BlockAccessorImpl.Builder().level(mc.level).player(mc.player).blockState(mc.level.getBlockState(first))
+    .blockEntity(()->mc.level.getBlockEntity(first)).hit(new BlockHitResult(Vec3.atCenterOf(first),Direction.WEST,first,false))
+    .serverData(new CompoundTag()).serverConnected(true).showDetails(true).build();
+   NATIVE_ACCESSOR
+   if(now-lastRequest>=250){
+    lastRequest=now;
+    var providers=handler.shouldRequestData(accessor).stream()
+     .filter(p->p.getUid().equals(JadeIds.UNIVERSAL_ITEM_STORAGE)).toList();
+    if(providers.isEmpty())throw new AssertionError("Jade did not register a barrel storage provider");
+    handler.requestData(accessor,providers);sent++;
+   }
+   if(now-began<1600||data==null)return;
+   var raw=data.get(JadeIds.UNIVERSAL_ITEM_STORAGE.toString());
+   if(raw==null)return;
+   var decoded=accessor.decodeFromNbt(JadeBarrelStorageAccessor.halfmasa$codec(),raw).orElseThrow();
+   var groups=ItemStorageProvider.Extension.INSTANCE.getClientGroups(accessor,decoded.getValue());
+   int stone=0,diamond=0;
+   if(groups!=null)for(var group:groups)for(var view:group.views){
+    if(view.item.is(Items.STONE))stone+=view.item.getCount();
+    if(view.item.is(Items.DIAMOND))diamond+=view.item.getCount();
+   }
+   if(stage==3&&stone==2&&diamond==3){
+    var field=JadeBarrelPreview.class.getDeclaredField("SAMPLES");field.setAccessible(true);
+    var replies=(Object[])field.get(null);
+    if(replies[0]==null||replies[1]==null)return;
+   }
+   check(stone==2&&diamond==3,"native full inventory preserved with toggle "+(stage==3)+" (stone="+stone+", diamond="+diamond+")");
+   if(stage==3){
+    Configs.JADE_LARGE_BARREL.setBooleanValue(false);JadeBarrelPreview.tick();stage=4;began=now;
+   }else{
+    System.out.println("JADE_BARREL_BASELINE_PASS checks="+checks);stage=99;mc.stop();
+   }
+  }
  }catch(Throwable error){throw new IllegalStateException("Jade barrel smoke stage="+stage,error);}}
 }
 '''
@@ -218,6 +278,7 @@ public class JadeBarrelSmoke implements ClientModInitializer {
     check(true,c.name+" through actual Jade request/reply and preview mixins");
     if(caseIndex==0){
      check(JadeClient.tickHandler().getData().getIntOr("x",-99)==FIRST.getX(),"auxiliary reply preserves primary target metadata");
+     SPARSE_NATIVE_REPLY_CHECK
      CompoundTag old=lastReply.copy();reset();Configs.JADE_LARGE_BARREL.setBooleanValue(true);
      check(JadeBarrelPreview.receive(old),"late reply from cancelled request is discarded");
      check(JadeBarrelPreview.groups(accessor,List.of()).isEmpty(),"cancelled pair has no cached preview");
@@ -286,6 +347,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  @Inject(method="runTick",at=@At("TAIL")) private void frame(CallbackInfo ci){JadeBarrelSmoke.frame((Minecraft)(Object)this);}
 }
 '''
+NATIVE_REPLY = r'''package io.github.halfmasa.jadebarrelsmoke.mixin;
+import io.github.halfmasa.jadebarrelsmoke.JadeBarrelSmoke;
+import net.minecraft.nbt.CompoundTag;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.*;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+@Mixin(targets="snownee.jade.impl.ObjectDataCenter",remap=false,priority=2000) public class NativeReplyMixin {
+ @Inject(method="setServerData",at=@At("HEAD")) private static void observe(CompoundTag data,CallbackInfo ci){JadeBarrelSmoke.observed(data);}
+}
+'''
 
 
 def main():
@@ -314,9 +385,33 @@ def main():
     cp += ';' + ';'.join(str(port_compat.named_mod(args.version,args.java_home,p,cp)) for p in selected)
     sources = []
     fixture_sources = [('JadeBarrelSmoke', BASELINE_SOURCE if args.baseline else SOURCE), ('FrameMixin', FRAME)]
+    legacy_baseline = args.baseline and tuple(map(int, args.version.split('.'))) < (1, 21, 10)
+    if legacy_baseline:
+        fixture_sources.append(('NativeReplyMixin', NATIVE_REPLY))
     if not args.baseline:
         fixture_sources += [('PacketMixin', PACKET), ('ReplyMixin', REPLY), ('ReceiveMixin', RECEIVE)]
     for name, text in fixture_sources:
+        if name == 'JadeBarrelSmoke' and args.baseline:
+            legacy_protocol = tuple(map(int, args.version.split('.'))) < (1, 21, 10)
+            native_accessor = '''ObjectDataCenter.set(accessor);
+   var data=ObjectDataCenter.getServerData();''' if legacy_protocol else '''var tick=snownee.jade.JadeClient.tickHandler();
+   var data=tick.getData();
+   tick.state=new snownee.jade.overlay.WailaTickHandler.State(accessor,(AccessorClientHandler)handler,data==null?new CompoundTag():data);'''
+            text = text.replace('NATIVE_ACCESSOR', native_accessor)
+            text = text.replace('NATIVE_FULL_EXPECTED', 'true' if args.version.startswith('1.21.') else 'false')
+        if name == 'JadeBarrelSmoke' and not args.baseline:
+            text = text.replace('SPARSE_NATIVE_REPLY_CHECK', '''
+     var samplesField=JadeBarrelPreview.class.getDeclaredField("SAMPLES");
+     samplesField.setAccessible(true);
+     var samples=(Object[])samplesField.get(null);
+     samples[1]=samples[0];
+     var comparable=JadeBarrelPreview.class.getDeclaredField("comparableSamples");
+     comparable.setAccessible(true);
+     comparable.setBoolean(null,false);
+     var nativeGroups=List.of(new ViewGroup<>(List.of(new ItemStack(Items.STONE,2),new ItemStack(Items.DIAMOND,3))));
+     check(JadeBarrelPreview.groups(accessor,nativeGroups)==nativeGroups,
+           "matching sparse replies retain Jade groups without doubling item counts");
+''')
         text = port_compat.source(text,args.version,cp)
         if args.version not in ('26.2','26.3'):
             text = text.replace('net.minecraft.advancements.predicates.', 'net.minecraft.advancements.criterion.')
@@ -340,7 +435,7 @@ def main():
             'mixins': ['jade-barrel-smoke.mixins.json']}))
         jar.writestr('jade-barrel-smoke.mixins.json', json.dumps({'required': True,
             'package': 'io.github.halfmasa.jadebarrelsmoke.mixin', 'compatibilityLevel': 'JAVA_21' if args.version.startswith('1.21.') else 'JAVA_25',
-            'client': ['FrameMixin'] + ([] if args.baseline else ['PacketMixin', 'ReplyMixin', 'ReceiveMixin']), 'injectors': {'defaultRequire': 1}}))
+            'client': [name for name, _ in fixture_sources if name.endswith('Mixin')], 'injectors': {'defaultRequire': 1}}))
     mod = port_compat.remap_fixture(args.version,args.java_home,mod,cp,directory)
     game = directory / 'game'
     (game / 'mods').mkdir(parents=True)
@@ -353,10 +448,11 @@ def main():
         'pauseOnLostFocus:false\nsoundCategory_master:0.0\n', encoding='utf-8')
     command = startup.production_command(args, game, mod)
     command[1:1] = ['-Djava.awt.headless=true', '-Dsun.java2d.d3d=false']
+    command[1:1] = ['-XX:TieredStopAtLevel=1', '-XX:ActiveProcessorCount=4']
     log_path = directory / 'launcher.log'
     start = time.monotonic()
     with log_path.open('w', encoding='utf-8') as output:
-        process = subprocess.Popen(command, cwd=ROOT, stdin=subprocess.DEVNULL, stdout=output,
+        process = subprocess.Popen(command, cwd=game, stdin=subprocess.DEVNULL, stdout=output,
                                    stderr=subprocess.STDOUT, creationflags=subprocess.CREATE_NO_WINDOW)
         try:
             code = process.wait(timeout=args.timeout)

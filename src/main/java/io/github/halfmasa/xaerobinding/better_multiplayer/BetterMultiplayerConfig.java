@@ -24,6 +24,10 @@ public final class BetterMultiplayerConfig {
     public static final ConfigBooleanHotkeyed LATENCY = flag("multiplayerLatency", true);
     public static final ConfigBooleanHotkeyed FOLDERS = flag("multiplayerFolders", true);
     public static final ConfigBooleanHotkeyed COLLAPSED_ICONS = flag("multiplayerCollapsedIcons", true);
+    //#if MC >= 1.21.1
+    public static final ConfigBoolean FAVORITES = new ConfigBoolean("multiplayerFavorites", false).apply(KEY);
+    public static boolean favorites() { return active() && FAVORITES.getBooleanValue(); }
+    //#endif
     public static final ConfigOptionList DETECTION_MODE = new ConfigOptionList("multiplayerDetectionMode", Mode.HYBRID).apply(KEY);
     public static final ConfigOptionList ADDRESS_POSITION = new ConfigOptionList("multiplayerAddressPosition", Position.BELOW_NAME).apply(KEY);
     public static final ActionHotkey CYCLE_DETECTION = new ActionHotkey("multiplayerCycleDetection", "", MENU_KEYS).applyTranslationKey(KEY);
@@ -38,6 +42,9 @@ public final class BetterMultiplayerConfig {
             AUTO_HIDE, DETECTION_MODE, CYCLE_DETECTION, HIDE_UNKNOWN, AUTO_RESTORE, MANUAL_PRIVACY,
             LATENCY, GREEN_LIMIT, YELLOW_LIMIT, FOLDERS,
             COLLAPSED_ICONS,
+            //#if MC >= 1.21.1
+            FAVORITES,
+            //#endif
             OBS_URL, OBS_PASSWORD, DETECTION_INTERVAL, PING_TIMEOUT);
     public static final List<IConfigBase> ALL = java.util.stream.Stream.concat(
             java.util.stream.Stream.of(ENABLED, EXPANDED), CHILDREN.stream()).toList();

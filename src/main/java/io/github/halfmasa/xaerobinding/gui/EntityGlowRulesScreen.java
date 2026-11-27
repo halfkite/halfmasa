@@ -49,14 +49,22 @@ import io.github.halfmasa.xaerobinding.feature.BlockGlowService;
 import io.github.halfmasa.xaerobinding.feature.EntityGlowRule;
 import io.github.halfmasa.xaerobinding.feature.EntityGlowService;
 import io.github.halfmasa.xaerobinding.feature.GlowRuleHotkeys;
+//#if MC >= 1.21.3
+import io.github.halfmasa.xaerobinding.picker.RegistryIndex;
+import io.github.halfmasa.xaerobinding.picker.RegistryPickerButton;
+import io.github.halfmasa.xaerobinding.picker.RegistryPickerScreen;
+//#endif
 
-/** One editable list for entity, dropped-item and through-wall block highlights. */
+/** Shared editor for the independent entity and block highlight lists. */
 public final class EntityGlowRulesScreen extends GuiBase implements IKeybindConfigGui
 {
     private static final int WIDE_ROW_HEIGHT = 30;
     private static final int COMPACT_ROW_HEIGHT = 52;
     private static final int TINY_ROW_HEIGHT = 76;
+    private static final int DISTANCE_WIDTH = 125;
+    private static final int DISTANCE_ROW_HEIGHT = 23;
     private final Screen parent;
+    private final boolean blockRules;
     private final List<Draft> drafts = new ArrayList<>();
     private final Set<String> savedKeys = new HashSet<>();
     private final ButtonPressDirtyListenerSimple buttonListener = new ButtonPressDirtyListenerSimple();
@@ -66,12 +74,14 @@ public final class EntityGlowRulesScreen extends GuiBase implements IKeybindConf
     private Component error;
     private boolean needsRebuild;
 
-    public EntityGlowRulesScreen(Screen parent)
+    public EntityGlowRulesScreen(Screen parent, boolean blockRules)
     {
-        this.setTitle(Component.translatable("halfmasa.entity_glow.rules_title").getString());
+        this.setTitle(Component.translatable(blockRules
+                ? "halfmasa.block_glow.rules_title" : "halfmasa.entity_glow.rules_title").getString());
         this.setParent(parent);
         this.parent = parent;
-        for (EntityGlowRule rule : EntityGlowRule.loadAll())
+        this.blockRules = blockRules;
+        for (EntityGlowRule rule : EntityGlowRule.loadRules(blockRules))
         {
             this.drafts.add(new Draft(rule));
             this.savedKeys.add(rule.key());
@@ -80,8 +90,12 @@ public final class EntityGlowRulesScreen extends GuiBase implements IKeybindConf
 
     private boolean compact() { return this.width < 700; }
     private boolean tiny() { return this.contentWidth() < 320; }
-    private int rowHeight() { return this.tiny() ? TINY_ROW_HEIGHT
-            : this.compact() ? COMPACT_ROW_HEIGHT : WIDE_ROW_HEIGHT; }
+    private int rowHeight()
+    {
+        if (!this.compact()) return WIDE_ROW_HEIGHT;
+        int height = this.tiny() ? TINY_ROW_HEIGHT : COMPACT_ROW_HEIGHT;
+        return this.blockRules ? height + DISTANCE_ROW_HEIGHT : height;
+    }
     private int contentWidth() { return Math.min(960, this.width - 20); }
     private int contentX() { return (this.width - this.contentWidth()) / 2; }
     private int visibleRows() { return Math.max(1, (this.height - 112) / this.rowHeight()); }
@@ -96,10 +110,8 @@ public final class EntityGlowRulesScreen extends GuiBase implements IKeybindConf
         this.scroll = Math.max(0, Math.min(this.scroll, Math.max(0, this.drafts.size() - visible)));
         this.addButton(new ButtonGeneric(x, 30, 90, 20,
                 Component.translatable("halfmasa.entity_glow.add").getString()), (button, mouseButton) -> {
-                    this.drafts.add(new Draft(new EntityGlowRule(EntityGlowRule.TargetType.ENTITY,
-                            EntityGlowRule.normalizeId("minecraft:pig"), EntityGlowRule.DEFAULT_COLOR)));
-                    Draft draft = this.drafts.get(this.drafts.size() - 1);
-                    draft.idText = "";
+                    this.drafts.add(new Draft(this.blockRules
+                            ? EntityGlowRule.TargetType.BLOCK : EntityGlowRule.TargetType.ENTITY));
                     this.scroll = Math.max(0, this.drafts.size() - this.visibleRows());
                     this.needsRebuild = true;
                 });
@@ -141,16 +153,21 @@ public final class EntityGlowRulesScreen extends GuiBase implements IKeybindConf
                 draft.hotkey.getKeybind(), this);
         this.addButton(keybindButton, this.buttonListener);
         int typeX = hotkeyX + hotkeyWidth + gap;
-        this.addButton(new ButtonGeneric(typeX, y, typeWidth, 20,
-                this.typeLabel(draft.type).getString()), (button, mouseButton) -> {
-                    draft.type = draft.type.next();
-                    draft.idText = "";
-                    this.needsRebuild = true;
-                });
+        if (!this.blockRules)
+        {
+            this.addButton(new ButtonGeneric(typeX, y, typeWidth, 20,
+                    this.typeLabel(draft.type).getString()), (button, mouseButton) -> {
+                        draft.type = draft.type == EntityGlowRule.TargetType.ENTITY
+                                ? EntityGlowRule.TargetType.ITEM : EntityGlowRule.TargetType.ENTITY;
+                        draft.idText = "";
+                        this.needsRebuild = true;
+                    });
+        }
 
         int fieldsY = this.compact() ? y + 23 : y;
-        int idX = this.compact() ? x : typeX + typeWidth + gap;
+        int idX = this.compact() ? x : typeX + (this.blockRules ? 0 : typeWidth + gap);
         int remaining = this.compact() ? contentWidth : x + contentWidth - idX;
+        if (!this.compact() && this.blockRules) remaining -= DISTANCE_WIDTH;
         int idWidth = this.tiny() ? contentWidth - pickerWidth - gap
                 : remaining - pickerWidth - hexWidth - indicatorWidth
                 - colorResetWidth - (this.compact() ? 0 : deleteWidth) - 5 * gap;
@@ -169,14 +186,14 @@ public final class EntityGlowRulesScreen extends GuiBase implements IKeybindConf
         idBox.setHoverTooltip(draft.idText);
         //#endif
         int pickerX = idX + idWidth + gap;
-        this.addButton(new ButtonGeneric(pickerX, fieldsY, pickerWidth, 20,
-                Component.translatable("halfmasa.entity_glow.search").getString()),
-                (button, mouseButton) -> MinecraftClientCompat.setScreen(this.minecraft,
-                        new EntityGlowSearchScreen(this, draft.type, id -> {
-                            draft.idText = id.toString();
-                            this.error = null;
-                            this.needsRebuild = true;
-                        })));
+        this.addButton(
+                //#if MC >= 1.21.3
+                Configs.BETTER_REGISTRY_PICKER.getBooleanValue()
+                        ? new RegistryPickerButton(pickerX, fieldsY, pickerWidth, 20) :
+                //#endif
+                new ButtonGeneric(pickerX, fieldsY, pickerWidth, 20,
+                        Component.translatable("halfmasa.entity_glow.search").getString()),
+                (button, mouseButton) -> this.openTargetPicker(draft));
 
         int hexX = this.tiny() ? x : pickerX + pickerWidth + gap;
         int colorY = this.tiny() ? y + 46 : fieldsY;
@@ -216,13 +233,60 @@ public final class EntityGlowRulesScreen extends GuiBase implements IKeybindConf
             this.drafts.removeIf(row -> row.key.equals(draft.key));
             this.needsRebuild = true;
         });
+        if (this.blockRules)
+        {
+            GuiTextFieldGeneric distanceBox = new GuiTextFieldGeneric(
+                    this.distanceX() + DISTANCE_WIDTH - 46, y + this.distanceOffsetY(), 44, 20, this.font);
+            this.addTextField(distanceBox, field -> {
+                draft.distanceText = fieldText(field);
+                return true;
+            });
+            distanceBox.setMaxLengthWrapper(16);
+            setFieldText(distanceBox, draft.distanceText);
+            //#if MC >= 1.21.8
+            distanceBox.setHoverTooltip(Component.translatable("halfmasa.entity_glow.block_distance_hint",
+                    Configs.BLOCK_GLOW_DISTANCE.getIntegerValue()).getString());
+            //#endif
+        }
     }
+
+    private void openTargetPicker(Draft draft)
+    {
+        //#if MC >= 1.21.3
+        if (Configs.BETTER_REGISTRY_PICKER.getBooleanValue())
+        {
+            RegistryIndex.Kind kind = switch (draft.type)
+            {
+                case BLOCK -> RegistryIndex.Kind.BLOCK;
+                case ENTITY -> RegistryIndex.Kind.ENTITY;
+                case ITEM -> RegistryIndex.Kind.ITEM;
+            };
+            RegistryPickerScreen.openSingle(this, Set.of(kind), entry -> this.applyTarget(draft, entry.id()));
+            return;
+        }
+        //#endif
+        MinecraftClientCompat.setScreen(this.minecraft,
+                new EntityGlowSearchScreen(this, draft.type, id -> this.applyTarget(draft, id.toString())));
+    }
+
+    private void applyTarget(Draft draft, String id)
+    {
+        draft.idText = id;
+        this.error = null;
+        this.needsRebuild = true;
+    }
+
+    private int distanceX()
+    {
+        return this.compact() ? this.contentX() : this.contentX() + this.contentWidth() - DISTANCE_WIDTH;
+    }
+
+    private int distanceOffsetY() { return this.tiny() ? 69 : this.compact() ? 46 : 0; }
 
     private Component typeLabel(EntityGlowRule.TargetType type)
     {
         return Component.translatable(type == EntityGlowRule.TargetType.ENTITY
-                ? "halfmasa.entity_glow.entity" : type == EntityGlowRule.TargetType.ITEM
-                ? "halfmasa.entity_glow.item" : "halfmasa.entity_glow.block");
+                ? "halfmasa.entity_glow.entity" : "halfmasa.entity_glow.item");
     }
 
     private void openColorEditor(Draft draft)
@@ -281,17 +345,29 @@ public final class EntityGlowRulesScreen extends GuiBase implements IKeybindConf
         //#endif
         if (this.drafts.isEmpty())
         {
+            Component hint = Component.translatable(this.blockRules
+                    ? "halfmasa.block_glow.empty_hint" : "halfmasa.entity_glow.empty_hint");
             //#if MC >= 26.1
-            graphics.centeredText(this.font, Component.translatable("halfmasa.entity_glow.empty_hint"),
-                    this.width / 2, 83, 0xFFDDDDDD);
+            graphics.centeredText(this.font, hint, this.width / 2, 83, 0xFFDDDDDD);
             //#else
-            //$$ this.drawString(graphics, Component.translatable("halfmasa.entity_glow.empty_hint").getString(),
+            //$$ this.drawString(graphics, hint.getString(),
             //$$         this.width / 2 - 70, 83, 0xFFDDDDDD);
             //#endif
         }
         for (int slot = 0; slot < this.visibleRows() && this.scroll + slot < this.drafts.size(); slot++)
         {
             Draft draft = this.drafts.get(this.scroll + slot);
+            int rowY = 60 + slot * this.rowHeight();
+            if (this.blockRules)
+            {
+                String distanceLabel = Component.translatable("halfmasa.entity_glow.block_distance").getString();
+                int labelY = rowY + this.distanceOffsetY() + 6;
+                //#if MC >= 26.1
+                graphics.text(this.font, distanceLabel, this.distanceX(), labelY, 0xFFDDDDDD, false);
+                //#else
+                //$$ this.drawString(graphics, distanceLabel, this.distanceX(), labelY, 0xFFDDDDDD);
+                //#endif
+            }
             //#if MC >= 1.21.11
             Identifier id = EntityGlowRule.normalizeId(draft.idText);
             //#else
@@ -301,10 +377,10 @@ public final class EntityGlowRulesScreen extends GuiBase implements IKeybindConf
             {
                 //#if MC >= 26.1
                 graphics.text(this.font, Component.translatable("halfmasa.entity_glow.missing").getString(),
-                        this.contentX() + 4, 81 + slot * this.rowHeight(), 0xFFFFAA55, false);
+                        this.contentX() + 4, rowY + this.rowHeight() - 9, 0xFFFFAA55, false);
                 //#else
                 //$$ this.drawString(graphics, Component.translatable("halfmasa.entity_glow.missing").getString(),
-                //$$         this.contentX() + 4, 81 + slot * this.rowHeight(), 0xFFFFAA55);
+                //$$         this.contentX() + 4, rowY + this.rowHeight() - 9, 0xFFFFAA55);
                 //#endif
             }
         }
@@ -355,8 +431,19 @@ public final class EntityGlowRulesScreen extends GuiBase implements IKeybindConf
                 this.error = Component.translatable("halfmasa.entity_glow.invalid_color");
                 return;
             }
+            Integer distance = EntityGlowRule.INHERIT_DISTANCE;
+            if (this.blockRules)
+            {
+                distance = EntityGlowRule.parseBlockDistance(draft.distanceText);
+                if (distance == null)
+                {
+                    this.error = Component.translatable("halfmasa.entity_glow.invalid_distance",
+                            index + 1, EntityGlowRule.MAX_BLOCK_DISTANCE);
+                    return;
+                }
+            }
             EntityGlowRule rule = new EntityGlowRule(draft.type, id, color, draft.enabled,
-                    hotkeyText(draft.hotkey));
+                    hotkeyText(draft.hotkey), distance);
             String key = rule.key();
             if (!seen.add(key))
             {
@@ -370,10 +457,9 @@ public final class EntityGlowRulesScreen extends GuiBase implements IKeybindConf
             }
             encoded.add(rule.encode());
         }
-        Configs.ENTITY_GLOW_RULES.setStrings(encoded);
-        Configs.BLOCK_GLOW_RULES.setStrings(List.of());
-        EntityGlowService.reload();
-        BlockGlowService.getInstance().reload();
+        EntityGlowRule.configFor(this.blockRules).setStrings(encoded);
+        if (this.blockRules) BlockGlowService.getInstance().reload();
+        else EntityGlowService.reload();
         GlowRuleHotkeys.reload();
         new Configs().save();
         MinecraftClientCompat.setScreen(this.minecraft, this.parent);
@@ -463,16 +549,25 @@ public final class EntityGlowRulesScreen extends GuiBase implements IKeybindConf
         private final ConfigHotkey hotkey = new ConfigHotkey("glowRuleDraft", "");
         private final ConfigColor color = new ConfigColor("glowRuleColor", "#FFFFFFFF");
         private EntityGlowRule.TargetType type;
-        private String idText;
+        private String idText = "";
         private String colorText;
-        private boolean enabled;
+        private String distanceText = "";
+        private boolean enabled = true;
+
+        private Draft(EntityGlowRule.TargetType type)
+        {
+            this.type = type;
+            this.colorText = this.color.getStringValue();
+        }
 
         private Draft(EntityGlowRule rule)
         {
-            this.type = rule.type();
+            this(rule.type());
             this.idText = rule.id().toString();
             this.color.setIntegerValue(rule.color());
             this.colorText = this.color.getStringValue();
+            this.distanceText = rule.distance() == EntityGlowRule.INHERIT_DISTANCE
+                    ? "" : Integer.toString(rule.distance());
             setHotkeyText(this.hotkey, rule.hotkey());
             this.enabled = rule.enabled();
         }

@@ -1,0 +1,22 @@
+{
+  "text.autoconfig.condensed_creative.title": "合併創造物品欄配置",
+  "text.autoconfig.condensed_creative.category.common": "通用",
+  "text.autoconfig.condensed_creative.category.debug_info": "除錯資訊",
+  "text.autoconfig.condensed_creative.category.client": "客戶端",
+  "text.autoconfig.condensed_creative.option.defaultCCGroups": "啟用內建合併條目",
+  "text.autoconfig.condensed_creative.option.defaultEntriesConfig": "內建條目配置",
+  "text.autoconfig.condensed_creative.option.defaultEntriesConfig.enchantmentBooks": "附魔書",
+  "text.autoconfig.condensed_creative.option.defaultEntriesConfig.tippedArrows": "藥箭",
+  "text.autoconfig.condensed_creative.option.defaultEntriesConfig.potions": "藥水",
+  "text.autoconfig.condensed_creative.option.entryRefreshButton": "顯示條目重新整理按鈕",
+  "text.autoconfig.condensed_creative.option.entryBackgroundColor": "顯示條目背景",
+  "text.autoconfig.condensed_creative.option.entryBorderColor": "顯示條目邊框",
+  "text.autoconfig.condensed_creative.option.condensedEntryBorderColor": "合併條目顏色",
+  "text.autoconfig.condensed_creative.option.rotationPreview": "啟用條目輪換預覽",
+  "text.autoconfig.condensed_creative.option.tagPreviewForEntries": "顯示標籤提示",
+  "text.autoconfig.condensed_creative.option.debugIdentifiersForEntries": "顯示內部識別符號",
+  "itemGroup.condensed_creative.test": "合併創造物品欄",
+  "itemGroup.condensed_creative.test.tab.building_blocks": "建築方塊",
+  "itemGroup.condensed_creative.test.tab.colored_blocks": "染色方塊",
+  "itemGroup.condensed_creative.test.tab.ingredients": "原材料"
+}

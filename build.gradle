@@ -54,12 +54,6 @@ tasks.register('buildAllVersions') {
                 from artifactTask.archiveFile
                 into archiveDir
             }
-            if (versionProject.mcVersion >= 26_03_00) {
-                copy {
-                    from versionProject.tasks.named('voidTradingServerJar').get().archiveFile
-                    into archiveDir
-                }
-            }
         }
         println "All version artifacts archived at ${archiveDir}"
     }

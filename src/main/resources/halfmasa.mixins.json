@@ -18,6 +18,48 @@
     "DragonFightBossEventAccessor"
   ],
   "client": [
+    //#if MC >= 1.21.1
+    "CreativeSurvivalReachMixin",
+    //#endif
+    //#if MC >= 1.21.11
+    "CreativeSurvivalAttackRangeMixin",
+    //#endif
+    "ContainerComparatorScreenMixin",
+    //#if MC >= 1.21.1
+    "CustomBlockModelFilterMixin",
+    "CustomBlockOcclusionMixin",
+    "CustomSodiumBlockFilterMixin",
+    "CustomSodiumBlockFaceFilterMixin",
+    "CustomSodiumBlockOcclusionMixin",
+    "CustomBlockEntityFilterMixin",
+    "CustomBlockOutlineFilterMixin",
+    "FluidTransparencyFogMixin",
+    "FluidTransparencyWaterOverlayMixin",
+    //#endif
+    "PlacementPreviewBlockItemInvoker",
+    "PlacementPreviewExtractMixin",
+    "PlacementPreviewFluidInvoker",
+    "PlacementPreviewCauldronInvoker",
+    "PlacementPreviewItemInvoker",
+    "PlacementPreviewRenderMixin",
+    "PlacementPreviewStairsInvoker",
+    "PlacementPreviewTweakerooAccessor",
+    //#if MC >= 1.21.1
+    "KelpCountSliderMixin",
+    "KelpCountSliderMixin$IntegerCallbackAccessor",
+    //#endif
+    //#if MC >= 1.21.1
+    "RegistryPickerListMixin",
+    //#if MC >= 1.21.8
+    "RegistryPickerEntityRenderMixin",
+    //#endif
+    "RegistryPickerListSizeAccessor",
+    "RegistryPickerStringEditorAccessor",
+    "RegistryPickerSelectionAccessor",
+    "RegistryPickerNativeMixin",
+    "RegistryPickerScrollMixin",
+    "RegistryPickerVisibleRowsAccessor",
+    //#endif
     "BetterMultiplayerPingMixin",
     "BetterMultiplayerEntryMixin",
     "BetterMultiplayerListMixin",
@@ -71,6 +113,11 @@
     "SelectWorldScreenMixin",
     "WorldSelectionListAccessor",
     "WorldSelectionListMixin",
+    //#if MC >= 1.21.1
+    "WorldListEntryStorageMixin",
+    "CreateWorldScreenMixin",
+    "WorldCreationUiStateAccessor",
+    //#endif
     "ItemEntityMixin",
     "ItemDespawnRenderStateMixin",
     "ItemDespawnLabelMixin",
@@ -79,6 +126,9 @@
     "BoatItemViewMixin",
     "BridgingMinecraftMixin",
     "BridgingGuiMixin",
+    //#if MC >= 1.21.1
+    "AllModeHudMixin",
+    //#endif
     "BridgingLevelRendererMixin",
     "BlockGlowLevelRendererMixin",
     "KeyMappingAccessor",
@@ -146,6 +196,12 @@
     "ImeTextScreenMixin",
     "ImeReiTextFieldMixin",
     "LiquidBlockRendererMixin",
+    "FluidTransparencyVanillaMixin",
+    //#if MC >= 1.21.1 && MC < 26.1
+    //$$ "FluidTransparencyLegacyLayerMixin",
+    //#endif
+    "FluidTransparencySodiumLayerMixin",
+    "FluidTransparencySodiumColorMixin",
     "SodiumFluidRendererMixin",
     "SodiumLevelSliceFluidMixin",
     "PlantModelOffsetMixin",

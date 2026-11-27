@@ -9,4 +9,15 @@ public interface WorldSelectionListAccessor
 {
     @Invoker("reloadWorldList")
     void halfmasa$reloadWorldList();
+    //#if MC >= 1.21.1
+    @org.spongepowered.asm.mixin.gen.Accessor("currentlyDisplayedLevels")
+    java.util.List<net.minecraft.world.level.storage.LevelSummary> halfmasa$getLevels();
+
+    @org.spongepowered.asm.mixin.gen.Accessor("filter")
+    String halfmasa$getFilter();
+
+    @Invoker("fillLevels")
+    void halfmasa$fillLevels(String filter, java.util.List<net.minecraft.world.level.storage.LevelSummary> levels);
+
+    //#endif
 }

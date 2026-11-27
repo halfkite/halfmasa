@@ -2,9 +2,46 @@
 
 # halfmasa Features and Configuration
 
+## New Helpful-Tweake Features (all project targets)
+
+The adventure mode icon uses a filled map on 26.1.2 and 26.2.
+
+- **Container Comparator Output** displays the estimated signal strength using the contents synchronized to the open container screen. Feature source: Helpful-Tweake.
+- **Survival Reach in Creative** applies survival reach rules to block and entity interactions and weapon attacks in Creative mode. The toggle has a configurable hotkey that is unbound by default. Tweakeroo's block and entity reach overrides take precedence independently. Feature source: Helpful-Tweake.
+- **All Mode HUD** offers separate status bar toggles for Creative and Spectator, with independent settings for the experience bar and game mode icons. Show Hotbar in Spectator is off by default. When enabled, it displays your own hotbar whenever the spectator menu is closed. Feature source: Helpful-Tweake.
+- **Auto Kelp Clearing** clears visible kelp within interaction range and supports targeting the base and optionally restricting the scan to a Litematica selection. Manual input takes priority. Feature source: Helpful-Tweake.
+
+All four features are disabled by default.
+
 ## Better Multiplayer Server List (All Project Targets)
 
 Includes address privacy, OBS status detection, latency and folders. Server rows retain vanilla height, with latency directly below the player count. Show compact icons when collapsed is enabled by default: collapsed folders show wrapping server icons with names and connection state inside each icon; hover to move left/right or join. Full details remain available in tooltips. See [usage and validation notes](better_multiplayer.md). This feature is synchronized and validated on all project targets: 1.21.1, 1.21.3, 1.21.4, 1.21.5, 1.21.8, 1.21.10, 1.21.11, 26.1.2, 26.2 and 26.3.
+
+Server Favorites is off by default. Enable it to pin servers within their folder using the star on the left of each row. Turning it off preserves the saved stars.
+
+## Better Registry Picker (all project targets)
+
+Feature source: Helpful-Tweake.
+
+Better Registry Picker is enabled by default in Generic. Block, entity and dropped-item highlight rules share the picker with compatible registry lists. Open it with the four-tile button to search by registry ID, translated name or `@namespace`. JustEnoughCharacters adds pinyin search when installed. Selecting changes the current entry's ID and leaves saving to the original editor. Turning the switch off restores the original pickers.
+
+Hover over an entry to see its name in a vanilla tooltip. The picker shows entity models by default in a world. Turn off Picker Entity Models in Generic to use item icons. The four-tile button can select the first entry in an empty entity list.
+
+## Fluid Transparency (all project targets)
+
+Feature source: Helpful-Tweake. Water and lava each have a toggle and hotkey row and a separate percentage row. The master and both fluid toggles default to off. At 100% transparency, they retain 15% and 10% of their original opacity respectively. Existing fluid-hiding options take precedence. Supports vanilla rendering and Sodium Fabric 0.9.2, 0.9.3-beta.5, 0.9.3, 0.9.4-beta.1 and 0.9.4-beta.2 on Minecraft 26.3. Minecraft 1.21.1, 1.21.3, 1.21.4 and 1.21.5 support vanilla rendering and their corresponding Sodium Fabric 0.6.13 builds. Minecraft 1.21.8 and 1.21.10 support vanilla rendering and Sodium Fabric 0.7.3. Minecraft 1.21.11 supports vanilla rendering and Sodium Fabric 0.8.14. Minecraft 26.1.2 and 26.2 support vanilla rendering and Sodium Fabric 0.9.2.
+
+Transparency Inside Fluids is enabled by default. When the camera is submerged, the matching water or lava setting reduces fog and underwater overlay opacity. Disable it to restore the original interior effects.
+
+## Block and Entity Render Filters (all project targets)
+
+Feature source: Helpful-Tweake. Blocks and entities each have a separate blacklist and whitelist in the native MaLiLib editor, with support for Better Registry Picker. Blacklist hides listed entries, Whitelist shows only listed entries, and No List hides everything. The local player and camera entity remain visible. Leaving halfmasa settings reloads resource packs and applies block list changes. Previous lists migrate with equivalent visibility.
+
+Block render filtering supports vanilla rendering and Sodium Fabric 0.9.2, 0.9.3-beta.5, 0.9.3, 0.9.4-beta.1 and 0.9.4-beta.2 on Minecraft 26.3. Minecraft 1.21.1, 1.21.3, 1.21.4 and 1.21.5 support vanilla rendering and their corresponding Sodium Fabric 0.6.13 builds. Minecraft 1.21.8 and 1.21.10 support vanilla rendering and Sodium Fabric 0.7.3. Minecraft 1.21.11 supports vanilla rendering and Sodium Fabric 0.8.14. Minecraft 26.1.2 and 26.2 support vanilla rendering and Sodium Fabric 0.9.2.
+
+## Block Placement Preview (all project targets)
+
+Feature source: Helpful-Tweake. Off by default, with translucent models and outlines. The water and lava previews estimate the changes caused by emptying a bucket, taking nearby fluid levels in loaded chunks into account. An existing source of the same fluid gets a target outline. Using a bucket on a cauldron previews its contents. Using it while crouching previews flow from the adjacent space on the hit side. A warning outline marks prediction limits and contact between different fluids. Tweakeroo compatibility includes Angel Block in Creative mode with Tweakeroo 0.21.59 on 1.21.1, 0.22.8 on 1.21.3, 0.23.4 on 1.21.4, 0.24.3 on 1.21.5, 0.25.6 on 1.21.8, 0.26.2 on 1.21.10, 0.27.12 on 1.21.11, 0.28.7 on 26.1.2, 0.29.4 on 26.2 and 0.30.1 on 26.3. The preview is client-side.
 
 ## Masa Favorites (All Project Targets)
 
@@ -16,7 +53,7 @@ Version 1.7.0 backports range feeding, Auto Eat, Better Boss Bar, invisible bloc
 
 Conflux Map 0.1.11-beta.1 requires Fabric Loader 0.19.0+ on 26.x; integration checks use 0.19.5. The standalone HalfMasa minimum remains defined by its mod metadata.
 
-> Documentation version `1.7.0` | Open the configuration screen with `X + H` (or from Mod Menu) | Disabled by default unless noted; an empty hotkey means unbound
+> Documentation version `1.8.0` | Open the configuration screen with `X + H` (or from Mod Menu) | Disabled by default unless noted; an empty hotkey means unbound
 
 The screen displays “Click [+] to expand sub-settings” at the top. Opening, closing or saving unrelated settings does not rebuild chunks; changing actual fluid visibility still triggers the required refresh. Chinese-English spacing updates only the language, without reloading all resource packs.
 
@@ -71,6 +108,7 @@ Disabled by default in the client configuration, with an independent optional ho
 | `itemDespawnTimer` | `false` | Independent timer switch |
 | `itemDespawnSource` | Auto | Auto / Servux / client estimate |
 | `itemDespawnFormat` | Minutes:seconds | Minutes:seconds / seconds / game ticks |
+| `itemDespawnDisplay` | Always | Click or bind the shortcut on the same row to cycle Always, When Targeted, and Never. |
 | `itemDespawnThroughWalls` | `true` | Show labels behind blocks |
 | `itemDespawnMaxLabels` | `64` | Prefer the nearest 8–256 labels |
 | `itemDespawnSyncInterval` | `20` ticks | Minimum server Age request interval, range 10–200; at most 4 requests submitted per tick |
@@ -265,21 +303,35 @@ Ordinary Servux entity replies are implemented. Splitter packets 10/11 are curre
 | Name | Type | Default | Description |
 |---|---|---|---|
 | Custom save paths<br>`customSavesPaths` | String list | `[]` | Custom save directories can be absolute or relative to the game directory. Click the current path in the top-left of world selection to switch immediately; vanilla `saves` remains available. |
+| Better World Management<br>`betterWorldSaves` (all project targets) | Boolean | `false` | Expand to configure save locations, folders, path labels, favorites, dragging and empty-list behavior. |
+| World folders<br>`worldSaveFolders` (all project targets) | Boolean | `true` | Save locations expand independently in the Singleplayer list. Use the folder button to create subfolders. |
+| Show folder paths<br>`worldSaveShowPaths` (all project targets) | Boolean | `true` | Show paths beside folder names. Turn off to keep only the notes. |
+| World favorites<br>`worldSaveFavorites` (all project targets) | Boolean | `false` | Enable the left-side star to pin worlds within their group. Turning this off preserves your saved favorites. |
+| Allow Dragging Worlds<br>`worldSaveDrag` (all project targets) | Boolean | `true` | Drag the text area to reorder or regroup within the same save location. Drop onto the containing save location to ungroup a world. Dropping across locations shows a message. |
+| Choose Save Location When Creating<br>`worldSaveCreateChoosePath` (all project targets) | Boolean | `true` | When Better World Management is enabled, choose a location for this world from the default and configured locations. Defaults to the location selected in Singleplayer. |
+| Create Worlds Without Joining<br>`worldSaveCreateWithoutJoin` (all project targets) | Boolean | `false` | Return to Singleplayer after saving the world. Terrain generates the first time you join. |
 | Keep world selection when empty<br>`keepWorldSelectionOnEmpty` | Boolean | `false` | If the selected directory contains no worlds, clicking “Singleplayer” still opens world selection instead of jumping to world creation. |
 
 ## Entity and Block Highlights
 
 | Name | Type | Default | Description |
 |---|---|---|---|
-| Entity and block highlights<br>`entityGlowHighlight` | Boolean with hotkey | `false` | Outline entities and dropped items, plus configured blocks through walls; client side only. |
-| Entity highlight mode<br>`entityGlowMode` | Option list | All | Highlight all entities and dropped items, or only enabled rules; blocks always follow their rules. |
+| Entity highlight<br>`entityGlowHighlight` | Boolean with hotkey | `false` | Show glowing outlines for entities and dropped items on the client. |
+| Entity highlight mode<br>`entityGlowMode` | Option list | All | Highlight all entities and dropped items or only those with enabled rules. |
 | Switch entity highlight mode<br>`entityGlowModeHotkey` | Hotkey | Unbound | Switch between all and individual modes without enabling the main switch. |
 | Highlight all color<br>`entityGlowAllColor` | Color | White | Outline color in all mode. |
-| Highlight rule editor<br>`entityGlowRuleEditor` | Action | — | Set colors, enabled states, and hotkeys by entity, item, or block ID; changes apply after saving. |
+| Entity highlight rules<br>`entityGlowRuleEditor` | Action | — | Set colors, enabled states and hotkeys by entity or dropped-item ID. |
+| Block highlight<br>`blockGlowHighlight` | Boolean with hotkey | `false` | Show block outlines through walls in chunks loaded by the client. |
+| Global block highlight distance<br>`blockGlowDistance` | Integer | `16` | Set a distance from 1 to 128 blocks. |
+| Block highlight list<br>`blockGlowRuleEditor` | Action | — | Set colors, distances, enabled states and hotkeys by block ID. Leave the distance blank to inherit the global value. |
 
 ## Entity Aggregation Rendering
 
 Mob and dropped-item aggregation have separate expandable settings, refresh schedules, filters and label positions. Merge count means the minimum number of entities; previous settings are converted to preserve their trigger count.
+
+In Minecraft 26.3, each group has a Merged Count Display option. Click it or bind its cycle hotkey to switch between Always (the default), When Targeted, and Never. When Targeted shows only the label for the group under the crosshair.
+
+When a dropped pile's count and countdown are both visible, they share one label that follows the countdown's through-walls setting. Dropped-item and entity labels are positioned together to avoid overlapping.
 
 | Name | Type | Default | Description |
 |---|---|---|---|
@@ -301,6 +353,7 @@ Mob and dropped-item aggregation have separate expandable settings, refresh sche
 | Merge dropped-item rendering<br>`itemRenderAggregation` | Boolean | `true` | Render one model per stack; merge nearby item entities with matching items and components, showing total item quantity. |
 | Dropped item merge count<br>`itemAggregationThreshold` | Integer | `2` | Minimum number of dropped stack entities required to merge. |
 | Dropped item merge radius<br>`itemAggregationRadius` | Decimal | `1` | Maximum neighbor distance for chained item aggregation. |
+| Item Name Display<br>`itemAggregationNameDisplay` | Option | `Show Name` | Show when targeted, hide, or always show the name independently of count and despawn time. |
 | Dropped item list mode<br>`itemAggregationListMode` | Option list | No list | Whitelist handles listed items only; blacklist excludes listed items. |
 | Dropped item whitelist<br>`itemAggregationWhitelist` | String list | `[]` | Item IDs, such as `minecraft:stone`; an empty whitelist handles no items. |
 | Dropped item blacklist<br>`itemAggregationBlacklist` | String list | `[]` | Item IDs excluded from aggregation. |
@@ -362,15 +415,17 @@ MiniHUD Container Preview Optimization is under Other Mod Extensions. It default
 
 MiniHUD Independent Preview defaults to off under Other Mod Extensions, with an unbound toggle hotkey. Enabling it keeps world-container previews available with the original MiniHUD preview key while its main rendering toggle is off. MiniHUD preview controls, background colors and target detection remain in use. When the main toggle is on, MiniHUD handles the preview once through its native path; when off, only the world-container preview is added and info lines remain disabled. Item, bundle, ender chest and map tooltip previews retain their settings. This toggle is independent of preview optimization and does nothing without MiniHUD.
 
-## Jade large barrel compatibility (26.1.2, 26.2, 26.3)
+## Jade large barrel compatibility (all supported versions)
 
 Enable Jade Large Barrel Compatibility (`jadeLargeBarrel`) under Other Mod Extensions. It defaults to off with an unbound toggle hotkey. Use it on TIS `largeBarrel` servers where Jade only returns the targeted half. Install HalfMasa and Jade on the client; the server needs Jade, Carpet and TIS. Servux and server HalfMasa are not required.
 
 Alternates between the halves at Jade's existing request rate and combines identical items and components in the native preview. Supports all six facings, empty halves and large totals. The first complete preview needs two responses. World changes, disabling, removed or rotated barrels and expired responses invalidate the combined preview. Missing, locked and unopened-loot responses are excluded. Without Jade, these mixins do not apply.
 
-Disable this switch if another server integration already returns the complete 54-slot inventory, to avoid double counting. Without client TIS, the server rule cannot be detected automatically; enable only after confirming `largeBarrel` is active. Baseline verification uses Minecraft 26.3, Jade 26.3.5+fabric and TIS 1.82.4.
+Matching replies keep Jade's native preview to avoid counting a complete inventory twice. The same rule applies when two half-barrels contain identical item totals. If the client lacks TIS, enable the switch only after confirming that the server has enabled `largeBarrel`.
 
-26.2 (Jade 26.2.11) and 26.1.2 (Jade 26.1.9) use the same compensation. 1.21.1, 1.21.3, 1.21.4, 1.21.5, 1.21.8, 1.21.10 and 1.21.11 retain native Jade handling without an extra merge switch: their respective Jade 15.10.6, 16.0.4, 17.2.2, 18.2.0, 19.3.2, 20.0.5 and 21.1.6 builds already returned the full 54-slot inventory with TIS 1.82.4 in real-world checks. Another merge would duplicate counts. Checks used an integrated single-player server; remote servers need matching Jade, Carpet and TIS with `largeBarrel` enabled.
+## Simplified and Traditional Chinese mod language fallback
+
+HalfMasa and Condensed Creative include Traditional Chinese. The fallback defaults to on in General settings. A mod that lacks a language file for the selected Chinese locale can use its other Chinese language file. Native translations and resource pack priority are preserved. The fallback runs when Simplified or Traditional Chinese is selected.
 
 ## Automatically open chat
 

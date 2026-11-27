@@ -57,6 +57,10 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+//#if MC >= 1.21.1
+import net.minecraft.world.phys.AABB;
+import io.github.halfmasa.xaerobinding.config.AggregationCountDisplayMode;
+//#endif
 
 import io.github.halfmasa.xaerobinding.config.Configs;
 import io.github.halfmasa.xaerobinding.config.EntityAggregationListMode;
@@ -67,6 +71,10 @@ public final class EntityRenderAggregation implements IClientTickHandler
     private final Map<Integer, Group> groupsByEntityId = new HashMap<>();
     private ClientLevel trackedLevel;
     private long lastRebuildTick = Long.MIN_VALUE;
+    //#if MC >= 1.21.1
+    private Entity pointedRepresentative;
+    private ClientLevel labelLevel;
+    //#endif
 //#if MC >= 1.21.1
     // Only numeric, immutable entity snapshots cross this thread boundary.
     private static final ExecutorService COUNT_EXECUTOR = Executors.newSingleThreadExecutor(task -> {
@@ -110,7 +118,11 @@ public final class EntityRenderAggregation implements IClientTickHandler
 //#endif
                 )
         {
-            clear();
+            //#if MC >= 1.21.1
+            if (this.trackedLevel != null) clear();
+            //#else
+            //$$ clear();
+            //#endif
             return;
         }
 
@@ -162,6 +174,15 @@ public final class EntityRenderAggregation implements IClientTickHandler
                         }).findFirst().orElse(-1);
             }
         }
+        //#if MC >= 1.21.1
+        Minecraft client = Minecraft.getInstance();
+        if (this.labelLevel != client.level)
+        {
+            this.labelLevel = client.level;
+            this.previousLabelOffsets.clear();
+        }
+        this.pointedRepresentative = this.findPointedRepresentative(client);
+        //#endif
         //#if MC >= 1.21.1 && MC < 1.21.10
         //$$ layoutLegacyLabels();
         //#endif
@@ -227,8 +248,94 @@ public final class EntityRenderAggregation implements IClientTickHandler
     public Component getLabel(Entity entity)
     {
         Group group = this.groupsByEntityId.get(entity.getId());
-        return group != null && group.representativeId == entity.getId() ? group.label : null;
+        if (group == null || group.representativeId != entity.getId()) return null;
+        //#if MC >= 1.21.1
+        if (group.item)
+        {
+            boolean pointed = this.pointedRepresentative == entity;
+            boolean name = itemNameDisplayMode().visible(pointed);
+            var mode = countDisplayMode(true);
+            boolean count = mode == AggregationCountDisplayMode.ALWAYS
+                    || mode == AggregationCountDisplayMode.TARGETED && pointed;
+            if (name && count) return group.label;
+            if (name) return group.displayName;
+            return count ? Component.literal(Integer.toString(group.itemCount)) : null;
+        }
+        return switch (countDisplayMode(group.item))
+        {
+            case ALWAYS -> group.label;
+            case TARGETED -> this.pointedRepresentative == entity ? group.label : null;
+            case HIDDEN -> null;
+        };
+        //#else
+        //$$ return group.label;
+        //#endif
     }
+
+    //#if MC >= 1.21.1
+    private static io.github.halfmasa.xaerobinding.config.ItemAggregationNameDisplayMode itemNameDisplayMode()
+    {
+        return (io.github.halfmasa.xaerobinding.config.ItemAggregationNameDisplayMode)
+                Configs.ITEM_AGGREGATION_NAME_DISPLAY.getOptionListValue();
+    }
+
+    private static AggregationCountDisplayMode countDisplayMode(boolean item)
+    {
+        return (AggregationCountDisplayMode) (item ? Configs.ITEM_AGGREGATION_COUNT_DISPLAY
+                : Configs.ENTITY_AGGREGATION_COUNT_DISPLAY).getOptionListValue();
+    }
+
+    private Entity findPointedRepresentative(Minecraft client)
+    {
+        if (client.level == null || client.player == null) return null;
+        boolean hasGroups = this.trackedLevel == client.level && !this.groupsByEntityId.isEmpty();
+        boolean targetItems = hasGroups && Configs.ITEM_RENDER_AGGREGATION.getBooleanValue()
+                && (countDisplayMode(true) == AggregationCountDisplayMode.TARGETED
+                || itemNameDisplayMode() == io.github.halfmasa.xaerobinding.config.ItemAggregationNameDisplayMode.TARGETED);
+        boolean targetEntities = hasGroups && Configs.ENTITY_RENDER_AGGREGATION.getBooleanValue()
+                && countDisplayMode(false) == AggregationCountDisplayMode.TARGETED;
+        boolean targetTimers = Configs.ITEM_DESPAWN_TIMER.getBooleanValue()
+                && Configs.ITEM_DESPAWN_DISPLAY.getOptionListValue() == AggregationCountDisplayMode.TARGETED;
+        if (!targetItems && !targetEntities && !targetTimers) return null;
+        Entity camera = client.getCameraEntity();
+        if (camera == null) return null;
+
+        //#if MC >= 1.21.3
+        float partialTick = client.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        //#else
+        //$$ float partialTick = client.getTimer().getGameTimeDeltaPartialTick(false);
+        //#endif
+        Vec3 start = camera.getEyePosition(partialTick);
+        // Limit the ray at the first block. Item entities need their own hitbox test because vanilla does not pick them.
+        Vec3 end = camera.pick(client.player.entityInteractionRange(), partialTick, false).getLocation();
+        Entity pointed = null;
+        double nearest = start.distanceToSqr(end);
+        for (Entity entity : client.level.getEntities(camera, new AABB(start, end).inflate(1.0D),
+                candidate -> !candidate.isRemoved() && !candidate.isSpectator()))
+        {
+            Group group = hasGroups ? this.groupsByEntityId.get(entity.getId()) : null;
+            if (group != null && group.representativeId != entity.getId()
+                    || EntityRenderDisableService.shouldHide(entity)) continue;
+            boolean target = targetTimers && entity instanceof ItemEntity
+                    || group != null && (group.item ? targetItems : targetEntities);
+            if (!target && !entity.isPickable()) continue;
+
+            AABB bounds = entity.getBoundingBox().move(entity.getPosition(partialTick).subtract(entity.position()))
+                    .inflate(entity.getPickRadius());
+            Vec3 hit = bounds.contains(start) ? start : bounds.clip(start, end).orElse(null);
+            if (hit == null) continue;
+            double distance = start.distanceToSqr(hit);
+            if (distance < nearest)
+            {
+                nearest = distance;
+                pointed = target ? entity : null;
+            }
+        }
+        return pointed;
+    }
+
+    public boolean isPointed(Entity entity) { return this.pointedRepresentative == entity; }
+    //#endif
 
     //#if MC >= 1.21.1 && MC < 1.21.10
     //$$ public Vec3 getLabelOffset(Entity entity) { return legacyLabelOffsets.getOrDefault(entity.getId(), Vec3.ZERO); }
@@ -256,13 +363,19 @@ public final class EntityRenderAggregation implements IClientTickHandler
     //$$     var clipDepths = new HashMap<Integer, Float>();
     //$$     for (Group group : new HashSet<>(groupsByEntityId.values())) {
     //$$         Entity entity = client.level.getEntity(group.representativeId);
-    //$$         if (entity == null || group.label == null) continue;
+    //$$         if (entity == null) continue;
+    //$$         Component text = getLabel(entity);
+    //$$         if (text == null) continue;
+    //$$         if (entity instanceof ItemEntity item) {
+    //$$             var merged = ItemDespawnLabelRenderer.legacySnapshot(item);
+    //$$             if (merged != null) text = merged.text();
+    //$$         }
     //$$         boolean side = isSideLabel(entity);
     //$$         Vec3 relative = entity.getPosition(partial).subtract(camera.getPosition());
     //$$         Vector4f clip = projection.transform(new Vector4f((float) (relative.x + (side ? entity.getBbWidth() * 0.5D + 0.35D : 0)), (float) (relative.y + (side ? entity.getBbHeight() * 0.5D : entity.getBbHeight() + 0.5D)), (float) relative.z, 1));
     //$$         if (!Float.isFinite(clip.w) || clip.w <= 0 || Math.abs(clip.x) > clip.w || Math.abs(clip.y) > clip.w || Math.abs(clip.z) > clip.w) continue;
     //$$         double sx = NAME_TAG_SCALE * Math.abs(focalX) * width / (2 * clip.w), sy = NAME_TAG_SCALE * Math.abs(focalY) * height / (2 * clip.w);
-    //$$         labels.add(new AggregationLabelLayout.Label(entity.getId(), (clip.x / clip.w + 1) * width / 2, (1 - clip.y / clip.w) * height / 2, (client.font.width(group.label) + 2) * sx, (client.font.lineHeight + 2) * sy, relative.lengthSqr()));
+    //$$         labels.add(new AggregationLabelLayout.Label(entity.getId(), (clip.x / clip.w + 1) * width / 2, (1 - clip.y / clip.w) * height / 2, (client.font.width(text) + 2) * sx, (client.font.lineHeight + 2) * sy, relative.lengthSqr()));
     //$$         clipDepths.put(entity.getId(), clip.w);
     //$$     }
     //$$     for (var placement : AggregationLabelLayout.arrange(labels, LABEL_GAP_PIXELS, previousLabelOffsets)) {
@@ -276,6 +389,9 @@ public final class EntityRenderAggregation implements IClientTickHandler
 
     public void clear()
     {
+        //#if MC >= 1.21.1
+        this.pointedRepresentative = null;
+        //#endif
 //#if MC >= 1.21.1
         this.entityScan.cancel();
         this.itemScan.cancel();
@@ -300,6 +416,12 @@ public final class EntityRenderAggregation implements IClientTickHandler
     /** All visible representatives must be extracted before resolving screen-space collisions. */
     public void layoutLabels(LevelRenderState levelState)
     {
+        //#if MC >= 1.21.1
+        if (Configs.ITEM_DESPAWN_TIMER.getBooleanValue())
+        {
+            this.previousLabelOffsets.keySet().retainAll(new HashSet<>(this.frameLabels.values()));
+        }
+        //#endif
         if (this.frameLabels.size() < 2)
         {
             return;
@@ -326,8 +448,18 @@ public final class EntityRenderAggregation implements IClientTickHandler
         for (EntityRenderState state : levelState.entityRenderStates)
         {
             Integer id = this.frameLabels.get(state);
-            if (id == null || state.nameTag == null || state.nameTagAttachment == null) continue;
+            if (id == null) continue;
+            Component text = state.nameTag;
             Vec3 attachment = state.nameTagAttachment;
+            //#if MC >= 1.21.1
+            if (state instanceof ItemDespawnLabelState itemState && itemState.halfmasa$getDespawnLabel() != null)
+            {
+                var label = itemState.halfmasa$getDespawnLabel();
+                text = label.text();
+                attachment = label.attachment();
+            }
+            //#endif
+            if (text == null || attachment == null) continue;
             Vector4f clip = projection.transform(new Vector4f(
                     (float) (state.x + attachment.x - camera.pos.x),
                     (float) (state.y + attachment.y + NAME_TAG_Y_OFFSET - camera.pos.y),
@@ -337,7 +469,7 @@ public final class EntityRenderAggregation implements IClientTickHandler
             double scaleX = NAME_TAG_SCALE * Math.abs(focalX) * width / (2.0D * clip.w);
             double scaleY = NAME_TAG_SCALE * Math.abs(focalY) * height / (2.0D * clip.w);
             // Include vanilla's nameplate background and shadow around the glyphs.
-            double textWidth = (client.font.width(state.nameTag) + 2) * scaleX;
+            double textWidth = (client.font.width(text) + 2) * scaleX;
             double textHeight = (client.font.lineHeight + 2) * scaleY;
             labels.add(new AggregationLabelLayout.Label(id,
                     (clip.x / clip.w + 1) * width / 2.0D,
@@ -357,6 +489,15 @@ public final class EntityRenderAggregation implements IClientTickHandler
             float viewY = (float) (-2 * placement.offsetY() * label.clipW() / (height * focalY));
             Vector3f offset = inverseView.transformDirection(new Vector3f(0, viewY, 0));
             EntityRenderState state = label.state();
+            //#if MC >= 1.21.1
+            if (state instanceof ItemDespawnLabelState itemState && itemState.halfmasa$getDespawnLabel() != null)
+            {
+                var timer = itemState.halfmasa$getDespawnLabel();
+                itemState.halfmasa$setDespawnLabel(new ItemDespawnLabelState.Label(timer.text(),
+                        timer.attachment().add(offset.x, offset.y, offset.z), timer.throughWalls()));
+                continue;
+            }
+            //#endif
             state.nameTagAttachment = state.nameTagAttachment.add(offset.x, offset.y, offset.z);
         }
     }
@@ -451,7 +592,10 @@ public final class EntityRenderAggregation implements IClientTickHandler
                 this.groupsByEntityId.put(entityId, group);
             }
         }
-        this.previousLabelOffsets.keySet().retainAll(this.groupsByEntityId.keySet());
+        //#if MC >= 1.21.1
+        if (!Configs.ITEM_DESPAWN_TIMER.getBooleanValue())
+        //#endif
+            this.previousLabelOffsets.keySet().retainAll(this.groupsByEntityId.keySet());
     }
 
     private Snapshot capture(ClientLevel level, Minecraft client, boolean item)

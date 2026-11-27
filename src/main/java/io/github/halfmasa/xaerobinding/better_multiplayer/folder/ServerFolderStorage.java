@@ -15,6 +15,9 @@ public final class ServerFolderStorage {
         public String lastName;
         public String lastAddress;
         public int lastIndex;
+        //#if MC >= 1.21.1
+        public boolean favorite;
+        //#endif
         public Assignment(String id, String name, String address, int index) {
             entryId = id; lastName = name; lastAddress = address; lastIndex = index; order = index;
         }

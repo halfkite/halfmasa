@@ -31,7 +31,8 @@ public final class GlowRuleHotkeys
             //$$ hotkey.setValueFromString(rule.hotkey());
             //#endif
             String key = rule.key();
-            hotkey.getKeybind().setCallback((action, binding) -> toggle(key));
+            boolean blocks = rule.type() == EntityGlowRule.TargetType.BLOCK;
+            hotkey.getKeybind().setCallback((action, binding) -> toggle(key, blocks));
             updated.add(hotkey);
         }
         hotkeys = List.copyOf(updated);
@@ -40,26 +41,22 @@ public final class GlowRuleHotkeys
         manager.updateUsedKeys();
     }
 
-    private static boolean toggle(String key)
+    private static boolean toggle(String key, boolean blocks)
     {
-        List<String> encoded = new ArrayList<>();
-        boolean found = false;
-        for (EntityGlowRule rule : EntityGlowRule.loadAll())
+        var config = EntityGlowRule.configFor(blocks);
+        List<String> encoded = new ArrayList<>(config.getStrings());
+        for (int index = 0; index < encoded.size(); index++)
         {
-            if (rule.key().equals(key))
-            {
-                rule = new EntityGlowRule(rule.type(), rule.id(), rule.color(), !rule.enabled(), rule.hotkey());
-                found = true;
-            }
-            encoded.add(rule.encode());
+            EntityGlowRule rule = EntityGlowRule.parse(encoded.get(index));
+            if (rule == null || !rule.key().equals(key)) continue;
+            encoded.set(index, rule.withEnabled(!rule.enabled()).encode());
+            config.setStrings(encoded);
+            if (blocks) BlockGlowService.getInstance().reload();
+            else EntityGlowService.reload();
+            new Configs().save();
+            return true;
         }
-        if (!found) return false;
-        Configs.ENTITY_GLOW_RULES.setStrings(encoded);
-        Configs.BLOCK_GLOW_RULES.setStrings(List.of());
-        EntityGlowService.reload();
-        BlockGlowService.getInstance().reload();
-        new Configs().save();
-        return true;
+        return false;
     }
 }
 //#endif

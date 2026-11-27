@@ -1,4 +1,4 @@
-//#if MC >= 26.1
+//#if MC >= 1.21.1
 package io.github.halfmasa.xaerobinding.feature.jade;
 
 import java.lang.reflect.Field;
@@ -16,7 +16,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+//#if MC >= 1.21.11
 import net.minecraft.util.Util;
+//#else
+//$$ import net.minecraft.Util;
+//#endif
+//#if MC < 1.21.9
+//$$ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+//#endif
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
@@ -26,7 +33,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import snownee.jade.addon.universal.ItemCollector;
-import snownee.jade.addon.universal.ItemStorageProvider;
 import snownee.jade.api.Accessor;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IServerDataProvider;
@@ -35,7 +41,9 @@ import snownee.jade.api.view.ViewGroup;
 import snownee.jade.impl.BlockAccessorImpl;
 import snownee.jade.impl.ObjectDataCenter;
 import snownee.jade.network.RequestBlockPacket;
+//#if MC >= 1.21.9
 import snownee.jade.util.ClientProxy;
+//#endif
 
 /** Client-only compensation for servers whose Jade provider returns individual TIS barrel halves. */
 public final class JadeBarrelPreview
@@ -53,6 +61,10 @@ public final class JadeBarrelPreview
     private static long sequence;
     private static int nextHalf;
     private static boolean nativeCombined;
+    //#if MC >= 1.21.1
+    private static boolean comparableSamples;
+    private static boolean distinctSamples;
+    //#endif
     private static boolean sorted, details;
     private static List<ViewGroup<ItemStack>> combined;
     private static Field tisRule;
@@ -88,6 +100,9 @@ public final class JadeBarrelPreview
         nextHalf = 0;
         nativeCombined = false;
         combined = null;
+        //#if MC >= 1.21.1
+        comparableSamples = false;
+        //#endif
         for (int i = 0; i < 2; i++) { REQUESTS[i] = null; SAMPLES[i] = null; }
     }
 
@@ -152,10 +167,13 @@ public final class JadeBarrelPreview
             pair = target;
             if (target != null) nextHalf = ((BlockAccessor) accessor).getPosition().equals(target.first) ? 0 : 1;
         }
-        boolean sort = accessor.getServerData().getBooleanOr("SortItems", false);
+        boolean sort = booleanTag(accessor.getServerData(), "SortItems");
         if (sorted != sort || details != accessor.showDetails())
         {
             combined = null;
+            //#if MC >= 1.21.1
+            comparableSamples = false;
+            //#endif
             SAMPLES[0] = SAMPLES[1] = null;
             REQUESTS[0] = REQUESTS[1] = null;
             sorted = sort;
@@ -168,7 +186,10 @@ public final class JadeBarrelPreview
     public static boolean request(BlockAccessor accessor, List<IServerDataProvider<BlockAccessor>> providers)
     {
         Pair target = bind(accessor);
-        if (target == null || nativeCombined || !providers.contains(ItemStorageProvider.BLOCK)) return false;
+        if (target == null || nativeCombined) return false;
+        var storage = providers.stream().filter(provider -> JadeIds.UNIVERSAL_ITEM_STORAGE.equals(provider.getUid()))
+                .findFirst().orElse(null);
+        if (storage == null) return false;
         long now = Util.getMillis();
         int half = nextHalf;
         if (REQUESTS[half] != null && now - REQUESTS[half].sent < REQUEST_TIMEOUT_MS)
@@ -176,23 +197,33 @@ public final class JadeBarrelPreview
         if (REQUESTS[half] != null && now - REQUESTS[half].sent < REQUEST_TIMEOUT_MS) return true;
         BlockPos position = half == 0 ? target.first : target.second;
         boolean primary = position.equals(accessor.getPosition());
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(position), accessor.getSide(), position, false);
+        //#if MC >= 1.21.9
         CompoundTag data = primary ? accessor.getServerData().copy() : new CompoundTag();
         long id = ++sequence;
         data.putLong(REQUEST_ID, id);
         data.putBoolean("SortItems", sorted);
         data.putInt("MaxItemCount", accessor.getServerData().getIntOr("MaxItemCount", ItemCollector.MAX_SIZE));
-        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(position), accessor.getSide(), position, false);
         REQUESTS[half] = new Request(id, half, target, accessor, now);
         nextHalf = 1 - half;
-        List<IServerDataProvider<BlockAccessor>> requestedProviders = primary ? providers : List.of(ItemStorageProvider.BLOCK);
+        List<IServerDataProvider<BlockAccessor>> requestedProviders = primary ? providers : List.of(storage);
         ClientProxy.sendPacket(new RequestBlockPacket(
                 new BlockAccessorImpl.SyncData(details, hit, accessor.getServersideRep(), data), requestedProviders));
+        //#else
+        //$$ REQUESTS[half] = new Request(0, half, target, accessor, now);
+        //$$ nextHalf = 1 - half;
+        //$$ if (primary) return false; // Let Jade build its normal request with all providers.
+        //$$ ClientPlayNetworking.send(new RequestBlockPacket(new BlockAccessorImpl.SyncData(
+        //$$         details, hit, level.getBlockState(position), ItemStack.EMPTY), List.of(storage)));
+        //#endif
         return true;
     }
 
     /** Consume auxiliary replies before Jade can replace the current target's payload. */
     public static boolean receive(CompoundTag data)
     {
+        if (data == null) return false;
+        //#if MC >= 1.21.9
         if (!data.contains(REQUEST_ID)) return false;
         tick();
         long id = data.getLongOr(REQUEST_ID, -1);
@@ -202,17 +233,33 @@ public final class JadeBarrelPreview
                 || Util.getMillis() - request.sent > REQUEST_TIMEOUT_MS) return true;
         REQUESTS[request.half] = null;
         BlockPos pos = request.half == 0 ? pair.first : pair.second;
-        if (data.getIntOr("x", Integer.MIN_VALUE) != pos.getX()
-                || data.getIntOr("y", Integer.MIN_VALUE) != pos.getY()
-                || data.getIntOr("z", Integer.MIN_VALUE) != pos.getZ()
-                || !"minecraft:barrel".equals(data.getStringOr("BlockId", ""))) return true;
+        if (!matchesPosition(data, pos)) return true;
+        //#else
+        //$$ tick();
+        //$$ if (pair == null) return false;
+        //$$ Request request = null;
+        //$$ BlockPos pos = null;
+        //$$ for (Request candidate : REQUESTS)
+        //$$ {
+        //$$     if (candidate == null || Util.getMillis() - candidate.sent > REQUEST_TIMEOUT_MS) continue;
+        //$$     BlockPos candidatePos = candidate.half == 0 ? pair.first : pair.second;
+        //$$     if (matchesPosition(data, candidatePos))
+        //$$     {
+        //$$         request = candidate;
+        //$$         pos = candidatePos;
+        //$$         break;
+        //$$     }
+        //$$ }
+        //$$ if (request == null) return false;
+        //$$ REQUESTS[request.half] = null;
+        //#endif
         // Only use Jade's default, ungrouped container data. Respect locks, loot and provider failures.
         var raw = data.get(JadeIds.UNIVERSAL_ITEM_STORAGE.toString());
         var decoded = raw == null ? null : request.accessor.decodeFromNbt(JadeBarrelStorageAccessor.halfmasa$codec(), raw).orElse(null);
-        if (data.getBooleanOr("Locked", false) || data.getBooleanOr("Loot", false) || decoded == null
+        if (booleanTag(data, "Locked") || booleanTag(data, "Loot") || decoded == null
                 || !decoded.getKey().equals(JadeIds.UNIVERSAL_ITEM_STORAGE_DEFAULT) || decoded.getValue().size() != 1
                 || decoded.getValue().getFirst().id != null
-                || decoded.getValue().getFirst().getExtraData().contains("Collecting"))
+                || isCollecting(decoded.getValue().getFirst()))
         {
             SAMPLES[request.half] = null;
             combined = null;
@@ -229,8 +276,52 @@ public final class JadeBarrelPreview
             combined = null;
         }
         // The current target's normal metadata still belongs to Jade, even if the player switched halves.
-        var current = snownee.jade.JadeClient.tickHandler().state;
-        return current == null || !(current.accessor() instanceof BlockAccessor block) || !block.getPosition().equals(pos);
+        //#if MC >= 1.21.1
+        comparableSamples = false;
+        //#endif
+        //#if MC >= 1.21.9
+        var state = snownee.jade.JadeClient.tickHandler().state;
+        Accessor<?> current = state == null ? null : state.accessor();
+        //#else
+        //$$ Accessor<?> current = ObjectDataCenter.get();
+        //#endif
+        return !(current instanceof BlockAccessor block) || !block.getPosition().equals(pos);
+    }
+
+    private static boolean matchesPosition(CompoundTag data, BlockPos pos)
+    {
+        //#if MC >= 1.21.5
+        return data.getIntOr("x", Integer.MIN_VALUE) == pos.getX()
+                && data.getIntOr("y", Integer.MIN_VALUE) == pos.getY()
+                && data.getIntOr("z", Integer.MIN_VALUE) == pos.getZ()
+                && "minecraft:barrel".equals(data.getStringOr("BlockId", ""));
+        //#else
+        //$$ return data.contains("x", net.minecraft.nbt.Tag.TAG_INT) && data.getInt("x") == pos.getX()
+        //$$         && data.contains("y", net.minecraft.nbt.Tag.TAG_INT) && data.getInt("y") == pos.getY()
+        //$$         && data.contains("z", net.minecraft.nbt.Tag.TAG_INT) && data.getInt("z") == pos.getZ()
+        //$$         && "minecraft:barrel".equals(data.getString("BlockId"));
+        //#endif
+    }
+
+    private static boolean booleanTag(CompoundTag data, String name)
+    {
+        //#if MC >= 1.21.5
+        return data.getBooleanOr(name, false);
+        //#else
+        //$$ return data.getBoolean(name);
+        //#endif
+    }
+
+    private static boolean isCollecting(ViewGroup<?> group)
+    {
+        var data = group.getExtraData();
+        //#if MC >= 1.21.4
+        return data.contains("Collecting");
+        //#else
+        //$$ // Jade 15/16 encode an eager container read's NaN progress as a zero float.
+        //$$ // Nonzero progress still identifies a partial inventory.
+        //$$ return data.contains("Collecting") && data.getFloat("Collecting") != 0.0F;
+        //#endif
     }
 
     private static ItemStack copyDisplayStack(ItemStack source)
@@ -255,6 +346,16 @@ public final class JadeBarrelPreview
         long now = Util.getMillis();
         long lifetime = Math.max(MIN_SAMPLE_LIFETIME_MS, (long) ObjectDataCenter.rateLimiter * 4);
         if (now - SAMPLES[0].time > lifetime || now - SAMPLES[1].time > lifetime) return original;
+        //#if MC >= 1.21.1
+        // Jade already consolidates slots into item totals. Both replies can be the same full inventory,
+        // including sparse or sorted inventories whose row count cannot reveal their original size.
+        if (!comparableSamples)
+        {
+            distinctSamples = !itemCounts(List.of(SAMPLES[0].items)).equals(itemCounts(List.of(SAMPLES[1].items)));
+            comparableSamples = true;
+        }
+        if (!distinctSamples) return original;
+        //#endif
         if (combined == null)
             combined = List.of(new ViewGroup<>(merge(SAMPLES[0].items, SAMPLES[1].items, sorted)));
         return combined;
@@ -263,17 +364,23 @@ public final class JadeBarrelPreview
     /** Match the entire component patch: named, enchanted and filled items stay distinct. */
     public static List<ItemStack> merge(List<ItemStack> first, List<ItemStack> second, boolean sort)
     {
+        var counts = itemCounts(List.of(first, second));
+        var result = new ArrayList<ItemStack>();
+        counts.forEach((key, count) -> result.add(key.toStack((int) Math.min(Integer.MAX_VALUE, count))));
+        if (sort) result.sort(Comparator.comparingInt(ItemStack::getCount).reversed());
+        return List.copyOf(result);
+    }
+
+    private static LinkedHashMap<ItemCollector.ItemDefinition, Long> itemCounts(List<List<ItemStack>> halves)
+    {
         var counts = new LinkedHashMap<ItemCollector.ItemDefinition, Long>();
-        for (var half : List.of(first, second)) for (ItemStack stack : half)
+        for (var half : halves) for (ItemStack stack : half)
         {
             if (stack.isEmpty()) continue;
             var key = new ItemCollector.ItemDefinition(stack.getItem(), stack.getComponentsPatch());
             counts.merge(key, (long) stack.getCount(), Long::sum);
         }
-        var result = new ArrayList<ItemStack>();
-        counts.forEach((key, count) -> result.add(key.toStack((int) Math.min(Integer.MAX_VALUE, count))));
-        if (sort) result.sort(Comparator.comparingInt(ItemStack::getCount).reversed());
-        return List.copyOf(result);
+        return counts;
     }
 }
 //#endif

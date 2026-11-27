@@ -24,6 +24,23 @@ import io.github.halfmasa.xaerobinding.mixin.WorldSelectionListAccessor;
 public final class CustomSavesPath
 {
     private static Path currentPath;
+    //#if MC >= 1.21.1
+    private static final ThreadLocal<Boolean> EXPLICIT_WORLD_LIST_SOURCE = new ThreadLocal<>();
+
+    public static LevelStorageSource createWorldListSource(Path path, LevelStorageSource vanilla)
+    {
+        EXPLICIT_WORLD_LIST_SOURCE.set(true);
+        try
+        {
+            return new LevelStorageSource(path, vanilla.getBackupPath(), vanilla.getWorldDirValidator(),
+                    net.minecraft.util.datafix.DataFixers.getDataFixer());
+        }
+        finally
+        {
+            EXPLICIT_WORLD_LIST_SOURCE.remove();
+        }
+    }
+    //#endif
 
     private CustomSavesPath()
     {
@@ -31,6 +48,9 @@ public final class CustomSavesPath
 
     public static Path replaceDefault(Path original)
     {
+        //#if MC >= 1.21.1
+        if (Boolean.TRUE.equals(EXPLICIT_WORLD_LIST_SOURCE.get())) return original;
+        //#endif
         Path defaultSaves = getDefaultPath();
         if (!normalize(original).equals(defaultSaves))
         {
@@ -290,8 +310,12 @@ public final class CustomSavesPath
         {
             ((WorldSelectionListAccessor) (Object) list).halfmasa$reloadWorldList();
         }
+        //#if MC >= 1.21.1
         //#if MC >= 1.21.11
         screen.resize(screen.width, screen.height);
+        //#else
+        //$$ screen.resize(Minecraft.getInstance(), screen.width, screen.height);
+        //#endif
         //#else
         //$$ screen.resize(Minecraft.getInstance(), screen.width, screen.height);
         //#endif

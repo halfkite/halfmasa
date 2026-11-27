@@ -21,6 +21,9 @@ public abstract class BetterMultiplayerScreenMixin extends Screen {
     @Shadow protected ServerSelectionList serverSelectionList;
     @Unique private EditBox halfmasa$search;
     @Unique private Button halfmasa$newFolder;
+    //#if MC >= 1.21.1
+    @Unique private boolean halfmasa$favorites;
+    //#endif
     @Unique private boolean halfmasa$active, halfmasa$folders, halfmasa$address, halfmasa$latency, halfmasa$hidden;
     @Unique private long halfmasa$revision;
     @Unique private String halfmasa$query = "";
@@ -44,6 +47,9 @@ public abstract class BetterMultiplayerScreenMixin extends Screen {
         halfmasa$hidden = CaptureDetectionManager.INSTANCE.privacy.hidden();
         halfmasa$compact = BetterMultiplayerConfig.COLLAPSED_ICONS.getBooleanValue();
         halfmasa$revision = ServerFolderManager.getInstance().revision();
+        //#if MC >= 1.21.1
+        halfmasa$favorites = BetterMultiplayerConfig.favorites();
+        //#endif
         if (halfmasa$folders) {
             int left = width / 2 - Math.min(150, width / 2 - 8);
             int space = Math.min(300, width - 16);
@@ -90,6 +96,12 @@ public abstract class BetterMultiplayerScreenMixin extends Screen {
     private void halfmasa$tick(CallbackInfo ci) {
         CaptureDetectionManager.INSTANCE.update();
         if (halfmasa$active != BetterMultiplayerConfig.active() || halfmasa$folders != BetterMultiplayerConfig.folders()) { rebuildWidgets(); return; }
+        //#if MC >= 1.21.1
+        if (halfmasa$favorites != BetterMultiplayerConfig.favorites()) {
+            halfmasa$favorites = BetterMultiplayerConfig.favorites();
+            ((ServerFolderWidget) serverSelectionList).halfmasa$rebuildFolders();
+        }
+        //#endif
         boolean hidden = CaptureDetectionManager.INSTANCE.privacy.hidden();
         if (halfmasa$compact != BetterMultiplayerConfig.COLLAPSED_ICONS.getBooleanValue()) {
             halfmasa$compact = BetterMultiplayerConfig.COLLAPSED_ICONS.getBooleanValue();

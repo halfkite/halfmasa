@@ -39,7 +39,11 @@ public abstract class BetterMultiplayerListMixin extends ObjectSelectionList<Ser
     private void halfmasa$fitRowWidth(CallbackInfoReturnable<Integer> cir) {
         if (BetterMultiplayerConfig.active())
             cir.setReturnValue(Math.max(CompactServerRow.ICON_SIZE + CompactServerRow.GAP,
-                    Math.min(cir.getReturnValue(), getWidth() - CompactServerRow.GAP * 3)));
+                    Math.min(cir.getReturnValue(), getWidth() - CompactServerRow.GAP * 3
+                            //#if MC >= 1.21.1
+                            - (BetterMultiplayerConfig.favorites() ? 2 * io.github.halfmasa.xaerobinding.gui.PlayListStar.GUTTER : 0)
+                            //#endif
+                    )));
     }
     @Inject(method = "refreshEntries", at = @At("RETURN"))
     private void halfmasa$organize(CallbackInfo ci) {
@@ -65,7 +69,14 @@ public abstract class BetterMultiplayerListMixin extends ObjectSelectionList<Ser
                                 screen, (ServerSelectionList) (Object) this));
                 }
             }
-        } else rows.addAll(onlineServers);
+        } else {
+            //#if MC >= 1.21.1
+            rows.addAll(BetterMultiplayerConfig.favorites() ? onlineServers.stream().sorted(Comparator.comparing(
+                    entry -> !manager.isFavorite(manager.id(entry.getServerData())))).toList() : onlineServers);
+            //#else
+            //$$ rows.addAll(onlineServers);
+            //#endif
+        }
         rows.addAll(lan);
         var selected = getSelected(); String selectedId = halfmasa$entryId(selected);
         if (selectedId != null)
@@ -107,6 +118,17 @@ public abstract class BetterMultiplayerListMixin extends ObjectSelectionList<Ser
     //$$ @Override public boolean mouseClicked(double mouseX,double mouseY,int button) {
     //$$         var event=new ServerPointer(mouseX,mouseY,button,net.minecraft.client.gui.screens.Screen.hasShiftDown());
     //#endif
+        //#if MC >= 1.21.1
+        if (BetterMultiplayerConfig.favorites() && event.button() == InputConstants.MOUSE_BUTTON_LEFT
+                && event.x() < getRowLeft() && isMouseOver(event.x(), event.y())) {
+            var row = getEntryAtPosition(getRowLeft() + 2, event.y());
+            if (row instanceof ServerSelectionList.OnlineServerEntry && row instanceof ServerEntryLayout layout
+                    && io.github.halfmasa.xaerobinding.gui.PlayListStar.hits(layout.getX(), layout.getContentY(), event.x(), event.y())) {
+                if (ServerFolderManager.getInstance().toggleFavorite(halfmasa$entryId(row))) halfmasa$rebuildFolders();
+                return true;
+            }
+        }
+        //#endif
         //#if MC >= 1.21.10
         if (!BetterMultiplayerConfig.folders()) return super.mouseClicked(event, doubleClick);
         //#else

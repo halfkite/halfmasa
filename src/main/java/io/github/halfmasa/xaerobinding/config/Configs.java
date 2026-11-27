@@ -43,7 +43,9 @@ public final class Configs implements IConfigHandler
     private static final String CONFIG_DIRECTORY_NAME = "halfmasa";
     private static final String CONFIG_FILE_NAME = "halfmasa.json";
     //#if MC >= 1.21.1
-    private static final int CONFIG_VERSION = 55;
+    private static final int CONFIG_VERSION = 58;
+    //#elseif MC >= 1.21.1
+    //$$ private static final int CONFIG_VERSION = 57;
     //#else
     //$$ private static final int CONFIG_VERSION = 54;
     //#endif
@@ -54,7 +56,24 @@ public final class Configs implements IConfigHandler
             "openWaypointTools",
             "X,H").apply(GENERIC_KEY);
 
-    public static final List<IConfigBase> GENERIC = List.of(OPEN_TOOLS);
+    //#if MC >= 1.21.1
+    public static final ConfigBoolean CHINESE_MOD_LANGUAGE_FALLBACK = new ConfigBoolean(
+            "chineseModLanguageFallback", true).apply(GENERIC_KEY);
+    //#endif
+    //#if MC >= 1.21.1
+    public static final ConfigBooleanHotkeyed BETTER_REGISTRY_PICKER = new ConfigBooleanHotkeyed(
+            "betterRegistryPicker", true, "").apply(GENERIC_KEY);
+    public static final ConfigBoolean REGISTRY_PICKER_ENTITY_MODELS = new ConfigBoolean(
+            "registryPickerEntityModels", true).apply(GENERIC_KEY);
+    //#endif
+    public static final List<IConfigBase> GENERIC = List.of(
+            //#if MC >= 1.21.1
+            CHINESE_MOD_LANGUAGE_FALLBACK,
+            //#endif
+            //#if MC >= 1.21.1
+            BETTER_REGISTRY_PICKER, REGISTRY_PICKER_ENTITY_MODELS,
+            //#endif
+            OPEN_TOOLS);
 
     private static final String WAYPOINT_KEY = "halfmasa.config.waypoint";
     public static final ConfigBooleanHotkeyed ENABLE_WORLD_BINDING = new ConfigBooleanHotkeyed(
@@ -91,6 +110,10 @@ public final class Configs implements IConfigHandler
             WAYPOINT_SHARING_EXPANDED);
 
     private static final String CREATIVE_KEY = "halfmasa.config.creative";
+    //#if MC >= 1.21.1
+    public static final ConfigBooleanHotkeyed CREATIVE_SURVIVAL_REACH = new ConfigBooleanHotkeyed(
+            "creativeSurvivalReach", false, "").apply(CREATIVE_KEY);
+    //#endif
     public static final ConfigBooleanHotkeyed ENABLE_GIVE_FULL_INVENTORY = new ConfigBooleanHotkeyed(
             "enableGiveFullInventory", false, "").apply(CREATIVE_KEY);
     public static final ActionHotkey GIVE_FULL_INVENTORY = new ActionHotkey(
@@ -117,6 +140,9 @@ public final class Configs implements IConfigHandler
             ITEM_SEARCH_HISTORY_ROWS,
             ITEM_SEARCH_HISTORY_DURING_SEARCH);
     public static final List<IConfigBase> CREATIVE = List.of(
+            //#if MC >= 1.21.1
+            CREATIVE_SURVIVAL_REACH,
+            //#endif
             ENABLE_GIVE_FULL_INVENTORY,
             GIVE_FULL_INVENTORY,
             BUNDLE_FILL,
@@ -136,6 +162,29 @@ public final class Configs implements IConfigHandler
             "").apply(PORTED_KEY);
     public static final ConfigStringList CUSTOM_SAVES_PATHS = new ConfigStringList(
             "customSavesPaths", ImmutableList.of()).apply(PORTED_KEY);
+    //#if MC >= 1.21.1
+    public static final ConfigBoolean BETTER_WORLD_SAVES = new ConfigBoolean(
+            "betterWorldSaves", false).apply(PORTED_KEY);
+    public static final ConfigBoolean WORLD_SAVE_DRAG = new ConfigBoolean(
+            "worldSaveDrag", true).apply(PORTED_KEY);
+    public static final ConfigBoolean WORLD_SAVE_CREATE_CHOOSE_PATH = new ConfigBoolean(
+            "worldSaveCreateChoosePath", true).apply(PORTED_KEY);
+    public static final ConfigBoolean WORLD_SAVE_CREATE_WITHOUT_JOIN = new ConfigBoolean(
+            "worldSaveCreateWithoutJoin", false).apply(PORTED_KEY);
+    public static final ConfigBoolean WORLD_SAVE_FOLDERS = new ConfigBoolean(
+            "worldSaveFolders", true).apply(PORTED_KEY);
+    public static final ConfigBoolean WORLD_SAVE_SHOW_PATHS = new ConfigBoolean(
+            "worldSaveShowPaths", true).apply(PORTED_KEY);
+    public static final ConfigBoolean WORLD_SAVE_FAVORITES = new ConfigBoolean(
+            "worldSaveFavorites", false).apply(PORTED_KEY);
+
+    private static boolean isWorldSaveManagementChild(IConfigBase config)
+    {
+        return config == CUSTOM_SAVES_PATHS || config == WORLD_SAVE_FOLDERS || config == WORLD_SAVE_SHOW_PATHS
+                || config == WORLD_SAVE_FAVORITES || config == WORLD_SAVE_DRAG || config == KEEP_WORLD_SELECTION_ON_EMPTY
+                || config == WORLD_SAVE_CREATE_CHOOSE_PATH || config == WORLD_SAVE_CREATE_WITHOUT_JOIN;
+    }
+    //#endif
     public static final ConfigBoolean KEEP_WORLD_SELECTION_ON_EMPTY = new ConfigBoolean(
             "keepWorldSelectionOnEmpty", false).apply(PORTED_KEY);
     /** Internal state used by the world-selection saves path switcher. */
@@ -145,12 +194,15 @@ public final class Configs implements IConfigHandler
             "customSavesButtonX", -1, -1, 10000, true).apply(PORTED_KEY);
     public static final ConfigInteger CUSTOM_SAVES_BUTTON_Y = new ConfigInteger(
             "customSavesButtonY", -1, -1, 10000, true).apply(PORTED_KEY);
+    public static final ConfigBoolean CUSTOM_SAVES_PATHS_EXPANDED = new ConfigBoolean(
+            "customSavesPathsExpanded", false).apply(PORTED_KEY);
     private static final List<IConfigBase> CUSTOM_SAVES_INTERNAL = List.of(
+            //#if MC >= 1.21.1
+            CUSTOM_SAVES_PATHS_EXPANDED,
+            //#endif
             CUSTOM_SAVES_ACTIVE_PATH,
             CUSTOM_SAVES_BUTTON_X,
             CUSTOM_SAVES_BUTTON_Y);
-    public static final ConfigBoolean CUSTOM_SAVES_PATHS_EXPANDED = new ConfigBoolean(
-            "customSavesPathsExpanded", false).apply(PORTED_KEY);
     public static final ConfigGroupHeader CUSTOM_SAVES_PATHS_GROUP = new ConfigGroupHeader(
             "customSavesPathsGroup", PORTED_KEY, CUSTOM_SAVES_PATHS_EXPANDED);
     public static final ConfigBooleanHotkeyed SCREENSHOT_TO_CLIPBOARD = new ConfigBooleanHotkeyed(
@@ -775,7 +827,14 @@ public final class Configs implements IConfigHandler
     private static final List<IConfigBase> PLANT_CENTERING_CHILDREN = PlantCenteringConfigs.CHILDREN;
     private static final List<IConfigBase> SAVES_RELATED_CONFIGS = List.of(
             ENABLE_WORLD_BINDING,
+            //#if MC >= 1.21.1
+            BETTER_WORLD_SAVES,
+            //#endif
             CUSTOM_SAVES_PATHS,
+            //#if MC >= 1.21.1
+            WORLD_SAVE_FOLDERS, WORLD_SAVE_SHOW_PATHS, WORLD_SAVE_FAVORITES, WORLD_SAVE_DRAG,
+            WORLD_SAVE_CREATE_CHOOSE_PATH, WORLD_SAVE_CREATE_WITHOUT_JOIN,
+            //#endif
             KEEP_WORLD_SELECTION_ON_EMPTY);
     private static final List<IConfigBase> RECORD_RELATED_CONFIGS = Stream.of(
             List.of(ITEM_SEARCH_HISTORY),
@@ -791,7 +850,14 @@ public final class Configs implements IConfigHandler
             .toList();
 
     public static final List<IConfigBase> PORTED = Stream.of(List.of(
+            //#if MC >= 1.21.1
+            BETTER_WORLD_SAVES,
+            //#endif
             CUSTOM_SAVES_PATHS,
+            //#if MC >= 1.21.1
+            WORLD_SAVE_FOLDERS, WORLD_SAVE_SHOW_PATHS, WORLD_SAVE_FAVORITES, WORLD_SAVE_DRAG,
+            WORLD_SAVE_CREATE_CHOOSE_PATH, WORLD_SAVE_CREATE_WITHOUT_JOIN,
+            //#endif
             KEEP_WORLD_SELECTION_ON_EMPTY,
             SCREENSHOT_TO_CLIPBOARD,
             SKIP_RESOURCE_PACK_COMPATIBILITY_CHECK,
@@ -898,6 +964,20 @@ public final class Configs implements IConfigHandler
     private static boolean customSavesActivePathPersisted;
 
     private static final String CLIENT_KEY = "halfmasa.config.client";
+    //#if MC >= 1.21.1
+    public static final ConfigBooleanHotkeyed CONTAINER_COMPARATOR_OUTPUT = new ConfigBooleanHotkeyed(
+            "containerComparatorOutput", false, "").apply(CLIENT_KEY);
+    private static final ConfigBoolean CONTAINER_COMPARATOR_EXPANDED = new ConfigBoolean(
+            "containerComparatorExpanded", false).apply(CLIENT_KEY);
+    public static final ConfigBoolean CONTAINER_COMPARATOR_ICON = new ConfigBoolean(
+            "containerComparatorIcon", true).apply(CLIENT_KEY);
+    public static final ConfigBoolean CONTAINER_COMPARATOR_TOOLTIP = new ConfigBoolean(
+            "containerComparatorTooltip", true).apply(CLIENT_KEY);
+    public static final ConfigBoolean CONTAINER_COMPARATOR_COLOR = new ConfigBoolean(
+            "containerComparatorColor", false).apply(CLIENT_KEY);
+    private static final List<IConfigBase> CONTAINER_COMPARATOR_CHILDREN = List.of(
+            CONTAINER_COMPARATOR_ICON, CONTAINER_COMPARATOR_TOOLTIP, CONTAINER_COMPARATOR_COLOR);
+    //#endif
 //#if MC >= 1.21.1
     public static final ConfigBooleanHotkeyed RANGE_FEEDING = new ConfigBooleanHotkeyed("rangeFeeding", false, "").apply(CLIENT_KEY);
     public static final ConfigBoolean RANGE_FEEDING_EXPANDED = new ConfigBoolean("rangeFeedingExpanded", false).apply(CLIENT_KEY);
@@ -912,6 +992,19 @@ public final class Configs implements IConfigHandler
     public static final ConfigStringList RANGE_FEEDING_WHITELIST = new ConfigStringList("rangeFeedingWhitelist", ImmutableList.of()).apply(CLIENT_KEY);
     private static final List<IConfigBase> RANGE_FEEDING_CHILDREN = List.of(RANGE_FEEDING_SKIP_BABIES, RANGE_FEEDING_HOLD,
             RANGE_FEEDING_ONCE, RANGE_FEEDING_RANGE, RANGE_FEEDING_INTERVAL, RANGE_FEEDING_LIST_MODE, RANGE_FEEDING_BLACKLIST, RANGE_FEEDING_WHITELIST);
+    //#if MC >= 1.21.1
+    public static final ConfigBooleanHotkeyed AUTO_KELP_CLEARING = new ConfigBooleanHotkeyed(
+            "autoKelpClearing", false, "").apply(CLIENT_KEY);
+    public static final ConfigBoolean AUTO_KELP_EXPANDED = new ConfigBoolean("autoKelpExpanded", false).apply(CLIENT_KEY);
+    public static final ConfigBooleanHotkeyed AUTO_KELP_DISABLE_ON_GUI = new ConfigBooleanHotkeyed("autoKelpDisableOnGui", false, "").apply(CLIENT_KEY);
+    public static final ConfigBooleanHotkeyed AUTO_KELP_ROOT_ONLY = new ConfigBooleanHotkeyed("autoKelpRootOnly", true, "").apply(CLIENT_KEY);
+    public static final ConfigBooleanHotkeyed AUTO_KELP_SELECTION_ONLY = new ConfigBooleanHotkeyed("autoKelpSelectionOnly", false, "").apply(CLIENT_KEY);
+    public static final ConfigBooleanHotkeyed AUTO_KELP_CUSTOM_REACH_ENABLED = new ConfigBooleanHotkeyed("autoKelpCustomReachEnabled", false, "").apply(CLIENT_KEY);
+    public static final ConfigDouble AUTO_KELP_CUSTOM_REACH = new ConfigDouble("autoKelpCustomReach", 4.5D, 1.0D, 8.0D, true).apply(CLIENT_KEY);
+    public static final ConfigInteger AUTO_KELP_BLOCKS_PER_TICK = new ConfigInteger("autoKelpBlocksPerTick", 2, 1, 4, true).apply(CLIENT_KEY);
+    private static final List<IConfigBase> AUTO_KELP_CHILDREN = List.of(AUTO_KELP_DISABLE_ON_GUI, AUTO_KELP_ROOT_ONLY, AUTO_KELP_SELECTION_ONLY,
+            AUTO_KELP_CUSTOM_REACH_ENABLED, AUTO_KELP_CUSTOM_REACH, AUTO_KELP_BLOCKS_PER_TICK);
+    //#endif
     public static final ConfigBooleanHotkeyed AUTO_EAT = new ConfigBooleanHotkeyed(
             "autoEat", false, "").apply(CLIENT_KEY);
     public static final ConfigBoolean AUTO_EAT_EXPANDED = new ConfigBoolean("autoEatExpanded", false).apply(CLIENT_KEY);
@@ -981,6 +1074,12 @@ public final class Configs implements IConfigHandler
             "itemDespawnSource", ItemDespawnDataSource.AUTO).apply(CLIENT_KEY);
     public static final ConfigOptionList ITEM_DESPAWN_FORMAT = new ConfigOptionList(
             "itemDespawnFormat", ItemDespawnTimeFormat.MINUTES).apply(CLIENT_KEY);
+    //#if MC >= 1.21.1
+    public static final ConfigOptionList ITEM_DESPAWN_DISPLAY = new ConfigOptionList(
+            "itemDespawnDisplay", AggregationCountDisplayMode.ALWAYS).apply(CLIENT_KEY);
+    public static final ConfigHotkey ITEM_DESPAWN_DISPLAY_HOTKEY = new ConfigHotkey(
+            "itemDespawnDisplayHotkey", "").apply(CLIENT_KEY);
+    //#endif
     public static final ConfigBoolean ITEM_DESPAWN_THROUGH_WALLS = new ConfigBoolean(
             "itemDespawnThroughWalls", true).apply(CLIENT_KEY);
     public static final ConfigInteger ITEM_DESPAWN_MAX_LABELS = new ConfigInteger(
@@ -992,6 +1091,9 @@ public final class Configs implements IConfigHandler
     public static final ConfigBoolean ITEM_DESPAWN_EXPANDED = new ConfigBoolean(
             "itemDespawnExpanded", false).apply(CLIENT_KEY);
     private static final List<IConfigBase> ITEM_DESPAWN_CHILDREN = List.of(
+            //#if MC >= 1.21.1
+            ITEM_DESPAWN_DISPLAY, ITEM_DESPAWN_DISPLAY_HOTKEY,
+            //#endif
             ITEM_DESPAWN_SOURCE, ITEM_DESPAWN_FORMAT, ITEM_DESPAWN_THROUGH_WALLS,
             ITEM_DESPAWN_MAX_LABELS, ITEM_DESPAWN_SYNC_INTERVAL, ITEM_DESPAWN_DISTANCE);
 //#endif
@@ -1006,6 +1108,9 @@ public final class Configs implements IConfigHandler
             "entityGlowModeHotkey", "").apply(CLIENT_KEY);
     public static final ConfigColor ENTITY_GLOW_ALL_COLOR = new ConfigColor(
             "entityGlowAllColor", "#FFFFFFFF").apply(CLIENT_KEY);
+    public static final ConfigInteger BLOCK_GLOW_DISTANCE = new ConfigInteger("blockGlowDistance",
+            io.github.halfmasa.xaerobinding.feature.EntityGlowRule.DEFAULT_BLOCK_DISTANCE, 1,
+            io.github.halfmasa.xaerobinding.feature.EntityGlowRule.MAX_BLOCK_DISTANCE, true).apply(CLIENT_KEY);
     public static final ActionConfig ENTITY_GLOW_RULE_EDITOR = new ActionConfig(
             "entityGlowRuleEditor", "halfmasa.gui.entity_glow.manage").applyTranslationKey(CLIENT_KEY);
     public static final ConfigBoolean ENTITY_GLOW_EXPANDED = new ConfigBoolean(
@@ -1022,7 +1127,7 @@ public final class Configs implements IConfigHandler
             "blockGlowRules", ImmutableList.of()).apply(CLIENT_KEY);
     private static final List<IConfigBase> ENTITY_GLOW_CHILDREN = List.of(
             ENTITY_GLOW_MODE_HOTKEY, ENTITY_GLOW_MODE, ENTITY_GLOW_ALL_COLOR, ENTITY_GLOW_RULE_EDITOR);
-    private static final List<IConfigBase> BLOCK_GLOW_CHILDREN = List.of(BLOCK_GLOW_RULE_EDITOR);
+    private static final List<IConfigBase> BLOCK_GLOW_CHILDREN = List.of(BLOCK_GLOW_DISTANCE, BLOCK_GLOW_RULE_EDITOR);
 //#endif
     //#if MC >= 1.21.1
     public static final ConfigBooleanHotkeyed AUTO_OPEN_CHAT = new ConfigBooleanHotkeyed(
@@ -1035,7 +1140,59 @@ public final class Configs implements IConfigHandler
             "autoOpenChatStopMessages", ImmutableList.of()).apply(CLIENT_KEY);
     //#endif
 
+    //#if MC >= 1.21.1
+    public static final ConfigBooleanHotkeyed PLACEMENT_PREVIEW = new ConfigBooleanHotkeyed("tweakBlockPlacementPreview", false, "").apply(CLIENT_KEY);
+    public static final ConfigOptionList PLACEMENT_PREVIEW_MODE = new ConfigOptionList("blockPlacementPreviewMode", io.github.halfmasa.xaerobinding.feature.placementpreview.PlacementPreviewOptions.MODEL).apply(CLIENT_KEY);
+    public static final ConfigInteger PLACEMENT_PREVIEW_OPACITY = new ConfigInteger("blockPlacementPreviewOpacity", 45, 10, 100, true).apply(CLIENT_KEY);
+    public static final ConfigOptionList PLACEMENT_PREVIEW_FILTER = new ConfigOptionList("blockPlacementPreviewFilter", io.github.halfmasa.xaerobinding.feature.placementpreview.PlacementPreviewFilter.ALL).apply(CLIENT_KEY);
+    public static final ConfigBoolean PLACEMENT_PREVIEW_EXPANDED = new ConfigBoolean("blockPlacementPreviewExpanded", false).apply(CLIENT_KEY);
+    public static final ConfigBoolean PLACEMENT_PREVIEW_FLUID = new ConfigBoolean("blockPlacementPreviewFluid", true).apply(CLIENT_KEY);
+    public static final ConfigBoolean PLACEMENT_PREVIEW_FLUID_EXPANDED = new ConfigBoolean("blockPlacementPreviewFluidExpanded", false).apply(CLIENT_KEY);
+    public static final ConfigBooleanHotkeyed PLACEMENT_PREVIEW_WATER = new ConfigBooleanHotkeyed("blockPlacementPreviewWater", false, "").apply(CLIENT_KEY);
+    public static final ConfigInteger PLACEMENT_PREVIEW_WATER_RADIUS = new ConfigInteger("blockPlacementPreviewWaterRadius", 16, 7, 32, true).apply(CLIENT_KEY);
+    public static final ConfigInteger PLACEMENT_PREVIEW_WATER_DEPTH = new ConfigInteger("blockPlacementPreviewWaterDepth", 32, 1, 64, true).apply(CLIENT_KEY);
+    public static final ConfigInteger PLACEMENT_PREVIEW_WATER_OPACITY = new ConfigInteger("blockPlacementPreviewWaterOpacity", 30, 5, 80, true).apply(CLIENT_KEY);
+    public static final ConfigBooleanHotkeyed PLACEMENT_PREVIEW_LAVA = new ConfigBooleanHotkeyed("blockPlacementPreviewLava", false, "").apply(CLIENT_KEY);
+    public static final ConfigInteger PLACEMENT_PREVIEW_LAVA_RADIUS = new ConfigInteger("blockPlacementPreviewLavaRadius", 16, 7, 32, true).apply(CLIENT_KEY);
+    public static final ConfigInteger PLACEMENT_PREVIEW_LAVA_DEPTH = new ConfigInteger("blockPlacementPreviewLavaDepth", 32, 1, 64, true).apply(CLIENT_KEY);
+    public static final ConfigInteger PLACEMENT_PREVIEW_LAVA_OPACITY = new ConfigInteger("blockPlacementPreviewLavaOpacity", 30, 5, 80, true).apply(CLIENT_KEY);
+    public static final ConfigBoolean PLACEMENT_PREVIEW_NEIGHBOURS = new ConfigBoolean("blockPlacementPreviewNeighbours", true).apply(CLIENT_KEY);
+    public static final ConfigBoolean PLACEMENT_PREVIEW_INVALID = new ConfigBoolean("blockPlacementPreviewInvalid", true).apply(CLIENT_KEY);
+    public static final ConfigBoolean PLACEMENT_PREVIEW_OFFHAND = new ConfigBoolean("blockPlacementPreviewOffhand", true).apply(CLIENT_KEY);
+    public static final ConfigBoolean PLACEMENT_PREVIEW_TWEAKEROO = new ConfigBoolean("blockPlacementPreviewTweakeroo", true).apply(CLIENT_KEY);
+    public static final ConfigStringList PLACEMENT_PREVIEW_WHITELIST = new ConfigStringList("blockPlacementPreviewWhitelist", ImmutableList.of()).apply(CLIENT_KEY);
+    public static final ConfigStringList PLACEMENT_PREVIEW_BLACKLIST = new ConfigStringList("blockPlacementPreviewBlacklist", ImmutableList.of()).apply(CLIENT_KEY);
+    private static final List<IConfigBase> PLACEMENT_PREVIEW_CHILDREN = List.of(PLACEMENT_PREVIEW_MODE, PLACEMENT_PREVIEW_OPACITY, PLACEMENT_PREVIEW_FILTER, PLACEMENT_PREVIEW_NEIGHBOURS, PLACEMENT_PREVIEW_INVALID, PLACEMENT_PREVIEW_OFFHAND, PLACEMENT_PREVIEW_TWEAKEROO, PLACEMENT_PREVIEW_WHITELIST, PLACEMENT_PREVIEW_BLACKLIST, PLACEMENT_PREVIEW_FLUID);
+    private static final List<IConfigBase> PLACEMENT_PREVIEW_FLUID_CHILDREN = List.of(PLACEMENT_PREVIEW_WATER, PLACEMENT_PREVIEW_WATER_RADIUS, PLACEMENT_PREVIEW_WATER_DEPTH, PLACEMENT_PREVIEW_WATER_OPACITY, PLACEMENT_PREVIEW_LAVA, PLACEMENT_PREVIEW_LAVA_RADIUS, PLACEMENT_PREVIEW_LAVA_DEPTH, PLACEMENT_PREVIEW_LAVA_OPACITY);
+    //#endif
+
+    //#if MC >= 1.21.1
+    public static final ConfigBoolean ALL_MODE_HUD = new ConfigBoolean(
+            "allModeHud", false).apply(CLIENT_KEY);
+    private static final ConfigBoolean ALL_MODE_HUD_EXPANDED = new ConfigBoolean(
+            "allModeHudExpanded", false).apply(CLIENT_KEY);
+    public static final ConfigBoolean CREATIVE_STATUS_BAR = new ConfigBoolean(
+            "creativeStatusBar", true).apply(CLIENT_KEY);
+    public static final ConfigBoolean SPECTATOR_STATUS_BAR = new ConfigBoolean(
+            "spectatorStatusBar", true).apply(CLIENT_KEY);
+    public static final ConfigBoolean SPECTATOR_HOTBAR = new ConfigBoolean(
+            "spectatorHotbar", false).apply(CLIENT_KEY);
+    public static final ConfigBoolean GAME_MODE_ICON = new ConfigBoolean(
+            "gameModeIcon", true).apply(CLIENT_KEY);
+    public static final ConfigBoolean ADVENTURE_MODE_ICON = new ConfigBoolean(
+            "adventureModeIcon", true).apply(CLIENT_KEY);
+    public static final ConfigBoolean ALL_MODE_EXPERIENCE_BAR = new ConfigBoolean(
+            "allModeExperienceBar", true).apply(CLIENT_KEY);
+    private static final List<IConfigBase> ALL_MODE_HUD_CHILDREN = List.of(
+            CREATIVE_STATUS_BAR, SPECTATOR_STATUS_BAR, SPECTATOR_HOTBAR,
+            GAME_MODE_ICON, ADVENTURE_MODE_ICON, ALL_MODE_EXPERIENCE_BAR);
+    //#endif
+
     public static final List<IConfigBase> CLIENT = Stream.of(
+            //#if MC >= 1.21.1
+            List.<IConfigBase>of(ALL_MODE_HUD, ALL_MODE_HUD_EXPANDED), ALL_MODE_HUD_CHILDREN,
+            List.<IConfigBase>of(CONTAINER_COMPARATOR_OUTPUT, CONTAINER_COMPARATOR_EXPANDED), CONTAINER_COMPARATOR_CHILDREN,
+            //#endif
             //#if MC >= 1.21.1
             io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.ALL,
             //#endif
@@ -1045,8 +1202,21 @@ public final class Configs implements IConfigHandler
                     //#endif
                     DISABLE_PAUSED_ITEM_TRAJECTORY_PREDICTION,
 //#if MC >= 1.21.1
+                    //#if MC >= 1.21.1
+                    PLACEMENT_PREVIEW, PLACEMENT_PREVIEW_EXPANDED, PLACEMENT_PREVIEW_MODE, PLACEMENT_PREVIEW_OPACITY,
+                    PLACEMENT_PREVIEW_FILTER, PLACEMENT_PREVIEW_NEIGHBOURS, PLACEMENT_PREVIEW_INVALID,
+                    PLACEMENT_PREVIEW_OFFHAND, PLACEMENT_PREVIEW_TWEAKEROO,
+                    PLACEMENT_PREVIEW_WHITELIST, PLACEMENT_PREVIEW_BLACKLIST,
+                    PLACEMENT_PREVIEW_FLUID, PLACEMENT_PREVIEW_FLUID_EXPANDED,
+                    PLACEMENT_PREVIEW_WATER, PLACEMENT_PREVIEW_WATER_RADIUS, PLACEMENT_PREVIEW_WATER_DEPTH, PLACEMENT_PREVIEW_WATER_OPACITY,
+                    PLACEMENT_PREVIEW_LAVA, PLACEMENT_PREVIEW_LAVA_RADIUS, PLACEMENT_PREVIEW_LAVA_DEPTH, PLACEMENT_PREVIEW_LAVA_OPACITY,
+                    //#endif
                     RANGE_FEEDING, RANGE_FEEDING_EXPANDED, RANGE_FEEDING_SKIP_BABIES, RANGE_FEEDING_HOLD,
                     RANGE_FEEDING_ONCE, RANGE_FEEDING_RANGE, RANGE_FEEDING_INTERVAL, RANGE_FEEDING_LIST_MODE, RANGE_FEEDING_BLACKLIST, RANGE_FEEDING_WHITELIST,
+                     //#if MC >= 1.21.1
+                     AUTO_KELP_CLEARING, AUTO_KELP_EXPANDED, AUTO_KELP_DISABLE_ON_GUI, AUTO_KELP_ROOT_ONLY, AUTO_KELP_SELECTION_ONLY,
+                     AUTO_KELP_CUSTOM_REACH_ENABLED, AUTO_KELP_CUSTOM_REACH, AUTO_KELP_BLOCKS_PER_TICK,
+                     //#endif
                     AUTO_EAT, AUTO_EAT_EXPANDED, AUTO_EAT_START_HUNGER, AUTO_EAT_TARGET_HUNGER,
                     AUTO_EAT_SOURCE, AUTO_EAT_SOURCE_HOTKEY, AUTO_EAT_PRIORITY, AUTO_EAT_FILTER_MODE,
                     AUTO_EAT_WHITELIST, AUTO_EAT_BLACKLIST, AUTO_EAT_RESTORE_SLOT, AUTO_EAT_SILENT, AUTO_EAT_PAUSE_COMBAT,
@@ -1062,6 +1232,9 @@ public final class Configs implements IConfigHandler
 //#endif
 //#if MC >= 1.21.1
                     ITEM_DESPAWN_TIMER, ITEM_DESPAWN_EXPANDED,
+                    //#if MC >= 1.21.1
+                    ITEM_DESPAWN_DISPLAY, ITEM_DESPAWN_DISPLAY_HOTKEY,
+                    //#endif
                     ITEM_DESPAWN_SOURCE, ITEM_DESPAWN_FORMAT, ITEM_DESPAWN_THROUGH_WALLS,
                     ITEM_DESPAWN_MAX_LABELS, ITEM_DESPAWN_SYNC_INTERVAL, ITEM_DESPAWN_DISTANCE,
 //#endif
@@ -1075,6 +1248,7 @@ public final class Configs implements IConfigHandler
                     ENTITY_GLOW_RULES,
                     BLOCK_GLOW_HIGHLIGHT,
                     BLOCK_GLOW_EXPANDED,
+                    BLOCK_GLOW_DISTANCE,
                     BLOCK_GLOW_RULE_EDITOR,
                     BLOCK_GLOW_RULES,
 //#endif
@@ -1121,13 +1295,13 @@ public final class Configs implements IConfigHandler
             "minihudContainerPreviewOptimization", false, "").apply("halfmasa.config.extensions");
     //#endif
 
-    //#if MC >= 26.1
+    //#if MC >= 1.21.1
     public static final ConfigBooleanHotkeyed JADE_LARGE_BARREL = new ConfigBooleanHotkeyed(
             "jadeLargeBarrel", false, "").apply("halfmasa.config.extensions");
     //#endif
 
     public static final List<IConfigBase> EXTENSIONS = Stream.of(
-            //#if MC >= 26.1
+            //#if MC >= 1.21.1
             List.<IConfigBase>of(JADE_LARGE_BARREL),
             //#endif
             //#if MC >= 1.21.1
@@ -1143,6 +1317,26 @@ public final class Configs implements IConfigHandler
             ).flatMap(List::stream).toList();
 
     private static final String DISABLED_KEY = "halfmasa.config.disabled";
+    //#if MC >= 1.21.1
+    public static final ConfigBooleanHotkeyed FLUID_TRANSPARENCY = new ConfigBooleanHotkeyed(
+            "fluidTransparency", false, "").apply(DISABLED_KEY);
+    public static final ConfigBoolean FLUID_TRANSPARENCY_EXPANDED = new ConfigBoolean(
+            "fluidTransparencyExpanded", true).apply(DISABLED_KEY);
+    public static final ConfigBoolean FLUID_TRANSPARENCY_INSIDE = new ConfigBoolean(
+            "fluidTransparencyInside", true).apply(DISABLED_KEY);
+    public static final ConfigInteger WATER_TRANSPARENCY = new ConfigInteger(
+            "waterTransparency", 50, 0, 100, true).apply(DISABLED_KEY);
+    public static final ConfigBooleanHotkeyed WATER_TRANSPARENCY_ENABLED = new ConfigBooleanHotkeyed(
+            "waterTransparencyEnabled", false, "").apply(DISABLED_KEY);
+    public static final ConfigInteger LAVA_TRANSPARENCY = new ConfigInteger(
+            "lavaTransparency", 50, 0, 100, true).apply(DISABLED_KEY);
+    public static final ConfigBooleanHotkeyed LAVA_TRANSPARENCY_ENABLED = new ConfigBooleanHotkeyed(
+            "lavaTransparencyEnabled", false, "").apply(DISABLED_KEY);
+    private static final List<IConfigBase> FLUID_TRANSPARENCY_CHILDREN = List.of(
+            FLUID_TRANSPARENCY_INSIDE,
+            WATER_TRANSPARENCY_ENABLED, WATER_TRANSPARENCY,
+            LAVA_TRANSPARENCY_ENABLED, LAVA_TRANSPARENCY);
+    //#endif
     public static final ConfigBooleanHotkeyed DISABLE_FLUID_RENDERING = new ConfigBooleanHotkeyed(
             "disableFluidRendering", false, "").apply(DISABLED_KEY);
     public static final ConfigBooleanHotkeyed DISABLE_NON_SOURCE_FLUID_RENDERING = new ConfigBooleanHotkeyed(
@@ -1152,21 +1346,34 @@ public final class Configs implements IConfigHandler
             "customEntityRenderDisable", false, "").apply(DISABLED_KEY);
     public static final ConfigBoolean ENTITY_RENDER_DISABLE_EXPANDED = new ConfigBoolean(
             "entityRenderDisableExpanded", false).apply(DISABLED_KEY);
+    //#if MC >= 1.21.1
+    private static final String ENTITY_FILTER_KEY = "halfmasa.config.render_filter";
+    //#else
+    //$$ private static final String ENTITY_FILTER_KEY = DISABLED_KEY;
+    //#endif
     public static final ConfigOptionList ENTITY_RENDER_DISABLE_MODE = new ConfigOptionList(
-            "entityRenderDisableMode", EntityRenderDisableMode.BLACKLIST).apply(DISABLED_KEY);
+            "entityRenderDisableMode", EntityRenderDisableMode.BLACKLIST).apply(ENTITY_FILTER_KEY);
     public static final ConfigHotkey ENTITY_RENDER_DISABLE_MODE_HOTKEY = new ConfigHotkey(
             "entityRenderDisableModeHotkey", "").apply(DISABLED_KEY);
     public static final ConfigStringList ENTITY_RENDER_DISABLE_BLACKLIST = new ConfigStringList(
-            "entityRenderDisableBlacklist", ImmutableList.of()).apply(DISABLED_KEY);
+            "entityRenderDisableBlacklist", ImmutableList.of()).apply(ENTITY_FILTER_KEY);
     public static final ConfigStringList ENTITY_RENDER_DISABLE_WHITELIST = new ConfigStringList(
-            "entityRenderDisableWhitelist", ImmutableList.of()).apply(DISABLED_KEY);
+            "entityRenderDisableWhitelist", ImmutableList.of()).apply(ENTITY_FILTER_KEY);
     public static final ConfigBooleanHotkeyed ENTITY_RENDER_HOLD_SHOW = new ConfigBooleanHotkeyed(
             "entityRenderHoldShow", false, "").apply(DISABLED_KEY);
     public static final ConfigHotkey ENTITY_RENDER_HOLD_SHOW_HOTKEY = new ConfigHotkey(
             "entityRenderHoldShowHotkey", "", KeybindSettings.MODIFIER_INGAME).apply(DISABLED_KEY);
+    //#if MC >= 1.21.1
+    public static final ConfigHotkey ENTITY_RENDER_GROUP_ADD = new ConfigHotkey("entityRenderGroupAdd", "").apply(DISABLED_KEY);
+    public static final ConfigHotkey ENTITY_RENDER_GROUP_REMOVE = new ConfigHotkey("entityRenderGroupRemove", "").apply(DISABLED_KEY);
+    //#endif
     private static final List<IConfigBase> ENTITY_RENDER_DISABLE_CHILDREN = List.of(
             ENTITY_RENDER_DISABLE_MODE, ENTITY_RENDER_DISABLE_MODE_HOTKEY, ENTITY_RENDER_DISABLE_BLACKLIST,
-            ENTITY_RENDER_DISABLE_WHITELIST, ENTITY_RENDER_HOLD_SHOW, ENTITY_RENDER_HOLD_SHOW_HOTKEY);
+            ENTITY_RENDER_DISABLE_WHITELIST, ENTITY_RENDER_HOLD_SHOW, ENTITY_RENDER_HOLD_SHOW_HOTKEY
+            //#if MC >= 1.21.1
+            , ENTITY_RENDER_GROUP_ADD, ENTITY_RENDER_GROUP_REMOVE
+            //#endif
+            );
     //#endif
     public static final ConfigBooleanHotkeyed ENTITY_RENDER_AGGREGATION = new ConfigBooleanHotkeyed(
             "entityRenderAggregation", false, "").apply(DISABLED_KEY);
@@ -1183,6 +1390,14 @@ public final class Configs implements IConfigHandler
             "itemAggregationScanInterval", 10, 1, 100, true).apply(DISABLED_KEY);
     public static final ConfigOptionList ITEM_AGGREGATION_LABEL_POSITION = new ConfigOptionList(
             "itemAggregationLabelPosition", EntityLabelPosition.TOP).apply(DISABLED_KEY);
+    //#if MC >= 1.21.1
+    public static final ConfigOptionList ITEM_AGGREGATION_COUNT_DISPLAY = new ConfigOptionList(
+            "itemAggregationCountDisplay", AggregationCountDisplayMode.ALWAYS).apply(DISABLED_KEY);
+    public static final ConfigOptionList ITEM_AGGREGATION_NAME_DISPLAY = new ConfigOptionList(
+            "itemAggregationNameDisplay", ItemAggregationNameDisplayMode.ALWAYS).apply(DISABLED_KEY);
+    public static final ConfigHotkey ITEM_AGGREGATION_COUNT_DISPLAY_HOTKEY = new ConfigHotkey(
+            "itemAggregationCountDisplayHotkey", "").apply(DISABLED_KEY);
+    //#endif
     public static final ConfigOptionList ITEM_AGGREGATION_LIST_MODE = new ConfigOptionList(
             "itemAggregationListMode", EntityAggregationListMode.NONE).apply(DISABLED_KEY);
     public static final ConfigStringList ITEM_AGGREGATION_WHITELIST = new ConfigStringList(
@@ -1204,6 +1419,12 @@ public final class Configs implements IConfigHandler
             "entityAggregationScanInterval", 10, 1, 100, true).apply(DISABLED_KEY);
     public static final ConfigOptionList ENTITY_AGGREGATION_LABEL_POSITION = new ConfigOptionList(
             "entityAggregationLabelPosition", EntityLabelPosition.TOP).apply(DISABLED_KEY);
+    //#if MC >= 1.21.1
+    public static final ConfigOptionList ENTITY_AGGREGATION_COUNT_DISPLAY = new ConfigOptionList(
+            "entityAggregationCountDisplay", AggregationCountDisplayMode.ALWAYS).apply(DISABLED_KEY);
+    public static final ConfigHotkey ENTITY_AGGREGATION_COUNT_DISPLAY_HOTKEY = new ConfigHotkey(
+            "entityAggregationCountDisplayHotkey", "").apply(DISABLED_KEY);
+    //#endif
     public static final ConfigOptionList ENTITY_AGGREGATION_LIST_MODE = new ConfigOptionList(
             "entityAggregationListMode", EntityAggregationListMode.NONE).apply(DISABLED_KEY);
     public static final ConfigStringList ENTITY_AGGREGATION_WHITELIST = new ConfigStringList(
@@ -1213,37 +1434,86 @@ public final class Configs implements IConfigHandler
     // Kept only to read configurations written before version 14
     private static final ConfigStringList LEGACY_ENTITY_AGGREGATION_ENTITY_LIST = new ConfigStringList(
             "entityAggregationEntityList", ImmutableList.of());
+    //#if MC >= 1.21.1
+    public static final ConfigBooleanHotkeyed CUSTOM_BLOCK_RENDER_DISABLE = new ConfigBooleanHotkeyed("customBlockRenderDisable", false, "").apply(DISABLED_KEY);
+    public static final ConfigBoolean BLOCK_RENDER_DISABLE_EXPANDED = new ConfigBoolean("blockRenderDisableExpanded", false).apply(DISABLED_KEY);
+    public static final ConfigBoolean BLOCK_RENDER_HIDE_BLOCK_ENTITIES = new ConfigBoolean("blockRenderHideBlockEntities", true).apply(DISABLED_KEY);
+    public static final ConfigBoolean BLOCK_RENDER_HIDE_OUTLINE = new ConfigBoolean("blockRenderHideOutline", false).apply(DISABLED_KEY);
+    public static final ConfigBoolean BLOCK_RENDER_HOLD_SHOW = new ConfigBoolean("blockRenderHoldShow", false).apply(DISABLED_KEY);
+    public static final ConfigHotkey BLOCK_RENDER_HOLD_SHOW_HOTKEY = new ConfigHotkey("blockRenderHoldShowHotkey", "", KeybindSettings.MODIFIER_INGAME).apply(DISABLED_KEY);
+    public static final ConfigOptionList BLOCK_RENDER_LIST_MODE = new ConfigOptionList(
+            "blockRenderListMode", BlockRenderListMode.BLACKLIST).apply(DISABLED_KEY);
+    public static final ConfigStringList BLOCK_RENDER_BLACKLIST = new ConfigStringList(
+            "blockRenderBlacklist", ImmutableList.of()).apply(DISABLED_KEY);
+    public static final ConfigStringList BLOCK_RENDER_WHITELIST = new ConfigStringList(
+            "blockRenderWhitelist", ImmutableList.of()).apply(DISABLED_KEY);
+    public static final ConfigStringList RENDER_FILTER_DATA = new ConfigStringList("renderFilterData", ImmutableList.of()).apply(DISABLED_KEY);
+    public static final ConfigHotkey BLOCK_RENDER_GROUP_ADD = new ConfigHotkey("blockRenderGroupAdd", "").apply(DISABLED_KEY);
+    public static final ConfigHotkey BLOCK_RENDER_GROUP_REMOVE = new ConfigHotkey("blockRenderGroupRemove", "").apply(DISABLED_KEY);
+    private static final List<IConfigBase> BLOCK_RENDER_GROUP_CHILDREN = List.of(
+            BLOCK_RENDER_LIST_MODE, BLOCK_RENDER_BLACKLIST, BLOCK_RENDER_WHITELIST, BLOCK_RENDER_HIDE_BLOCK_ENTITIES, BLOCK_RENDER_HIDE_OUTLINE,
+            BLOCK_RENDER_HOLD_SHOW, BLOCK_RENDER_HOLD_SHOW_HOTKEY, BLOCK_RENDER_GROUP_ADD,
+            BLOCK_RENDER_GROUP_REMOVE);
+    //#endif
     public static final List<IConfigBase> DISABLED = List.of(
+    //#if MC >= 1.21.1
+            CUSTOM_BLOCK_RENDER_DISABLE,
+            BLOCK_RENDER_DISABLE_EXPANDED,
+            BLOCK_RENDER_LIST_MODE,
+            BLOCK_RENDER_BLACKLIST, BLOCK_RENDER_WHITELIST,
+            BLOCK_RENDER_HIDE_BLOCK_ENTITIES,
+            BLOCK_RENDER_HIDE_OUTLINE,
+            BLOCK_RENDER_HOLD_SHOW,
+            BLOCK_RENDER_HOLD_SHOW_HOTKEY,
+            RENDER_FILTER_DATA,
+            BLOCK_RENDER_GROUP_ADD,
+            BLOCK_RENDER_GROUP_REMOVE,
+    //#endif
+            //#if MC >= 1.21.1
+            FLUID_TRANSPARENCY, FLUID_TRANSPARENCY_EXPANDED,
+            FLUID_TRANSPARENCY_INSIDE,
+            WATER_TRANSPARENCY_ENABLED, WATER_TRANSPARENCY,
+            LAVA_TRANSPARENCY_ENABLED, LAVA_TRANSPARENCY,
+            //#endif
             DISABLE_FLUID_RENDERING,
             DISABLE_NON_SOURCE_FLUID_RENDERING,
     //#if MC >= 1.21.1
             CUSTOM_ENTITY_RENDER_DISABLE, ENTITY_RENDER_DISABLE_EXPANDED,
-            ENTITY_RENDER_DISABLE_MODE, ENTITY_RENDER_DISABLE_MODE_HOTKEY,
-            ENTITY_RENDER_DISABLE_BLACKLIST, ENTITY_RENDER_DISABLE_WHITELIST,
+            //#if MC >= 1.21.1
+            ENTITY_RENDER_GROUP_ADD, ENTITY_RENDER_GROUP_REMOVE,
+            //#endif
+            ENTITY_RENDER_DISABLE_MODE, ENTITY_RENDER_DISABLE_BLACKLIST, ENTITY_RENDER_DISABLE_WHITELIST,
+            ENTITY_RENDER_DISABLE_MODE_HOTKEY,
             ENTITY_RENDER_HOLD_SHOW, ENTITY_RENDER_HOLD_SHOW_HOTKEY,
     //#endif
             ENTITY_RENDER_AGGREGATION,
-//#if MC >= 1.21.1
-            ENTITY_AGGREGATION_SEPARATE_SIZES,
-//#endif
-            ENTITY_AGGREGATION_COUNT_ONLY,
-            ENTITY_AGGREGATION_RADIUS,
             ENTITY_AGGREGATION_THRESHOLD,
+            ENTITY_AGGREGATION_RADIUS,
             ENTITY_AGGREGATION_SCAN_INTERVAL,
+            //#if MC >= 1.21.1
+            ENTITY_AGGREGATION_COUNT_DISPLAY, ENTITY_AGGREGATION_COUNT_DISPLAY_HOTKEY,
+            //#endif
             ENTITY_AGGREGATION_LABEL_POSITION,
             ENTITY_AGGREGATION_LIST_MODE,
             ENTITY_AGGREGATION_WHITELIST,
             ENTITY_AGGREGATION_BLACKLIST,
+            ENTITY_AGGREGATION_COUNT_ONLY,
+//#if MC >= 1.21.1
+            ENTITY_AGGREGATION_SEPARATE_SIZES,
+//#endif
             ENTITY_RENDER_AGGREGATION_EXPANDED
 //#if MC >= 1.21.1
             , ITEM_RENDER_AGGREGATION,
             ITEM_AGGREGATION_THRESHOLD,
             ITEM_AGGREGATION_RADIUS,
+            ITEM_AGGREGATION_SCAN_INTERVAL,
+            //#if MC >= 1.21.1
+            ITEM_AGGREGATION_COUNT_DISPLAY, ITEM_AGGREGATION_COUNT_DISPLAY_HOTKEY, ITEM_AGGREGATION_NAME_DISPLAY,
+            //#endif
+            ITEM_AGGREGATION_LABEL_POSITION,
             ITEM_AGGREGATION_LIST_MODE,
             ITEM_AGGREGATION_WHITELIST,
             ITEM_AGGREGATION_BLACKLIST,
-            ITEM_AGGREGATION_LABEL_POSITION,
-            ITEM_AGGREGATION_SCAN_INTERVAL,
             ITEM_RENDER_AGGREGATION_EXPANDED
 //#endif
             );
@@ -1311,9 +1581,18 @@ public final class Configs implements IConfigHandler
     public static final List<IHotkey> HOTKEYS = Stream.concat(
             Stream.of(
                     //#if MC >= 1.21.1
+                    CREATIVE_SURVIVAL_REACH,
+                    //#endif
+                    //#if MC >= 1.21.1
+                    CONTAINER_COMPARATOR_OUTPUT,
+                    //#endif
+                    //#if MC >= 1.21.1
+                    PLACEMENT_PREVIEW, PLACEMENT_PREVIEW_WATER, PLACEMENT_PREVIEW_LAVA,
+                    //#endif
+                    //#if MC >= 1.21.1
                     AUTO_OPEN_CHAT,
                     //#endif
-                    //#if MC >= 26.1
+                    //#if MC >= 1.21.1
                     JADE_LARGE_BARREL,
                     //#endif
                     //#if MC >= 1.21.1
@@ -1321,6 +1600,9 @@ public final class Configs implements IConfigHandler
                     //#endif
                     //#if MC >= 1.21.1
                     MINIHUD_PREVIEW_INDEPENDENT,
+                    //#endif
+                    //#if MC >= 1.21.1
+                    BETTER_REGISTRY_PICKER,
                     //#endif
                     OPEN_TOOLS,
                     GIVE_FULL_INVENTORY,
@@ -1369,6 +1651,9 @@ public final class Configs implements IConfigHandler
                     DISABLE_PAUSED_ITEM_TRAJECTORY_PREDICTION,
 //#if MC >= 1.21.1
                     RANGE_FEEDING, RANGE_FEEDING_SKIP_BABIES, RANGE_FEEDING_HOLD, RANGE_FEEDING_ONCE,
+                     //#if MC >= 1.21.1
+                     AUTO_KELP_CLEARING, AUTO_KELP_DISABLE_ON_GUI, AUTO_KELP_ROOT_ONLY, AUTO_KELP_SELECTION_ONLY, AUTO_KELP_CUSTOM_REACH_ENABLED,
+                     //#endif
                     AUTO_EAT, AUTO_EAT_SOURCE_HOTKEY,
                     BETTER_BOSS_BAR, BOSS_BAR_MERGE, BOSS_BAR_SHOW_HEALTH, BOSS_BAR_COMPACT,
                     INVISIBLE_BLOCKS, INVISIBLE_SHOW_BARRIER, INVISIBLE_SHOW_LIGHT, INVISIBLE_SHOW_STRUCTURE_VOID,
@@ -1380,16 +1665,30 @@ public final class Configs implements IConfigHandler
 //#endif
 //#if MC >= 1.21.1
                     ITEM_DESPAWN_TIMER,
+                    //#if MC >= 1.21.1
+                    ITEM_DESPAWN_DISPLAY_HOTKEY,
+                    //#endif
 //#endif
 //#if MC >= 1.21.1
                     ENTITY_GLOW_HIGHLIGHT,
                     ENTITY_GLOW_MODE_HOTKEY,
                     BLOCK_GLOW_HIGHLIGHT,
 //#endif
+                     //#if MC >= 1.21.1
+                     FLUID_TRANSPARENCY, WATER_TRANSPARENCY_ENABLED, LAVA_TRANSPARENCY_ENABLED,
+                     //#endif
                     DISABLE_FLUID_RENDERING,
                     DISABLE_NON_SOURCE_FLUID_RENDERING,
     //#if MC >= 1.21.1
                     CUSTOM_ENTITY_RENDER_DISABLE, ENTITY_RENDER_DISABLE_MODE_HOTKEY,
+    //#if MC >= 1.21.1
+                    CUSTOM_BLOCK_RENDER_DISABLE,
+                    BLOCK_RENDER_HOLD_SHOW_HOTKEY,
+                    BLOCK_RENDER_GROUP_ADD,
+                    BLOCK_RENDER_GROUP_REMOVE,
+                    ENTITY_RENDER_GROUP_ADD,
+                    ENTITY_RENDER_GROUP_REMOVE,
+    //#endif
                     ENTITY_RENDER_HOLD_SHOW, ENTITY_RENDER_HOLD_SHOW_HOTKEY,
     //#endif
                     ENTITY_RENDER_AGGREGATION,
@@ -1397,6 +1696,9 @@ public final class Configs implements IConfigHandler
                     ITEM_RENDER_AGGREGATION,
 //#endif
                     ENTITY_AGGREGATION_COUNT_ONLY,
+                    //#if MC >= 1.21.1
+                    ENTITY_AGGREGATION_COUNT_DISPLAY_HOTKEY, ITEM_AGGREGATION_COUNT_DISPLAY_HOTKEY,
+                    //#endif
                     FAST_WORLD_LOADING_SCREEN,
                     FAST_RESOURCE_PACK_LOADING_SCREEN,
                     BETTER_SAVED_HOTBARS,
@@ -1464,15 +1766,6 @@ public final class Configs implements IConfigHandler
             io.github.halfmasa.xaerobinding.feature.EntityRenderDisableService.reload();
             //#endif
             //#if MC >= 1.21.1
-            if (BLOCK_GLOW_HIGHLIGHT.getBooleanValue())
-            {
-                if (!ENTITY_GLOW_HIGHLIGHT.getBooleanValue())
-                {
-                    ENTITY_GLOW_HIGHLIGHT.setBooleanValue(true);
-                    ENTITY_GLOW_MODE.setOptionListValue(EntityGlowMode.SINGLE);
-                }
-                BLOCK_GLOW_HIGHLIGHT.setBooleanValue(false);
-            }
             io.github.halfmasa.xaerobinding.feature.EntityGlowService.reload();
             io.github.halfmasa.xaerobinding.feature.BlockGlowService.getInstance().reload();
             io.github.halfmasa.xaerobinding.feature.GlowRuleHotkeys.reload();
@@ -1575,6 +1868,19 @@ public final class Configs implements IConfigHandler
 
             ConfigUtils.readConfigBase(root, "Extensions", EXTENSIONS);
             ConfigUtils.readConfigBase(root, "Disabled", DISABLED);
+            //#if MC >= 1.21.1
+            if (configVersion < 58 && root.get("Disabled") instanceof JsonObject disabled)
+            {
+                // Only 26.3 stored the split lists under version 57.
+                if (configVersion < 57 || !disabled.has(BLOCK_RENDER_BLACKLIST.getName()))
+                    io.github.halfmasa.xaerobinding.feature.renderfilter.RenderFilterController.migrateLists(disabled);
+                if (!disabled.has(ITEM_AGGREGATION_NAME_DISPLAY.getName()))
+                {
+                    ITEM_AGGREGATION_NAME_DISPLAY.setOptionListValue(ItemAggregationNameDisplayMode.fromCount(
+                            (AggregationCountDisplayMode) ITEM_AGGREGATION_COUNT_DISPLAY.getOptionListValue()));
+                }
+            }
+            //#endif
             if (configVersion < 14)
             {
                 ConfigUtils.readConfigBase(root, "Disabled", List.of(LEGACY_ENTITY_AGGREGATION_ENTITY_LIST));
@@ -1700,6 +2006,18 @@ public final class Configs implements IConfigHandler
                 {
                     disableNewFeaturesByDefault();
                 }
+                //#if MC >= 1.21.1
+                if (configVersion < 56)
+                {
+                    io.github.halfmasa.xaerobinding.feature.EntityGlowRule.migrateSplitRules();
+                    if (ENTITY_GLOW_HIGHLIGHT.getBooleanValue()
+                            && io.github.halfmasa.xaerobinding.feature.EntityGlowRule.loadRules(true).stream()
+                                    .anyMatch(io.github.halfmasa.xaerobinding.feature.EntityGlowRule::enabled))
+                    {
+                        BLOCK_GLOW_HIGHLIGHT.setBooleanValue(true);
+                    }
+                }
+                //#endif
                 this.save();
                 XaeroWorldBinding.LOGGER.info("Migrated halfmasa config to version {}", CONFIG_VERSION);
             }
@@ -1746,6 +2064,7 @@ public final class Configs implements IConfigHandler
         }
         return migrated.toString();
     }
+
 
     public static boolean isConfigLoaded()
     {
@@ -1821,10 +2140,11 @@ public final class Configs implements IConfigHandler
         return ALL.stream()
                 .filter(config -> !(config instanceof ConfigGroupHeader))
                 .filter(config -> !config.getName().endsWith("Expanded"))
+                //#if MC >= 1.21.1
+                .filter(config -> config != RENDER_FILTER_DATA)
+                //#endif
     //#if MC >= 1.21.1
-                .filter(config -> config != ENTITY_GLOW_RULES && config != BLOCK_GLOW_RULES &&
-                        config != BLOCK_GLOW_HIGHLIGHT && config != BLOCK_GLOW_RULE_EDITOR &&
-                        config != BLOCK_GLOW_EXPANDED)
+                .filter(config -> config != ENTITY_GLOW_RULES && config != BLOCK_GLOW_RULES)
     //#endif
                 .toList();
     }
@@ -1916,6 +2236,17 @@ public final class Configs implements IConfigHandler
     public static ConfigBoolean getExpansionConfig(IConfigBase config)
     {
         //#if MC >= 1.21.1
+        if (config == ALL_MODE_HUD) return ALL_MODE_HUD_EXPANDED;
+        if (config == CONTAINER_COMPARATOR_OUTPUT) return CONTAINER_COMPARATOR_EXPANDED;
+        //#endif
+        //#if MC >= 1.21.1
+        if (config == FLUID_TRANSPARENCY) return FLUID_TRANSPARENCY_EXPANDED;
+        if (config == CUSTOM_BLOCK_RENDER_DISABLE) return BLOCK_RENDER_DISABLE_EXPANDED;
+        //#endif
+        //#if MC >= 1.21.1
+        if (config == BETTER_WORLD_SAVES) return CUSTOM_SAVES_PATHS_EXPANDED;
+        //#endif
+        //#if MC >= 1.21.1
         if (config == io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.ENABLED)
             return io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.EXPANDED;
         //#endif
@@ -1924,7 +2255,14 @@ public final class Configs implements IConfigHandler
     //#endif
     //#if MC >= 1.21.1
         if (config == CUSTOM_ENTITY_RENDER_DISABLE) return ENTITY_RENDER_DISABLE_EXPANDED;
+        //#if MC >= 1.21.1
+        if (config == AUTO_KELP_CLEARING) return AUTO_KELP_EXPANDED;
+        //#endif
         if (config == AUTO_EAT) return AUTO_EAT_EXPANDED;
+        //#if MC >= 1.21.1
+        if (config == PLACEMENT_PREVIEW) return PLACEMENT_PREVIEW_EXPANDED;
+        if (config == PLACEMENT_PREVIEW_FLUID) return PLACEMENT_PREVIEW_FLUID_EXPANDED;
+        //#endif
         if (config == RANGE_FEEDING) return RANGE_FEEDING_EXPANDED;
         if (config == BETTER_BOSS_BAR) return BETTER_BOSS_BAR_EXPANDED;
         if (config == BOSS_BAR_MERGE) return BOSS_BAR_MERGE_EXPANDED;
@@ -1985,8 +2323,21 @@ public final class Configs implements IConfigHandler
                 io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.CHILDREN.contains(config) ||
                 //#endif
     //#if MC >= 1.21.1
+                //#if MC >= 1.21.1
+                ALL_MODE_HUD_CHILDREN.contains(config) || CONTAINER_COMPARATOR_CHILDREN.contains(config) ||
+                //#endif
+                //#if MC >= 1.21.1
+                FLUID_TRANSPARENCY_CHILDREN.contains(config) ||
+                BLOCK_RENDER_GROUP_CHILDREN.contains(config) ||
+                //#endif
                 ENTITY_RENDER_DISABLE_CHILDREN.contains(config) ||
+                //#if MC >= 1.21.1
+                AUTO_KELP_CHILDREN.contains(config) ||
+                //#endif
                 AUTO_EAT_CHILDREN.contains(config) ||
+                //#if MC >= 1.21.1
+                PLACEMENT_PREVIEW_CHILDREN.contains(config) || PLACEMENT_PREVIEW_FLUID_CHILDREN.contains(config) ||
+                //#endif
                 RANGE_FEEDING_CHILDREN.contains(config) ||
                 BETTER_BOSS_BAR_CHILDREN.contains(config) ||
                 BOSS_BAR_MERGE_CHILDREN.contains(config) ||
@@ -2038,6 +2389,17 @@ public final class Configs implements IConfigHandler
     public static IConfigBase getExpansionParent(IConfigBase config)
     {
         //#if MC >= 1.21.1
+        if (ALL_MODE_HUD_CHILDREN.contains(config)) return ALL_MODE_HUD;
+        if (CONTAINER_COMPARATOR_CHILDREN.contains(config)) return CONTAINER_COMPARATOR_OUTPUT;
+        //#endif
+        //#if MC >= 1.21.1
+        if (FLUID_TRANSPARENCY_CHILDREN.contains(config)) return FLUID_TRANSPARENCY;
+        if (BLOCK_RENDER_GROUP_CHILDREN.contains(config)) return CUSTOM_BLOCK_RENDER_DISABLE;
+        //#endif
+        //#if MC >= 1.21.1
+        if (isWorldSaveManagementChild(config)) return BETTER_WORLD_SAVES;
+        //#endif
+        //#if MC >= 1.21.1
         if (io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.CHILDREN.contains(config))
             return io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.ENABLED;
         //#endif
@@ -2046,7 +2408,14 @@ public final class Configs implements IConfigHandler
     //#endif
     //#if MC >= 1.21.1
         if (ENTITY_RENDER_DISABLE_CHILDREN.contains(config)) return CUSTOM_ENTITY_RENDER_DISABLE;
+        //#if MC >= 1.21.1
+        if (AUTO_KELP_CHILDREN.contains(config)) return AUTO_KELP_CLEARING;
+        //#endif
         if (AUTO_EAT_CHILDREN.contains(config)) return AUTO_EAT;
+        //#if MC >= 1.21.1
+        if (PLACEMENT_PREVIEW_FLUID_CHILDREN.contains(config)) return PLACEMENT_PREVIEW_FLUID;
+        if (PLACEMENT_PREVIEW_CHILDREN.contains(config)) return PLACEMENT_PREVIEW;
+        //#endif
         if (RANGE_FEEDING_CHILDREN.contains(config)) return RANGE_FEEDING;
         if (BETTER_BOSS_BAR_CHILDREN.contains(config)) return BETTER_BOSS_BAR;
         if (BOSS_BAR_MERGE_CHILDREN.contains(config)) return BOSS_BAR_MERGE;
@@ -2114,10 +2483,11 @@ public final class Configs implements IConfigHandler
             return configs.stream()
                     .filter(config -> !(config instanceof ConfigGroupHeader))
                     .filter(config -> !config.getName().endsWith("Expanded"))
+                //#if MC >= 1.21.1
+                .filter(config -> config != RENDER_FILTER_DATA)
+                //#endif
     //#if MC >= 1.21.1
-                    .filter(config -> config != ENTITY_GLOW_RULES && config != BLOCK_GLOW_RULES &&
-                            config != BLOCK_GLOW_HIGHLIGHT && config != BLOCK_GLOW_RULE_EDITOR &&
-                            config != BLOCK_GLOW_EXPANDED)
+                    .filter(config -> config != ENTITY_GLOW_RULES && config != BLOCK_GLOW_RULES)
     //#endif
                     .toList();
         }
@@ -2133,7 +2503,21 @@ public final class Configs implements IConfigHandler
                         || AUTO_OPEN_CHAT_EXPANDED.getBooleanValue())
     //#endif
     //#if MC >= 1.21.1
+                //#if MC >= 1.21.1
+                .filter(config -> config != ALL_MODE_HUD_EXPANDED && config != CONTAINER_COMPARATOR_EXPANDED)
+                .filter(config -> !ALL_MODE_HUD_CHILDREN.contains(config) || ALL_MODE_HUD_EXPANDED.getBooleanValue())
+                .filter(config -> !CONTAINER_COMPARATOR_CHILDREN.contains(config) || CONTAINER_COMPARATOR_EXPANDED.getBooleanValue())
+                //#endif
+                //#if MC >= 1.21.1
+                .filter(config -> config != AUTO_KELP_EXPANDED)
+                .filter(config -> !AUTO_KELP_CHILDREN.contains(config) || AUTO_KELP_EXPANDED.getBooleanValue())
+                //#endif
                 .filter(config -> config != AUTO_EAT_EXPANDED)
+                //#if MC >= 1.21.1
+                .filter(config -> config != PLACEMENT_PREVIEW_EXPANDED && config != PLACEMENT_PREVIEW_FLUID_EXPANDED)
+                .filter(config -> !PLACEMENT_PREVIEW_CHILDREN.contains(config) || PLACEMENT_PREVIEW_EXPANDED.getBooleanValue())
+                .filter(config -> !PLACEMENT_PREVIEW_FLUID_CHILDREN.contains(config) || (PLACEMENT_PREVIEW_EXPANDED.getBooleanValue() && PLACEMENT_PREVIEW_FLUID_EXPANDED.getBooleanValue()))
+                //#endif
                 .filter(config -> config != RANGE_FEEDING_EXPANDED)
                 .filter(config -> !RANGE_FEEDING_CHILDREN.contains(config) || RANGE_FEEDING_EXPANDED.getBooleanValue())
                 .filter(config -> !AUTO_EAT_CHILDREN.contains(config) || AUTO_EAT_EXPANDED.getBooleanValue())
@@ -2150,8 +2534,7 @@ public final class Configs implements IConfigHandler
     //#endif
     //#if MC >= 1.21.1
                 .filter(config -> config != ENTITY_GLOW_RULES && config != BLOCK_GLOW_RULES &&
-                        config != ENTITY_GLOW_EXPANDED && config != BLOCK_GLOW_EXPANDED &&
-                        config != BLOCK_GLOW_HIGHLIGHT && config != BLOCK_GLOW_RULE_EDITOR)
+                        config != ENTITY_GLOW_EXPANDED && config != BLOCK_GLOW_EXPANDED)
                 .filter(config -> !ENTITY_GLOW_CHILDREN.contains(config) || ENTITY_GLOW_EXPANDED.getBooleanValue())
                 .filter(config -> !BLOCK_GLOW_CHILDREN.contains(config) || BLOCK_GLOW_EXPANDED.getBooleanValue())
     //#endif
@@ -2209,7 +2592,16 @@ public final class Configs implements IConfigHandler
                 .filter(config -> !isWaypointSharingChild(config) || WAYPOINT_SHARING_EXPANDED.getBooleanValue())
                 .filter(config -> !isDraggableChild(config) || DRAGGABLE_LISTS_EXPANDED.getBooleanValue())
                 //#if MC >= 1.21.1
+                //#if MC >= 1.21.1
+                .filter(config -> config != FLUID_TRANSPARENCY_EXPANDED)
+                .filter(config -> config != BLOCK_RENDER_DISABLE_EXPANDED)
+                .filter(config -> !BLOCK_RENDER_GROUP_CHILDREN.contains(config) || BLOCK_RENDER_DISABLE_EXPANDED.getBooleanValue())
+                .filter(config -> !FLUID_TRANSPARENCY_CHILDREN.contains(config) || FLUID_TRANSPARENCY_EXPANDED.getBooleanValue())
+                //#endif
                 .filter(config -> config != ENTITY_RENDER_DISABLE_EXPANDED)
+    //#if MC >= 1.21.1
+                .filter(config -> config != RENDER_FILTER_DATA)
+    //#endif
                 .filter(config -> !ENTITY_RENDER_DISABLE_CHILDREN.contains(config) || ENTITY_RENDER_DISABLE_EXPANDED.getBooleanValue())
                 //#endif
                 .filter(config -> config != ENTITY_RENDER_AGGREGATION_EXPANDED)
@@ -2234,6 +2626,9 @@ public final class Configs implements IConfigHandler
     private static boolean isEntityAggregationChild(IConfigBase config)
     {
         return config == ENTITY_AGGREGATION_COUNT_ONLY ||
+                //#if MC >= 1.21.1
+                config == ENTITY_AGGREGATION_COUNT_DISPLAY || config == ENTITY_AGGREGATION_COUNT_DISPLAY_HOTKEY ||
+                //#endif
 //#if MC >= 1.21.1
                 config == ENTITY_AGGREGATION_SEPARATE_SIZES ||
 //#endif
@@ -2247,6 +2642,10 @@ public final class Configs implements IConfigHandler
     private static boolean isItemAggregationChild(IConfigBase config)
     {
         return config == ITEM_AGGREGATION_THRESHOLD || config == ITEM_AGGREGATION_RADIUS ||
+                //#if MC >= 1.21.1
+                config == ITEM_AGGREGATION_COUNT_DISPLAY || config == ITEM_AGGREGATION_COUNT_DISPLAY_HOTKEY ||
+                config == ITEM_AGGREGATION_NAME_DISPLAY ||
+                //#endif
                 config == ITEM_AGGREGATION_LIST_MODE || config == ITEM_AGGREGATION_WHITELIST ||
                 config == ITEM_AGGREGATION_BLACKLIST || config == ITEM_AGGREGATION_LABEL_POSITION ||
                 config == ITEM_AGGREGATION_SCAN_INTERVAL;
@@ -2298,6 +2697,9 @@ public final class Configs implements IConfigHandler
         java.util.ArrayList<IConfigBase> result = new java.util.ArrayList<>();
         for (IConfigBase config : PORTED)
         {
+            //#if MC >= 1.21.1
+            if (isWorldSaveManagementChild(config) && !CUSTOM_SAVES_PATHS_EXPANDED.getBooleanValue()) continue;
+            //#endif
             //#if MC >= 1.21.1
             if (config == MASA_FAVORITES_EXPANDED || config == MASA_BETTER_SWITCHER_EXPANDED) continue;
             if (config == MASA_FAVORITES)
@@ -2438,10 +2840,25 @@ public final class Configs implements IConfigHandler
     private static boolean isGenericExpandedChildVisible(IConfigBase config)
     {
         //#if MC >= 1.21.1
+        if (ALL_MODE_HUD_CHILDREN.contains(config)) return ALL_MODE_HUD_EXPANDED.getBooleanValue();
+        if (CONTAINER_COMPARATOR_CHILDREN.contains(config)) return CONTAINER_COMPARATOR_EXPANDED.getBooleanValue();
+        //#endif
+        //#if MC >= 1.21.1
+        if (FLUID_TRANSPARENCY_CHILDREN.contains(config)) return FLUID_TRANSPARENCY_EXPANDED.getBooleanValue();
+        if (BLOCK_RENDER_GROUP_CHILDREN.contains(config)) return BLOCK_RENDER_DISABLE_EXPANDED.getBooleanValue();
+        //#endif
+        //#if MC >= 1.21.1
         if (ENTITY_RENDER_DISABLE_CHILDREN.contains(config)) return ENTITY_RENDER_DISABLE_EXPANDED.getBooleanValue();
         //#endif
     //#if MC >= 1.21.1
+        //#if MC >= 1.21.1
+        if (AUTO_KELP_CHILDREN.contains(config)) return AUTO_KELP_EXPANDED.getBooleanValue();
+        //#endif
         if (AUTO_EAT_CHILDREN.contains(config)) return AUTO_EAT_EXPANDED.getBooleanValue();
+        //#if MC >= 1.21.1
+        if (PLACEMENT_PREVIEW_FLUID_CHILDREN.contains(config)) return PLACEMENT_PREVIEW_EXPANDED.getBooleanValue() && PLACEMENT_PREVIEW_FLUID_EXPANDED.getBooleanValue();
+        if (PLACEMENT_PREVIEW_CHILDREN.contains(config)) return PLACEMENT_PREVIEW_EXPANDED.getBooleanValue();
+        //#endif
         if (RANGE_FEEDING_CHILDREN.contains(config)) return RANGE_FEEDING_EXPANDED.getBooleanValue();
         if (BETTER_BOSS_BAR_CHILDREN.contains(config)) return BETTER_BOSS_BAR_EXPANDED.getBooleanValue();
         if (BOSS_BAR_MERGE_CHILDREN.contains(config)) return BETTER_BOSS_BAR_EXPANDED.getBooleanValue() && BOSS_BAR_MERGE_EXPANDED.getBooleanValue();

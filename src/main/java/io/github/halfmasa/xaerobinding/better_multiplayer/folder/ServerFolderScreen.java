@@ -63,6 +63,13 @@ public final class ServerFolderScreen extends Screen {
             save.active = !name.getValue().isBlank(); name.setResponder(value -> save.active = !value.isBlank()); y += 26;
         }
         if (entryId != null) {
+            //#if MC >= 1.21.1
+            if (folder == null && io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.favorites()) {
+                button(manager.isFavorite(entryId) ? "halfmasa.play_lists.unfavorite" : "halfmasa.play_lists.favorite",
+                        y, () -> { if (manager.toggleFavorite(entryId)) onClose(); });
+                y += 26;
+            }
+            //#endif
             button("halfmasa.multiplayer.move", y, () -> { mode = "move"; rebuildWidgets(); }); y += 26;
             if (folder != null) {
                 button("halfmasa.multiplayer.new_folder", y, () -> minecraft.setScreenAndShow(new ServerFolderScreen(this, null, entryId))); y += 26;

@@ -26,6 +26,11 @@ import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.state.level.*;
 import net.minecraft.network.chat.Component;
 public class AggregationCheck {
+ static class TimerState extends EntityRenderState implements ItemDespawnLabelState {
+  private Label label;
+  public Label halfmasa$getDespawnLabel(){return label;}
+  public void halfmasa$setDespawnLabel(Label label){this.label=label;}
+ }
  static void check(boolean v,String why){if(!v)throw new AssertionError(why);}
  static EntityRenderAggregation aggregation=EntityRenderAggregation.getInstance();
  static void awaitJobs()throws Exception{
@@ -162,6 +167,12 @@ public class AggregationCheck {
    check(aggregation.shouldHideModel(mobs.getFirst())&&!aggregation.shouldHideModel(stoneA),"mob count-only leaks into items");
    Configs.ITEM_AGGREGATION_LABEL_POSITION.option=io.github.halfmasa.xaerobinding.config.EntityLabelPosition.SIDE;
    check(EntityRenderAggregation.isSideLabel(stoneA)&&!EntityRenderAggregation.isSideLabel(mobs.getFirst()),"label position is shared");
+   Configs.ITEM_AGGREGATION_COUNT_DISPLAY.option=io.github.halfmasa.xaerobinding.config.AggregationCountDisplayMode.HIDDEN;
+   check(aggregation.getLabel(stoneA)!=null && !aggregation.getLabel(stoneA).text.contains(" * "),
+       "hiding the count leaves the item name");
+   Configs.ITEM_AGGREGATION_NAME_DISPLAY.option=io.github.halfmasa.xaerobinding.config.ItemAggregationNameDisplayMode.HIDDEN;
+   check(aggregation.getLabel(stoneA)==null && aggregation.getLabel(mobs.getFirst())!=null
+       && aggregation.shouldHide(stoneB),"hidden item label changes neither mob labels nor grouping");
    Configs.ITEM_AGGREGATION_THRESHOLD.number=3;rebuild(mobs);
    check(!aggregation.shouldHide(stoneB)&&aggregation.shouldHide(mobs.get(1)),"item threshold changes mob grouping");
    Configs.ITEM_AGGREGATION_LIST_MODE.option=io.github.halfmasa.xaerobinding.config.EntityAggregationListMode.BLACKLIST;
@@ -226,6 +237,20 @@ public class AggregationCheck {
     check(fresh.nameTagAttachment.equals(Vec3.ZERO),"previous frame offsets leak into next frame");
    }
   }
+  case "mixed_labels" -> {
+   var level=new LevelRenderState();var camera=level.cameraRenderState;
+   camera.projectionMatrix=new Matrix4f().perspective((float)Math.toRadians(70),16f/9f,0.05f,256f);
+   camera.orientation=new Quaternionf();camera.viewRotationMatrix=new Matrix4f();
+   var mob=state(0,-0.5,-10);
+   var item=new TimerState();item.y=-0.5;item.z=-10;item.distanceToCameraSq=100;
+   item.halfmasa$setDespawnLabel(new ItemDespawnLabelState.Label(Component.literal("Stone * 20 · 02:15"),Vec3.ZERO,false));
+   level.entityRenderStates.addAll(List.of(mob,item));aggregation.beginRenderFrame();
+   aggregation.trackLabel(new Entity(1),mob);aggregation.trackLabel(new Entity(2),item);
+   aggregation.layoutLabels(level);
+   var combined=item.halfmasa$getDespawnLabel();
+   check(!combined.attachment().equals(mob.nameTagAttachment),"fused item label still overlaps the mob label");
+   check(!combined.throughWalls()&&combined.text().text.equals("Stone * 20 · 02:15"),"layout changed the label content or occlusion");
+  }
  }}
 }
 '''
@@ -234,15 +259,29 @@ STUBS = {
  "io/github/halfmasa/xaerobinding/feature/EntityRenderDisableService.java": "package io.github.halfmasa.xaerobinding.feature;import java.util.Set;import net.minecraft.world.entity.Entity;public class EntityRenderDisableService {public static boolean active;public static Set<Integer> hidden=Set.of();public static boolean isFiltering(){return active;}public static boolean shouldHide(Entity entity){return active&&hidden.contains(entity.getId());}}",
  "io/github/halfmasa/xaerobinding/config/Configs.java": '''package io.github.halfmasa.xaerobinding.config; import java.util.*;public class Configs {
  public static class Value {public boolean flag;public int number=10;public double decimal=1;public Object option=EntityAggregationListMode.NONE;public List<String> strings=List.of();public boolean getBooleanValue(){return flag;}public int getIntegerValue(){return number;}public double getDoubleValue(){return decimal;}public Object getOptionListValue(){return option;}public List<String> getStrings(){return strings;}}
+ public static final Value ENTITY_AGGREGATION_COUNT_DISPLAY=new Value(),ITEM_AGGREGATION_COUNT_DISPLAY=new Value(),ITEM_AGGREGATION_NAME_DISPLAY=new Value(),ITEM_DESPAWN_DISPLAY=new Value(),ITEM_DESPAWN_TIMER=new Value();
+ static{ENTITY_AGGREGATION_COUNT_DISPLAY.option=AggregationCountDisplayMode.ALWAYS;ITEM_AGGREGATION_COUNT_DISPLAY.option=AggregationCountDisplayMode.ALWAYS;ITEM_AGGREGATION_NAME_DISPLAY.option=ItemAggregationNameDisplayMode.ALWAYS;}
  public static final Value ENTITY_RENDER_AGGREGATION=new Value(),ITEM_RENDER_AGGREGATION=new Value(),ENTITY_AGGREGATION_SEPARATE_SIZES=new Value(),ENTITY_AGGREGATION_COUNT_ONLY=new Value(),ENTITY_AGGREGATION_SCAN_INTERVAL=new Value(),ENTITY_AGGREGATION_RADIUS=new Value(),ENTITY_AGGREGATION_THRESHOLD=new Value(),ENTITY_AGGREGATION_LIST_MODE=new Value(),ENTITY_AGGREGATION_WHITELIST=new Value(),ENTITY_AGGREGATION_BLACKLIST=new Value(),ITEM_AGGREGATION_THRESHOLD=new Value(),ITEM_AGGREGATION_RADIUS=new Value(),ITEM_AGGREGATION_SCAN_INTERVAL=new Value(),ITEM_AGGREGATION_LIST_MODE=new Value(),ITEM_AGGREGATION_WHITELIST=new Value(),ITEM_AGGREGATION_BLACKLIST=new Value(),ITEM_AGGREGATION_LABEL_POSITION=new Value(),ENTITY_AGGREGATION_LABEL_POSITION=new Value();static{ITEM_RENDER_AGGREGATION.flag=true;ENTITY_AGGREGATION_SEPARATE_SIZES.flag=true;ITEM_AGGREGATION_THRESHOLD.number=2;ITEM_AGGREGATION_LABEL_POSITION.option=EntityLabelPosition.TOP;ENTITY_AGGREGATION_LABEL_POSITION.option=EntityLabelPosition.TOP;}}''',
  "io/github/halfmasa/xaerobinding/config/EntityAggregationListMode.java": "package io.github.halfmasa.xaerobinding.config;public enum EntityAggregationListMode {NONE,WHITELIST,BLACKLIST}",
  "io/github/halfmasa/xaerobinding/config/EntityLabelPosition.java": "package io.github.halfmasa.xaerobinding.config;public enum EntityLabelPosition {TOP,SIDE}",
+ "io/github/halfmasa/xaerobinding/config/AggregationCountDisplayMode.java": "package io.github.halfmasa.xaerobinding.config;public enum AggregationCountDisplayMode {ALWAYS,TARGETED,HIDDEN}",
+ "fi/dy/masa/malilib/config/IConfigOptionListEntry.java": "package fi.dy.masa.malilib.config;public interface IConfigOptionListEntry {String getStringValue();String getDisplayName();IConfigOptionListEntry cycle(boolean forward);IConfigOptionListEntry fromString(String value);}",
+ "fi/dy/masa/malilib/util/StringUtils.java": "package fi.dy.masa.malilib.util;public class StringUtils {public static String translate(String key){return key;}}",
  "io/github/halfmasa/xaerobinding/XaeroWorldBinding.java": "package io.github.halfmasa.xaerobinding;public class XaeroWorldBinding {public static final Log LOGGER=new Log();public static class Log {public void warn(String message,Throwable error){throw new AssertionError(message,error);}}}",
  "net/fabricmc/loader/api/FabricLoader.java": "package net.fabricmc.loader.api;public class FabricLoader {public static FabricLoader getInstance(){return new FabricLoader();}public boolean isModLoaded(String id){return false;}}",
  "fi/dy/masa/malilib/config/options/ConfigBooleanHotkeyed.java": "package fi.dy.masa.malilib.config.options;public class ConfigBooleanHotkeyed {public boolean getBooleanValue(){return false;}}",
  "fi/dy/masa/malilib/interfaces/IClientTickHandler.java": "package fi.dy.masa.malilib.interfaces;import net.minecraft.client.Minecraft;public interface IClientTickHandler {void onClientTick(Minecraft client);}",
  "net/minecraft/network/chat/Component.java": "package net.minecraft.network.chat;public class Component {public String text;public Component(String s){text=s;}public static Component empty(){return new Component(\"\");}public static Component literal(String s){return new Component(s);}public static Component translatable(String key,Object... args){String prefix=switch(key){case \"halfmasa.entity_aggregation.baby\"->\"Baby \";case \"halfmasa.entity_aggregation.baby_cube\"->\"Baby \";case \"halfmasa.entity_aggregation.size.small\"->\"Small \";case \"halfmasa.entity_aggregation.size.medium\"->\"Medium \";case \"halfmasa.entity_aggregation.size.large\"->\"Large \";default->throw new IllegalArgumentException(key);};return new Component(prefix+((Component)args[0]).text);}public Component append(Component c){text+=c.text;return this;}}",
- "net/minecraft/world/phys/Vec3.java": "package net.minecraft.world.phys;public record Vec3(double x,double y,double z) {public static final Vec3 ZERO=new Vec3(0,0,0);public Vec3 add(double a,double b,double c){return new Vec3(x+a,y+b,z+c);}public double distanceToSqr(Vec3 b){return (x-b.x)*(x-b.x)+(y-b.y)*(y-b.y)+(z-b.z)*(z-b.z);}}",
+ "net/minecraft/world/phys/Vec3.java": "package net.minecraft.world.phys;public record Vec3(double x,double y,double z) {public static final Vec3 ZERO=new Vec3(0,0,0);public Vec3 add(double a,double b,double c){return new Vec3(x+a,y+b,z+c);}public Vec3 subtract(Vec3 b){return add(-b.x,-b.y,-b.z);}public double distanceToSqr(Vec3 b){return (x-b.x)*(x-b.x)+(y-b.y)*(y-b.y)+(z-b.z);}}",
+ "net/minecraft/world/phys/AABB.java": """package net.minecraft.world.phys;
+ public class AABB {
+   public AABB(Vec3 start,Vec3 end) {}
+   public AABB inflate(double value){return this;}
+   public AABB move(Vec3 offset){return this;}
+   public boolean contains(Vec3 point){return false;}
+   public java.util.Optional<Vec3> clip(Vec3 start,Vec3 end){return java.util.Optional.empty();}
+ }""",
+ "net/minecraft/world/phys/HitResult.java": "package net.minecraft.world.phys;public record HitResult(Vec3 location){public Vec3 getLocation(){return location;}}",
  "net/minecraft/world/entity/EntityType.java": "package net.minecraft.world.entity;import net.minecraft.network.chat.Component;public class EntityType<T> {private final String name;public EntityType(){this(\"mob\");}public EntityType(String name){this.name=name;}public Component getDescription(){return Component.literal(name);}public boolean equals(Object other){return other instanceof EntityType<?> type&&name.equals(type.name);}public int hashCode(){return name.hashCode();}}",
  "net/minecraft/world/entity/Entity.java": "package net.minecraft.world.entity;import net.minecraft.world.phys.Vec3;public class Entity {public boolean named,removed;public Vec3 pos=Vec3.ZERO;private int id;public static final EntityType<?> TYPE=new EntityType<>();public EntityType<?> type=TYPE;public Entity(){this(0);}public Entity(int id){this.id=id;}public int getId(){return id;}public boolean isRemoved(){return removed;}public boolean hasCustomName(){return named;}public Vec3 position(){return pos;}public EntityType<?> getType(){return type;}}",
  "net/minecraft/world/entity/LivingEntity.java": "package net.minecraft.world.entity;public class LivingEntity extends Entity {public boolean baby;public float width=1,height=2;public LivingEntity(int id){super(id);}public boolean isBaby(){return baby;}public EntityDimensions getDimensions(Pose pose){return new EntityDimensions(width,height);}}",
@@ -263,6 +302,27 @@ for qualified in ["boss.enderdragon.EnderDragon", "boss.wither.WitherBoss", "dec
  package, name = qualified.rsplit(".", 1)
  STUBS["net/minecraft/world/entity/" + qualified.replace(".", "/") + ".java"] = f"package net.minecraft.world.entity.{package};public class {name} extends net.minecraft.world.entity.Entity {{}}"
 
+# Targeting uses real hitboxes in the client smoke test. These boundary stubs keep
+# the pre-existing grouping and layout scenarios independent of a running client.
+STUBS["net/minecraft/world/entity/Entity.java"] = STUBS["net/minecraft/world/entity/Entity.java"][:-1] + """
+ public boolean isSpectator(){return false;} public boolean isPickable(){return true;}
+ public Vec3 getEyePosition(float partial){return pos;} public Vec3 getPosition(float partial){return pos;}
+ public float getPickRadius(){return 0;}
+ public net.minecraft.world.phys.AABB getBoundingBox(){return new net.minecraft.world.phys.AABB(pos,pos);}
+ public net.minecraft.world.phys.HitResult pick(double reach,float partial,boolean fluids){return new net.minecraft.world.phys.HitResult(pos);}
+}"""
+STUBS["net/minecraft/world/entity/player/Player.java"] = STUBS["net/minecraft/world/entity/player/Player.java"][:-1] + "public double entityInteractionRange(){return 3;}}"
+STUBS["net/minecraft/client/multiplayer/ClientLevel.java"] = STUBS["net/minecraft/client/multiplayer/ClientLevel.java"][:-1] + """
+ public List<Entity> getEntities(Entity excluded,net.minecraft.world.phys.AABB bounds,java.util.function.Predicate<? super Entity> predicate){
+   return entities.stream().filter(entity -> entity != excluded).filter(predicate).toList();
+ }
+}"""
+STUBS["net/minecraft/client/Minecraft.java"] = STUBS["net/minecraft/client/Minecraft.java"][:-1] + """
+ public net.minecraft.world.entity.player.Player player;
+ public DeltaTracker getDeltaTracker(){return new DeltaTracker();}
+ public static class DeltaTracker{ public float getGameTimeDeltaPartialTick(boolean advance){return 1;} }
+}"""
+
 class EntityAggregationTests(unittest.TestCase):
  @classmethod
  def setUpClass(cls):
@@ -278,7 +338,8 @@ class EntityAggregationTests(unittest.TestCase):
    if name.endswith("/Vec3.java"):
     code=code.replace("public record Vec3(double x,double y,double z)","public class Vec3").replace("{public static final", "{public final double x,y,z;public Vec3(double x,double y,double z){this.x=x;this.y=y;this.z=z;}public boolean equals(Object o){return o instanceof Vec3 v&&x==v.x&&y==v.y&&z==v.z;}public static final")
    path=work/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(code,encoding="utf-8");sources.append(path)
-  for name in ["EntityRenderAggregation.java","AggregationLabelLayout.java"]:sources.append(ROOT/"src/main/java/io/github/halfmasa/xaerobinding/feature"/name)
+  for name in ["EntityRenderAggregation.java","AggregationLabelLayout.java","ItemDespawnLabelState.java"]:sources.append(ROOT/"src/main/java/io/github/halfmasa/xaerobinding/feature"/name)
+  sources.append(ROOT/"src/main/java/io/github/halfmasa/xaerobinding/config/ItemAggregationNameDisplayMode.java")
   harness=work/"AggregationCheck.java";harness.write_text(HARNESS,encoding="utf-8");sources.append(harness)
   result=subprocess.run([javac,"-encoding","UTF-8","-classpath",str(joml),"-d",str(work),*map(str,sources)],capture_output=True,text=True)
   if result.returncode:raise AssertionError(result.stdout+result.stderr)
@@ -292,6 +353,7 @@ class EntityAggregationTests(unittest.TestCase):
  def test_dense_mixed_width_labels_are_deterministic_and_do_not_overlap(self):self.scenario("layout")
  def test_representative_stays_stable_within_one_block_and_recovers_after_removal(self):self.scenario("representative")
  def test_camera_pitch_yaw_projection_and_frame_reset(self):self.scenario("projection")
+ def test_fused_item_and_mob_labels_share_collision_layout(self):self.scenario("mixed_labels")
  def test_mob_and_item_threshold_radius_lists_position_and_count_only_are_independent(self):self.scenario("independent_settings")
  def test_mob_and_item_refresh_and_invalidation_are_independent(self):self.scenario("independent_refresh")
  def test_dead_representative_recovers_before_the_next_scan(self):self.scenario("anchor_removed")

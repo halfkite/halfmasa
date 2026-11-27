@@ -7,7 +7,7 @@ import java.util.Locale;
 import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
-//#if MC >= 1.21.11
+//#if MC >= 1.21.1
 import net.minecraft.resources.Identifier;
 //#else
 //$$ import net.minecraft.resources.ResourceLocation;
@@ -40,7 +40,7 @@ public final class EntityRenderDisableService
             if (entry == null || entry.isBlank()) continue;
             String input = entry.trim().toLowerCase(Locale.ROOT);
             if (!input.contains(":")) input = "minecraft:" + input;
-            //#if MC >= 1.21.11
+            //#if MC >= 1.21.1
             Identifier id = Identifier.tryParse(input);
             //#else
             //$$ ResourceLocation id = ResourceLocation.tryParse(input);
@@ -56,7 +56,11 @@ public final class EntityRenderDisableService
     {
         if (!Configs.CUSTOM_ENTITY_RENDER_DISABLE.getBooleanValue() || Minecraft.getInstance().level == null
                 || HoldToShow.entityRenderingRestored()) return false;
-        return Configs.ENTITY_RENDER_DISABLE_MODE.getOptionListValue() != EntityRenderDisableMode.WHITELIST || !rules.whitelist.isEmpty();
+        //#if MC >= 1.21.1
+        return Configs.ENTITY_RENDER_DISABLE_MODE.getOptionListValue() != EntityRenderDisableMode.BLACKLIST || !rules.blacklist.isEmpty();
+        //#else
+        //$$ return Configs.ENTITY_RENDER_DISABLE_MODE.getOptionListValue() != EntityRenderDisableMode.WHITELIST || !rules.whitelist.isEmpty();
+        //#endif
     }
     public static boolean shouldHide(Entity entity)
     {
@@ -65,8 +69,13 @@ public final class EntityRenderDisableService
         if (entity == mc.player || entity == mc.getCameraEntity()) return false;
         return switch ((EntityRenderDisableMode)Configs.ENTITY_RENDER_DISABLE_MODE.getOptionListValue())
         {
-            case BLACKLIST -> !rules.blacklist.contains(entity.getType());
-            case WHITELIST -> rules.whitelist.contains(entity.getType());
+            //#if MC >= 1.21.1
+            case BLACKLIST -> rules.blacklist.contains(entity.getType());
+            case WHITELIST -> !rules.whitelist.contains(entity.getType());
+            //#else
+            //$$ case BLACKLIST -> !rules.blacklist.contains(entity.getType());
+            //$$ case WHITELIST -> rules.whitelist.contains(entity.getType());
+            //#endif
             case NONE -> true;
         };
     }

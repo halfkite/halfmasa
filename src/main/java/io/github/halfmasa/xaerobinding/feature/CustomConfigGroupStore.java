@@ -102,16 +102,27 @@ public final class CustomConfigGroupStore
                             group.children.removeIf(ref -> HALF_MASA_SOURCE.equals(sourceOf(ref)) &&
                                     List.of("openMasaFavorites", "masaFavoritesStarLeft", "masaFavoritesPosition", "masaFavoritesPin").contains(nameOf(ref)));
                     // Only migrate this feature; leave user groups and deleted unrelated defaults alone.
-                    ensureDefaults(source, List.of(template), "favorites-independent-v1");
+                    ensureDefaults(source, List.of(template), "favorites-independent-v1", true);
                     break;
                 }
             }
         }
         //#endif
-        return ensureDefaults(source, templates, BUILT_IN_GROUPS_VERSION);
+        //#if MC >= 26.1
+        if (HALF_MASA_SOURCE.equals(normalizeSource(source)) && templates != null
+                && this.initializedDefaultVersions.contains(HALF_MASA_SOURCE + "::" + BUILT_IN_GROUPS_VERSION))
+        {
+            var newGroups = templates.stream().filter(template -> template != null &&
+                    (Configs.ALL_MODE_HUD.getName().equals(template.mainConfig)
+                            || Configs.CONTAINER_COMPARATOR_OUTPUT.getName().equals(template.mainConfig))).toList();
+            return ensureDefaults(source, newGroups, "hud-comparator-v1", false);
+        }
+        //#endif
+        return ensureDefaults(source, templates, BUILT_IN_GROUPS_VERSION, true);
     }
 
-    private boolean ensureDefaults(String source, List<GroupTemplate> templates, String version)
+    private boolean ensureDefaults(String source, List<GroupTemplate> templates, String version,
+                                   boolean migrateLegacyItemChild)
     {
         ensureLoaded();
         String normalizedSource = normalizeSource(source);
@@ -127,7 +138,7 @@ public final class CustomConfigGroupStore
         // User-created groups retain their explicitly assigned configuration.
         for (Group group : this.groups)
         {
-            if (HALF_MASA_SOURCE.equals(normalizedSource)
+            if (migrateLegacyItemChild && HALF_MASA_SOURCE.equals(normalizedSource)
                     && "builtin_halfmasa_entityRenderAggregation".equals(group.id)
                     && "entityRenderAggregation".equals(group.mainConfig))
             {

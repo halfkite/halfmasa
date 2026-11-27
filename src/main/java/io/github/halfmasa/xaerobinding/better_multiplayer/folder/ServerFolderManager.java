@@ -96,6 +96,25 @@ public final class ServerFolderManager {
     public ServerData server(String id) { return active.get(id); }
     public ServerFolder folder(String id) { return id == null ? null : data.folders.stream().filter(f -> f.id.equals(id)).findFirst().orElse(null); }
     public Assignment assignment(String id) { return id == null ? null : data.serverAssignments.stream().filter(a -> a.entryId.equals(id)).findFirst().orElse(null); }
+    //#if MC >= 1.21.1
+    public boolean isFavorite(String id) {
+        Assignment a = assignment(id); return a != null && a.favorite;
+    }
+    public boolean toggleFavorite(String id) {
+        Assignment a = assignment(id);
+        if (!active.containsKey(id) || a == null) return false;
+        a.favorite = !a.favorite;
+        if (!storage.save(data)) { a.favorite = !a.favorite; return false; }
+        revision++;
+        return true;
+    }
+    private List<String> displayChildren(String parent) {
+        var children = children(parent);
+        if (io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.favorites())
+            children.sort(Comparator.comparing(id -> !isFavorite(id)));
+        return children;
+    }
+    //#endif
     public List<ServerFolder> folders() { return List.copyOf(data.folders); }
     public List<Assignment> unresolved() { return data.serverAssignments.stream().filter(a -> !active.containsKey(a.entryId)).toList(); }
     public String create(String name, String parent) {
@@ -126,6 +145,9 @@ public final class ServerFolderManager {
         if (live == null || missing == null || !active.containsKey(liveId) || active.containsKey(missingId)) return false;
         ServerData server = active.remove(liveId); active.put(missingId, server); identities.put(server, missingId);
         missing.lastName = server.name; missing.lastAddress = server.ip; missing.lastIndex = live.lastIndex;
+        //#if MC >= 1.21.1
+        missing.favorite |= live.favorite;
+        //#endif
         data.lastActiveIds = data.lastActiveIds.stream().map(id -> id.equals(liveId) ? missingId : id).toList();
         data.serverAssignments.remove(live); persist(); return true;
     }
@@ -145,13 +167,21 @@ public final class ServerFolderManager {
     public List<String> compactServers(String folderId) {
         List<String> result = new ArrayList<>();
         Deque<String> pending = new ArrayDeque<>();
-        List<String> roots = children(folderId);
+        //#if MC >= 1.21.1
+        List<String> roots = displayChildren(folderId);
+        //#else
+        //$$ List<String> roots = children(folderId);
+        //#endif
         for (int i = roots.size() - 1; i >= 0; i--) pending.push(roots.get(i));
         while (!pending.isEmpty()) {
             String id = pending.pop();
             if (active.containsKey(id)) result.add(id);
             else if (folder(id) != null) {
-                List<String> branch = children(id);
+                //#if MC >= 1.21.1
+                List<String> branch = displayChildren(id);
+                //#else
+                //$$ List<String> branch = children(id);
+                //#endif
                 for (int i = branch.size() - 1; i >= 0; i--) pending.push(branch.get(i));
             }
         }
@@ -179,18 +209,30 @@ public final class ServerFolderManager {
             if ((s.name + ' ' + path + (searchAddresses ? ' ' + s.ip : "")).toLowerCase(Locale.ROOT).contains(text))
                 rows.add(new Node(entry.getKey(), false, 0, path));
         }
+        //#if MC >= 1.21.1
+        if (!text.isEmpty() && io.github.halfmasa.xaerobinding.better_multiplayer.BetterMultiplayerConfig.favorites())
+            rows.sort(Comparator.comparing(node -> !isFavorite(node.id())));
+        //#endif
         return rows;
     }
     private void append(String parent, int depth, List<Node> rows) {
         record Pending(String id, int depth) {}
         Deque<Pending> pending = new ArrayDeque<>();
-        List<String> roots = children(parent);
+        //#if MC >= 1.21.1
+        List<String> roots = displayChildren(parent);
+        //#else
+        //$$ List<String> roots = children(parent);
+        //#endif
         for (int i = roots.size() - 1; i >= 0; i--) pending.push(new Pending(roots.get(i), depth));
         while (!pending.isEmpty()) {
             Pending next = pending.pop(); ServerFolder f = folder(next.id());
             rows.add(new Node(next.id(), f != null, next.depth(), path(next.id())));
             if (f != null && f.expanded) {
-                List<String> children = children(f.id);
+                //#if MC >= 1.21.1
+                List<String> children = displayChildren(f.id);
+                //#else
+                //$$ List<String> children = children(f.id);
+                //#endif
                 for (int i = children.size() - 1; i >= 0; i--) pending.push(new Pending(children.get(i), next.depth() + 1));
             }
         }

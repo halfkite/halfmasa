@@ -21,7 +21,7 @@ public final class EntityGlowService
     {
         Map<String, Integer> entities = new HashMap<>();
         Map<String, Integer> items = new HashMap<>();
-        for (EntityGlowRule rule : EntityGlowRule.loadAll())
+        for (EntityGlowRule rule : EntityGlowRule.loadRules(false))
         {
             if (!rule.enabled()) continue;
             switch (rule.type())

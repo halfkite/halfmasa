@@ -34,7 +34,11 @@ public abstract class ItemDespawnLabelMixin
     @Inject(method = "extractRenderState(Lnet/minecraft/world/entity/item/ItemEntity;Lnet/minecraft/client/renderer/entity/state/ItemEntityRenderState;F)V", at = @At("TAIL"))
     private void halfmasa$extractTimer(ItemEntity item, ItemEntityRenderState state, float partialTick, CallbackInfo ci)
     {
+        //#if MC >= 1.21.10
         ((ItemDespawnLabelState) state).halfmasa$setDespawnLabel(ItemDespawnLabelRenderer.snapshot(item));
+        //#else
+        //$$ ((ItemDespawnLabelState) state).halfmasa$setDespawnLabel(ItemDespawnLabelRenderer.legacySnapshot(item));
+        //#endif
     }
 
     //#if MC >= 1.21.10
@@ -64,7 +68,7 @@ public abstract class ItemDespawnLabelMixin
     //$$ @Inject(method = "render(Lnet/minecraft/world/entity/item/ItemEntity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("TAIL"))
     //$$ private void halfmasa$renderTimer(ItemEntity item, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, CallbackInfo ci)
     //$$ {
-    //$$     ItemDespawnLabelRenderer.render(ItemDespawnLabelRenderer.snapshot(item), pose, buffers, light);
+    //$$     ItemDespawnLabelRenderer.render(ItemDespawnLabelRenderer.legacySnapshot(item), pose, buffers, light);
     //$$ }
     //#endif
 }

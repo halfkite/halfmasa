@@ -13,8 +13,8 @@ import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.platform.InputConstants;
 //#if MC >= 1.21.10
-import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.client.input.MouseButtonEvent;
 //#endif
 import net.minecraft.network.chat.Component;
@@ -39,9 +39,15 @@ import fi.dy.masa.malilib.config.ConfigManager;
 @Mixin(SelectWorldScreen.class)
 public abstract class SelectWorldScreenMixin
 {
+    //#if MC >= 1.21.1
+    @org.spongepowered.asm.mixin.Shadow protected net.minecraft.client.gui.components.EditBox searchBox;
+    //#endif
     @Inject(method = "init", at = @At("TAIL"))
     private void halfmasa_addSavesPathButton(CallbackInfo ci)
     {
+        //#if MC >= 1.21.1
+        if (!Configs.BETTER_WORLD_SAVES.getBooleanValue()) return;
+        //#endif
         Screen screen = (Screen) (Object) this;
         int defaultX = screen.width / 2 - 124;
         int defaultY = 23;
@@ -54,9 +60,40 @@ public abstract class SelectWorldScreenMixin
                 screen.height,
                 pressed -> MinecraftClientCompat.setScreen(Minecraft.getInstance(), new CustomSavesPathScreen((SelectWorldScreen) (Object) this)),
                 Component.translatable("halfmasa.custom_saves.label"));
-        button.setTooltip(Tooltip.create(Component.translatable(
-                "halfmasa.custom_saves.tooltip", CustomSavesPath.getCurrentPath())));
+        //#if MC >= 1.21.1
+        if (Configs.WORLD_SAVE_SHOW_PATHS.getBooleanValue())
+        //#endif
+            button.setTooltip(Tooltip.create(Component.translatable(
+                    "halfmasa.custom_saves.tooltip", CustomSavesPath.getCurrentPath())));
+        //#if MC >= 26.1
+        else
+        {
+            String note = io.github.halfmasa.xaerobinding.feature.WorldFolders.getInstance().note(CustomSavesPath.getCurrentPath());
+            button.setTooltip(Tooltip.create(note.isBlank() ? Component.translatable("halfmasa.custom_saves.title")
+                    : Component.literal(note)));
+        }
+        //#endif
         ((ScreenAccessor) (Object) this).halfmasa$addRenderableWidget(button);
+        //#if MC >= 1.21.1
+        var worldScreen = (SelectWorldScreen) (Object) this;
+        var widgets = (ScreenAccessor) (Object) this;
+        int x = Math.min(screen.width - 26, this.searchBox.getRight() + 4);
+        int y = this.searchBox.getY();
+        if (Configs.WORLD_SAVE_FOLDERS.getBooleanValue())
+        {
+            Button manage = widgets.halfmasa$addRenderableWidget(Button.builder(Component.literal("▤"), pressed -> {
+                var list = ((SelectWorldScreenAccessor) worldScreen).halfmasa$getWorldList();
+                var selected = list.getSelectedOpt().orElse(null);
+                var storage = selected == null ? null
+                        : ((io.github.halfmasa.xaerobinding.feature.WorldListEntryStorage) (Object) selected).halfmasa$getStorage();
+                var root = storage == null ? CustomSavesPath.getCurrentPath() : storage.getBaseDir();
+                String world = selected == null ? null : io.github.halfmasa.xaerobinding.feature.WorldListEntryStorage.summary(selected).getLevelId();
+                MinecraftClientCompat.setScreen(Minecraft.getInstance(),
+                        new io.github.halfmasa.xaerobinding.gui.WorldFolderScreen(worldScreen, root, world));
+            }).bounds(x, y, 20, 20).build());
+            manage.setTooltip(Tooltip.create(Component.translatable("halfmasa.world_folders.title")));
+        }
+        //#endif
     }
 
     private static final class FolderButton extends Button
@@ -94,7 +131,7 @@ public abstract class SelectWorldScreenMixin
 
         private boolean halfmasa$mouseClicked(double mouseX, double mouseY, int button)
         {
-            if (button != 0 || !this.active || !this.visible || !this.isMouseOver(mouseX, mouseY))
+            if (button != InputConstants.MOUSE_BUTTON_LEFT || !this.active || !this.visible || !this.isMouseOver(mouseX, mouseY))
             {
                 return false;
             }
@@ -123,7 +160,7 @@ public abstract class SelectWorldScreenMixin
 
         private boolean halfmasa$mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY)
         {
-            if (!this.mousePressed || button != 0)
+            if (!this.mousePressed || button != InputConstants.MOUSE_BUTTON_LEFT)
             {
                 return false;
             }
@@ -152,17 +189,17 @@ public abstract class SelectWorldScreenMixin
         //#endif
 
         //#if MC >= 1.21.10
-        private boolean halfmasa$mouseReleased(double mouseX, double mouseY, InputWithModifiers input)
+        private boolean halfmasa$mouseReleased(double mouseX, double mouseY, MouseButtonEvent input)
         //#else
         //$$ private boolean halfmasa$mouseReleased(double mouseX, double mouseY, int input)
         //#endif
         {
             //#if MC >= 1.21.10
-            int button = input.input();
+            int button = input.button();
             //#else
             //$$ int button = input;
             //#endif
-            if (!this.mousePressed || button != 0)
+            if (!this.mousePressed || button != InputConstants.MOUSE_BUTTON_LEFT)
             {
                 return false;
             }

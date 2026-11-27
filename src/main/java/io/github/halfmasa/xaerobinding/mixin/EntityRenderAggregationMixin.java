@@ -124,6 +124,8 @@ public abstract class EntityRenderAggregationMixin
     //$$ {
     //$$     Component label = EntityRenderAggregation.getInstance().getLabel(entity);
     //$$     if (label == null) return;
+    //$$     if (entity instanceof net.minecraft.world.entity.item.ItemEntity item
+    //$$             && io.github.halfmasa.xaerobinding.feature.ItemDespawnLabelRenderer.snapshot(item) != null) return;
     //$$
     //$$     Minecraft client = Minecraft.getInstance();
     //$$     Font font = client.font;

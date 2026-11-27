@@ -26,10 +26,26 @@ repositories {
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    // Optional Tweakeroo API, client runtime installation is not mandatory.
+    if (project.mcVersion >= 26_03_00) {
+        compileOnly "maven.modrinth:t5wuYk45:fWxKATn6"
+    } else if (project.name == '26.2') {
+        compileOnly "maven.modrinth:t5wuYk45:aHgZByf4"
+    } else if (project.name == '26.1.2') {
+        compileOnly "maven.modrinth:t5wuYk45:mooaDeGH"
+    }
     if (!unobfuscated) {
         mappings loom.officialMojangMappings()
     }
 
+    // Optional, version-specific Sodium integration; never bundled.
+    if (project.mcVersion >= 26_03_00) {
+        compileOnly "maven.modrinth:AANobbMI:tFcTKXDx"
+    } else if (project.name == '26.2') {
+        compileOnly "maven.modrinth:AANobbMI:xJZxADzI"
+    } else if (project.name == '26.1.2') {
+        compileOnly "maven.modrinth:AANobbMI:tZQ3jqnf"
+    }
     def loader = "net.fabricmc:fabric-loader:${loaderVersion}"
     def malilib = project.mcVersion >= 26_03_00 && project.hasProperty('malilib_local_path')
             ? files(project.property('malilib_local_path'))
@@ -43,6 +59,13 @@ dependencies {
     if (unobfuscated) {
         implementation loader
         implementation malilib
+        if (project.name == '26.3') {
+            compileOnly("maven.modrinth:bEpr0Arc:ZqV316KY") { transitive = false }
+        } else if (project.name == '26.2') {
+            compileOnly("maven.modrinth:bEpr0Arc:CuniXtbo") { transitive = false }
+        } else if (project.name == '26.1.2') {
+            compileOnly("maven.modrinth:bEpr0Arc:w8P6TokG") { transitive = false }
+        }
         compileOnly jade // Optional at runtime; match each Minecraft version's Jade protocol.
         compileOnly "maven.modrinth:modmenu:${project.mod_menu_version}"
         compileOnly xaeroMinimap
@@ -53,6 +76,36 @@ dependencies {
         modCompileOnly "maven.modrinth:modmenu:${project.mod_menu_version}"
         modCompileOnly xaeroMinimap
         modCompileOnly xaeroWorldMap
+        modCompileOnly(jade) { transitive = false }
+        if (project.name == '1.21.11') {
+            modCompileOnly("maven.modrinth:t5wuYk45:2cguFWQf") { transitive = false }
+            modCompileOnly("maven.modrinth:bEpr0Arc:mengBR9D") { transitive = false }
+            modCompileOnly("maven.modrinth:AANobbMI:rkdTcxoT") { transitive = false }
+        } else if (project.name == '1.21.10') {
+            modCompileOnly("maven.modrinth:t5wuYk45:vjpTP2fp") { transitive = false }
+            modCompileOnly("maven.modrinth:bEpr0Arc:c91sTAlP") { transitive = false }
+            modCompileOnly("maven.modrinth:AANobbMI:sFfidWgd") { transitive = false }
+        } else if (project.name == '1.21.8') {
+            modCompileOnly("maven.modrinth:t5wuYk45:gyi2D8hb") { transitive = false }
+            modCompileOnly("maven.modrinth:bEpr0Arc:GJMDd9Zq") { transitive = false }
+            modCompileOnly("maven.modrinth:AANobbMI:7pwil2dy") { transitive = false }
+        } else if (project.name == '1.21.5') {
+            modCompileOnly("maven.modrinth:t5wuYk45:fOZoIok9") { transitive = false }
+            modCompileOnly("maven.modrinth:bEpr0Arc:f9S0ZzGY") { transitive = false }
+            modCompileOnly("maven.modrinth:AANobbMI:DA250htH") { transitive = false }
+        } else if (project.name == '1.21.4') {
+            modCompileOnly("maven.modrinth:t5wuYk45:B9N3SOU5") { transitive = false }
+            modCompileOnly("maven.modrinth:bEpr0Arc:HGMPLnum") { transitive = false }
+            modCompileOnly("maven.modrinth:AANobbMI:c3YkZvne") { transitive = false }
+        } else if (project.name == '1.21.3') {
+            modCompileOnly("maven.modrinth:t5wuYk45:uBGANpxg") { transitive = false }
+            modCompileOnly("maven.modrinth:bEpr0Arc:diPHpcNy") { transitive = false }
+            modCompileOnly("maven.modrinth:AANobbMI:rLBgU2jc") { transitive = false }
+        } else if (project.name == '1.21.1') {
+            modCompileOnly("maven.modrinth:t5wuYk45:O8kH9uqc") { transitive = false }
+            modCompileOnly("maven.modrinth:bEpr0Arc:o7i8oi1Z") { transitive = false }
+            modCompileOnly("maven.modrinth:AANobbMI:u1OEbNKx") { transitive = false }
+        }
         if (project.hasProperty('jei_compile_version')) {
             modCompileOnly "mezz.jei:jei-${project.minecraft_version}-fabric:${project.jei_compile_version}"
         }
@@ -151,10 +204,11 @@ processResources {
     }
     filesMatching('halfmasa.mixins.json') {
         filter { line ->
+            if (project.mcVersion < 1_21_01 && line.contains('"PlacementPreview')) return null
+            if (project.mcVersion < 1_21_01 && line.contains('"FluidTransparency')) return null
             if (project.mcVersion < 1_21_01 && line.contains('"MasaFavorites')) return null
             if (project.mcVersion < 1_21_01 && line.contains('"BetterMultiplayer')) return null
             if (project.mcVersion < 1_21_01 && line.contains('"AutoOpenChat')) return null
-            if (project.mcVersion < 26_01_00 && line.contains('"JadeBarrel')) return null
             if (project.mcVersion < 1_21_01 && line.contains('"ConfluxMapSurfaceTeleportMixin"')) return null
             if (line.contains('"MiniHudPreviewLegacy') && (project.mcVersion < 1_21_01 || project.mcVersion >= 1_21_11)) return null
             if (line.contains('"MiniHudPreview') && !line.contains('"MiniHudPreviewLegacy') && !line.contains('"MiniHudPreviewLifecycle') && project.mcVersion < 1_21_11) return null
@@ -235,6 +289,10 @@ java {
 sourceSets {
     main {
         java {
+            if (project.mcVersion < 1_21_01) {
+                exclude 'io/github/halfmasa/xaerobinding/feature/placementpreview/**'
+                exclude 'io/github/halfmasa/xaerobinding/mixin/PlacementPreview*.java'
+            }
             if (project.mcVersion >= 26_03_00) {
                 exclude 'io/github/halfmasa/xaerobinding/better_multiplayer/folder/ServerKey.java'
             }
@@ -315,9 +373,6 @@ if (project.mcVersion >= 26_03_00) {
         }
     }
 
-    tasks.named('build') {
-        dependsOn tasks.named('voidTradingServerJar')
-    }
 }
 
 jar {

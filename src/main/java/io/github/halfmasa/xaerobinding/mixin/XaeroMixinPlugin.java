@@ -14,9 +14,47 @@ public final class XaeroMixinPlugin implements IMixinConfigPlugin
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName)
     {
+        if (mixinClassName.endsWith("ContainerComparatorScreenMixin"))
+        {
+            //#if MC >= 1.21.1
+            return true;
+            //#else
+            //$$ return false;
+            //#endif
+        }
+        if (mixinClassName.endsWith("PlacementPreviewTweakerooAccessor")) {
+            //#if MC >= 1.21.1
+            return io.github.halfmasa.xaerobinding.compat.RenderPipelineCompatibility.SUPPORTED_TWEAKEROO;
+            //#else
+            //$$ return false;
+            //#endif
+        }
+        if (mixinClassName.endsWith("CustomSodiumBlockFilterMixin") || mixinClassName.endsWith("CustomSodiumBlockFaceFilterMixin")
+                || mixinClassName.endsWith("CustomSodiumBlockOcclusionMixin")) {
+            //#if MC >= 1.21.1
+            return io.github.halfmasa.xaerobinding.compat.RenderPipelineCompatibility.SUPPORTED_SODIUM_CHUNKS;
+            //#else
+            //$$ return false;
+            //#endif
+        }
+        if (mixinClassName.endsWith("CustomBlockModelFilterMixin") || mixinClassName.endsWith("CustomBlockEntityFilterMixin") || mixinClassName.endsWith("CustomBlockOutlineFilterMixin")) {
+            //#if MC >= 1.21.1
+            return true;
+            //#else
+            //$$ return false;
+            //#endif
+        }
+        //#if MC >= 1.21.1
+        if (mixinClassName.endsWith("FluidTransparencyVanillaMixin") || mixinClassName.endsWith("FluidTransparencyLegacyLayerMixin"))
+            return !io.github.halfmasa.xaerobinding.compat.RenderPipelineCompatibility.SODIUM_LOADED;
+        if (mixinClassName.endsWith("FluidTransparencySodiumLayerMixin") ||
+                mixinClassName.endsWith("FluidTransparencySodiumColorMixin")) {
+            return io.github.halfmasa.xaerobinding.compat.RenderPipelineCompatibility.SUPPORTED_SODIUM_CHUNKS;
+        }
+        //#endif
         if (mixinClassName.substring(mixinClassName.lastIndexOf('.') + 1).startsWith("JadeBarrel"))
         {
-            //#if MC >= 26.1
+            //#if MC >= 1.21.1
             return FabricLoader.getInstance().isModLoaded("jade");
             //#else
             //$$ return false;

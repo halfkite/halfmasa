@@ -11,6 +11,9 @@ public final class ConfigRenderingRefresh
     private static boolean fluidsDisabled;
     private static boolean flowingFluidsDisabled;
     private static boolean translationSpacingEnabled;
+    //#if MC >= 1.21.1
+    private static boolean chineseFallbackEnabled;
+    //#endif
 
     private ConfigRenderingRefresh() {}
 
@@ -23,6 +26,9 @@ public final class ConfigRenderingRefresh
             fluidsDisabled = Configs.DISABLE_FLUID_RENDERING.getBooleanValue();
             flowingFluidsDisabled = !fluidsDisabled && Configs.DISABLE_NON_SOURCE_FLUID_RENDERING.getBooleanValue();
             translationSpacingEnabled = translationSpacingEnabled();
+            //#if MC >= 1.21.1
+            chineseFallbackEnabled = Configs.CHINESE_MOD_LANGUAGE_FALLBACK.getBooleanValue();
+            //#endif
             initialized = true;
             return;
         }
@@ -50,7 +56,13 @@ public final class ConfigRenderingRefresh
     {
         if (!Configs.isConfigLoaded()) return;
         boolean enabled = translationSpacingEnabled();
-        if (enabled == translationSpacingEnabled) return;
+        //#if MC >= 1.21.1
+        boolean fallback = Configs.CHINESE_MOD_LANGUAGE_FALLBACK.getBooleanValue();
+        if (enabled == translationSpacingEnabled && fallback == chineseFallbackEnabled) return;
+        chineseFallbackEnabled = fallback;
+        //#else
+        //$$ if (enabled == translationSpacingEnabled) return;
+        //#endif
         translationSpacingEnabled = enabled;
         Minecraft client = Minecraft.getInstance();
         if (client != null)
