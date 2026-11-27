@@ -337,11 +337,14 @@ sourceSets {
     }
 }
 
-// Preprocess expects every node in the graph to have matching source set names.
-// Older nodes have no companion sources or distributable tasks.
-sourceSets.maybeCreate('voidTradingServer')
+// Keep the optional companion out of Loom's normal source-set discovery.
+def buildVoidTradingServer = project.hasProperty('build_void_trading_server')
+if (buildVoidTradingServer) {
+    // Preprocess expects matching source set names across the version graph.
+    sourceSets.maybeCreate('voidTradingServer')
+}
 
-if (project.mcVersion >= 26_03_00) {
+if (buildVoidTradingServer && project.mcVersion >= 26_03_00) {
     def voidTradingServer = sourceSets.getByName('voidTradingServer')
     sourceSets.named('voidTradingServer') {
         java.srcDirs = [
@@ -372,7 +375,6 @@ if (project.mcVersion >= 26_03_00) {
             rename { 'LICENSE_halfmasa-void-trading-server' }
         }
     }
-
 }
 
 jar {

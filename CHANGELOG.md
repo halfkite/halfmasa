@@ -26,7 +26,7 @@
 - 以上功能已同步至项目十个 Fabric 构建目标。Minecraft 版本为 1.21.1、1.21.3、1.21.4、1.21.5、1.21.8、1.21.10、1.21.11、26.1.2、26.2 和 26.3。
 - 1.21.1 使用旧版世界创建与直接绘制接口。1.21.1 至 1.21.5 的实体模型预览经原版背包渲染器绘制。1.21.1 至 1.21.4 的方块放置预览读取该版的烘焙模型。
 - 十个构建目标均已测试原版渲染，以及各版本的 Sodium、Tweakeroo、Litematica 同装组合。联动检查覆盖水与岩浆透明度、Tweakeroo 放置方向，以及海带清理的 Litematica 选区限制。
-- 常规构建只生成 HalfMasa 主模组，独立的虚空交易服务端包可按需构建。
+- 常规构建只生成 HalfMasa 主模组。按需构建独立的虚空交易服务端包可运行 `./gradlew :26.3:voidTradingServerJar -Pbuild_void_trading_server`。
 
 [GitHub 双语更新日志 / Bilingual release notes](docs/release_1.8.0.md)
 
