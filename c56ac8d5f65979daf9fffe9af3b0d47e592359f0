@@ -56,6 +56,13 @@
       "github_asset_id": 803701309,
       "jar_name": "halfmasa-1.8.1-mc26.1-26.1.2.jar",
       "sha256": "5f297b9c0b602f2e3212a165816d6a1854a004a0c1e9bfb56bbefecd754e0f02"
+    },
+    {
+      "build_project": "26.2",
+      "curseforge_file_id": "9864413",
+      "github_asset_id": 803701334,
+      "jar_name": "halfmasa-1.8.1-mc26.2.jar",
+      "sha256": "c40563e04fe62c66254cf2f56bd51219879cb9bff2f2e8e74f5a8b343982e3f8"
     }
   ],
   "release_commit": "c56ac8d5f65979daf9fffe9af3b0d47e592359f0",
