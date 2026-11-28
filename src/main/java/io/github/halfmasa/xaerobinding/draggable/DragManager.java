@@ -32,6 +32,10 @@ public class DragManager<T, E extends ObjectSelectionList.Entry<?>> {
         this.dragList = dragList;
     }
 
+    public boolean isDragging() {
+        return selectedItem != null;
+    }
+
     /** Cancel without committing a move when another controller takes ownership. */
     public void cancelDrag() {
         if (selectedItem == null) return;
@@ -110,7 +114,7 @@ public class DragManager<T, E extends ObjectSelectionList.Entry<?>> {
         int n = dragList.draggable_lists$getItemCount();
 
         int draggingIndex = selectedItem == null ? -1 : dragList.draggable_lists$getIndexOfEntry(selectedItem);
-        int draggedPosition = selectedItem == null ? -1 : getIndexFromMouseY(mouseY);
+        int draggedPosition = draggingIndex < 0 ? -1 : dragList.draggable_lists$getIndexAtY(mouseY);
 
         for (int i = 0; i < n; i++) {
             int renderRow = otherItemIndexShift(i, draggingIndex, draggedPosition);
@@ -187,13 +191,8 @@ public class DragManager<T, E extends ObjectSelectionList.Entry<?>> {
         return capYCoordinate(y, true) == y;
     }
 
-    private int getIndexFromMouseY(double mouseY) {
-        int m = Mth.floor(mouseY - (double) dragList.draggable_lists$getY()) - dragList.draggable_lists$getHeaderHeight() + (int) dragList.draggable_lists$getScrollAmount() - 4;
-        return m / dragList.draggable_lists$getItemHeight();
-    }
-
     private boolean dragServerItem(DragItem<T, E> item, double mouseY) {
-        int n = getIndexFromMouseY(mouseY);
+        int n = dragList.draggable_lists$getIndexAtY(mouseY);
         dragList.draggable_lists$moveEntry(item, n);
         return true;
     }

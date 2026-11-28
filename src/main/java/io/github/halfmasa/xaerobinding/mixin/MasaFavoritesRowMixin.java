@@ -24,16 +24,44 @@ import io.github.halfmasa.xaerobinding.config.Configs;
 import io.github.halfmasa.xaerobinding.favorites.MasaConfigCatalog;
 import io.github.halfmasa.xaerobinding.favorites.MasaFavoriteButton;
 import io.github.halfmasa.xaerobinding.favorites.MasaFavoritePosition;
+import io.github.halfmasa.xaerobinding.favorites.MasaFavoritesScreen;
+import io.github.halfmasa.xaerobinding.config.ConfigGroupHeader;
 
 @Mixin(value = WidgetConfigOption.class, remap = false)
 public abstract class MasaFavoritesRowMixin extends WidgetConfigOptionBase<ConfigOptionWrapper>
 {
     @Shadow @Final protected IKeybindConfigGui host;
     @Unique private int halfmasa$valueEnd;
+    @Unique private int halfmasa$sourceWidth;
     @Unique private ButtonBase halfmasa$resetButton;
     protected MasaFavoritesRowMixin(int x, int y, int width, int height,
             WidgetListConfigOptionsBase<?, ?> parent, ConfigOptionWrapper wrapper, int index)
     { super(x, y, width, height, parent, wrapper, index); }
+
+    @Inject(method = "render", at = @At("TAIL"))
+    //#if MC >= 1.21.11
+    private void halfmasa$drawSourceHighlight(fi.dy.masa.malilib.render.GuiContext context,
+            int mouseX, int mouseY, boolean selected, CallbackInfo ci)
+    //#elseif MC >= 1.21.8
+    //$$ private void halfmasa$drawSourceHighlight(net.minecraft.client.gui.GuiGraphics context,
+    //$$         int mouseX, int mouseY, boolean selected, CallbackInfo ci)
+    //#else
+    //$$ private void halfmasa$drawSourceHighlight(int mouseX, int mouseY, boolean selected,
+    //$$         net.minecraft.client.gui.GuiGraphics context, CallbackInfo ci)
+    //#endif
+    {
+        if (!io.github.halfmasa.xaerobinding.favorites.MasaConfigNavigation.isHighlighted(
+                this.host, this.getEntry().getConfig())) return;
+        int x = this.getX();
+        int y = this.getY();
+        int right = x + this.getWidth();
+        int bottom = y + this.getHeight();
+        int color = 0xFFAAD8FF;
+        context.fill(x, y, right, y + 1, color);
+        context.fill(x, bottom - 1, right, bottom, color);
+        context.fill(x, y + 1, x + 1, bottom - 1, color);
+        context.fill(right - 1, y + 1, right, bottom - 1, color);
+    }
 
     @Override
     protected ButtonGeneric createResetButton(int x, int y, IConfigResettable config)
@@ -58,7 +86,17 @@ public abstract class MasaFavoritesRowMixin extends WidgetConfigOptionBase<Confi
         //#else
         //$$ int labelIndex=3, valueIndex=4, configIndex=5;
         //#endif
-        int space = MasaFavoriteButton.SPACE;
+        if (args.get(configIndex) instanceof ConfigGroupHeader) return;
+        int space = MasaFavoriteButton.space();
+        if (this.host instanceof MasaFavoritesScreen)
+        {
+            var entry = MasaConfigCatalog.lookup(args.get(configIndex));
+            if (entry != null)
+            {
+                this.halfmasa$sourceWidth = Math.min(78, this.getStringWidth(MasaConfigCatalog.sourceName(entry.modId())) + 10);
+                space += this.halfmasa$sourceWidth + 2;
+            }
+        }
         boolean customRow = (Object) this instanceof io.github.halfmasa.xaerobinding.gui.ActionConfigOptionWidget;
         if (customRow && MasaFavoritePosition.isLeft())
             space += io.github.halfmasa.xaerobinding.gui.ActionConfigOptionWidget.getLeadingControlOverhang();
@@ -73,7 +111,8 @@ public abstract class MasaFavoritesRowMixin extends WidgetConfigOptionBase<Confi
         args.set(valueIndex, configWidth);
         int label = Math.max(20, Math.min((int) args.get(labelIndex), this.getWidth() - configWidth - reset - space - group - 18));
         args.set(labelIndex, label);
-        if (MasaFavoritePosition.isLeft()) args.set(0, (int) args.get(0) + space);
+        if (MasaFavoritePosition.isLeft())
+            args.set(0, (int) args.get(0) + space - (this.halfmasa$sourceWidth > 0 ? this.halfmasa$sourceWidth + 2 : 0));
         this.halfmasa$valueEnd = (int) args.get(0) + label + 10 + configWidth;
     }
 
@@ -86,8 +125,9 @@ public abstract class MasaFavoritesRowMixin extends WidgetConfigOptionBase<Confi
         var entry = MasaConfigCatalog.observe(host.getModId(), wrapper.getConfig());
         if (entry == null) return;
         int starX;
-        if (MasaFavoritePosition.isLeft()) starX = this.getX();
-        else
+        boolean left = MasaFavoritePosition.isLeft();
+        int afterReset = 0;
+        if (!left || this.halfmasa$sourceWidth > 0)
         {
             ButtonBase reset = this.halfmasa$resetButton;
             if (reset == null)
@@ -99,12 +139,24 @@ public abstract class MasaFavoritesRowMixin extends WidgetConfigOptionBase<Confi
             int resetRight = reset != null ? reset.getX() + reset.getWidth()
                     : this.halfmasa$valueEnd + 2 + new ButtonGeneric(0, 0, -1, 20,
                             StringUtils.translate("malilib.gui.button.reset.caps")).getWidth();
-            starX = resetRight + 2;
+            afterReset = resetRight + 2;
             // The star follows reset; only trailing group controls need to move.
-            for (var widget : this.subWidgets)
-                if (widget.getX() >= starX) widget.setX(widget.getX() + MasaFavoriteButton.SPACE);
+            if (!left)
+                for (var widget : this.subWidgets)
+                    if (widget.getX() >= afterReset) widget.setX(widget.getX() + MasaFavoriteButton.space());
         }
-        this.addWidget(new MasaFavoriteButton(starX, y + 1, entry, () -> {
+        starX = left ? this.getX() : afterReset;
+        if (host instanceof MasaFavoritesScreen favorites && this.halfmasa$sourceWidth > 0)
+        {
+            int sourceX = afterReset + (left ? 0 : MasaFavoriteButton.space());
+            String source = MasaConfigCatalog.sourceName(entry.modId());
+            if (MasaFavoritesScreen.canJumpToSource())
+                this.addWidget(favorites.sourceButton(entry.modId(), entry, sourceX, y + 1, this.halfmasa$sourceWidth, source));
+            else
+                this.addLabel(sourceX + 4, y + 7, this.halfmasa$sourceWidth, 8, 0xFFCCCCCC,
+                        favorites.sourceLabel(source, this.halfmasa$sourceWidth));
+        }
+        this.addWidget(new MasaFavoriteButton(starX, y + (22 - MasaFavoriteButton.size()) / 2, entry, () -> {
             if (host instanceof io.github.halfmasa.xaerobinding.favorites.MasaFavoritesScreen ||
                     !Configs.MASA_FAVORITES_PIN.getBooleanValue()) return;
             int scroll = parent.getScrollbar().getValue();

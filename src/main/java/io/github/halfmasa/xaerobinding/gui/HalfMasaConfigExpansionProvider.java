@@ -180,6 +180,9 @@ public final class HalfMasaConfigExpansionProvider implements ConfigExpansionPro
             {
                 continue;
             }
+            if (CustomConfigGroupStore.TWEAKEROO_SOURCE.equals(this.source) &&
+                    !Configs.TWEAKEROO_COLLAPSIBLE_CONFIG.getBooleanValue() && group.id.startsWith("builtin_tweakeroo_"))
+                continue;
             ConfigOptionWrapper main = wrappersByName.get(group.mainConfig);
             if (!isGroupable(main))
             {

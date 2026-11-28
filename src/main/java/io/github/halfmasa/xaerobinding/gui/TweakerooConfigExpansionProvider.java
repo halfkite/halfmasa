@@ -203,8 +203,11 @@ public final class TweakerooConfigExpansionProvider implements ConfigExpansionPr
         this.collectInlineFlightPairs(source);
         if (Configs.CUSTOM_CONFIG_GROUPS.getBooleanValue())
         {
-            CustomConfigGroupStore.getInstance().ensureDefaults(
-                    CustomConfigGroupStore.TWEAKEROO_SOURCE, getBuiltInGroupTemplates());
+            if (Configs.TWEAKEROO_COLLAPSIBLE_CONFIG.getBooleanValue())
+            {
+                CustomConfigGroupStore.getInstance().ensureDefaults(
+                        CustomConfigGroupStore.TWEAKEROO_SOURCE, getBuiltInGroupTemplates());
+            }
             return this.customProvider.prepareEntries(source, searchActive);
         }
         this.parents.clear();
@@ -215,6 +218,7 @@ public final class TweakerooConfigExpansionProvider implements ConfigExpansionPr
         this.groupedChildren.clear();
         this.primaryByConfig.clear();
 
+        if (!Configs.TWEAKEROO_COLLAPSIBLE_CONFIG.getBooleanValue()) return source;
         this.addMissingPrimaryGroupEntries(source);
         Map<String, GroupDefinition> definitions = GROUPS.stream()
                 .flatMap(group -> group.members().stream().map(name -> Map.entry(name, group)))

@@ -42,8 +42,10 @@ public abstract class PackSelectionScreenMixin extends Screen {
     private void halfmasa$releaseDrag(TransferableSelectionList list)
     {
         if (!list.isDragging()) return;
-        //#if MC >= 1.21.10
-        list.mouseReleased(new MouseButtonEvent(0, 0, new MouseButtonInfo(0, 0)));
+        //#if MC >= 26.3
+        list.mouseReleased(new MouseButtonEvent(0, 0, new MouseButtonInfo(org.lwjgl.sdl.SDLMouse.SDL_BUTTON_LEFT, 0)));
+        //#elseif MC >= 1.21.10
+        //$$ list.mouseReleased(new MouseButtonEvent(0, 0, new MouseButtonInfo(0, 0)));
         //#else
         //$$ list.mouseReleased(0, 0, 0);
         //#endif

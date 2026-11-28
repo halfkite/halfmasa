@@ -127,7 +127,11 @@ final class XaeroWorldBindingInit implements IInitializationHandler, IKeybindPro
         TickHandler.getInstance().registerClientTickHandler(io.github.halfmasa.xaerobinding.favorites.MasaFavoritesLayout.INSTANCE);
         Configs.MASA_FAVORITES_POSITION.setValueChangeCallback(config ->
                 io.github.halfmasa.xaerobinding.favorites.MasaFavoritesLayout.INSTANCE.requestRefresh());
+        Configs.MASA_FAVORITES_STAR_SIZE.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.favorites.MasaFavoritesLayout.INSTANCE.requestRefresh());
         Configs.MASA_FAVORITES_GLOBAL_SEARCH.setValueChangeCallback(config ->
+                io.github.halfmasa.xaerobinding.favorites.MasaFavoritesLayout.INSTANCE.requestRefresh());
+        Configs.MASA_FAVORITES_SOURCE_JUMP.setValueChangeCallback(config ->
                 io.github.halfmasa.xaerobinding.favorites.MasaFavoritesLayout.INSTANCE.requestRefresh());
         Configs.MASA_BETTER_SWITCHER.setValueChangeCallback(config ->
                 io.github.halfmasa.xaerobinding.favorites.MasaFavoritesLayout.INSTANCE.requestRefresh());

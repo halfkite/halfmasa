@@ -3,7 +3,8 @@ package io.github.halfmasa.xaerobinding.mixin.draggable.packs;
 import io.github.halfmasa.xaerobinding.draggable.DragItem;
 import io.github.halfmasa.xaerobinding.draggable.DragList;
 import io.github.halfmasa.xaerobinding.draggable.DragManager;
-import io.github.halfmasa.xaerobinding.draggable.DraggableLists;
+import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.config.DragMode;
 import io.github.halfmasa.xaerobinding.draggable.duck.AbstractPackDuckProvider;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -45,36 +46,73 @@ public abstract class TransferableSelectionListMixin extends ObjectSelectionList
     //$$ @Override
     //$$ protected void renderListItems(GuiGraphics guiGraphics, int mouseX, int mouseY, float tickDelta) {
     //#endif
-        draggable_lists$dragManager.renderListItems(guiGraphics, mouseX, mouseY, tickDelta);
+        if (draggable_lists$dragManager.isDragging()) {
+            draggable_lists$dragManager.renderListItems(guiGraphics, mouseX, mouseY, tickDelta);
+        } else {
+            //#if MC >= 26.1
+            super.extractListItems(guiGraphics, mouseX, mouseY, tickDelta);
+            //#else
+            //$$ super.renderListItems(guiGraphics, mouseX, mouseY, tickDelta);
+            //#endif
+        }
     }
 
     @Unique
-    private boolean draggable_lists$isMouseOverScrollbar(double mouseX) {
-        return false;
+    private boolean draggable_lists$drag(double mouseX, double mouseY, int button, boolean shiftDown) {
+        if (button != draggable_lists$primaryButton()) return false;
+        if (draggable_lists$dragManager.isDragging()) return true;
+        if (!Configs.DRAGGABLE_LISTS.getBooleanValue()) return false;
+        DragMode mode = (DragMode) Configs.DRAG_RESOURCE_MODE.getOptionListValue();
+        if (mode != DragMode.ENABLED && !(mode == DragMode.REQUIRES_MODIFIER && shiftDown)) return false;
+
+        //#if MC >= 26.3
+        if (isOverScrollbar(mouseX, mouseY)) return false;
+        //#endif
+        var item = draggable_lists$getEntryAtPosition(mouseX, mouseY);
+        if (item == null || item.draggable_lists$getUnderlyingData().isFixedPosition()) return false;
+        //#if MC >= 1.21.10
+        if (mouseX < item.draggable_lists$getUnderlyingEntry().getContentX() + 32) return false;
+        //#endif
+        return draggable_lists$dragManager.mouseDragged(mouseX, mouseY, button, 0, 0);
+    }
+
+    @Unique
+    private static int draggable_lists$primaryButton() {
+        //#if MC >= 26.3
+        return org.lwjgl.sdl.SDLMouse.SDL_BUTTON_LEFT;
+        //#else
+        //$$ return org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
+        //#endif
     }
 
     //#if MC >= 1.21.10
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        if (draggable_lists$dragManager.mouseReleased(event.x(), event.y(), event.button())) return true;
+        if (event.button() == draggable_lists$primaryButton() && draggable_lists$dragManager.isDragging()) {
+            draggable_lists$dragManager.mouseReleased(event.x(), event.y(), event.button());
+            return true;
+        }
         return super.mouseReleased(event);
     }
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
-        if ((io.github.halfmasa.xaerobinding.config.Configs.DRAGGABLE_LISTS.getBooleanValue() && (((io.github.halfmasa.xaerobinding.config.DragMode) io.github.halfmasa.xaerobinding.config.Configs.DRAG_RESOURCE_MODE.getOptionListValue()) == io.github.halfmasa.xaerobinding.config.DragMode.ENABLED || ((io.github.halfmasa.xaerobinding.config.DragMode) io.github.halfmasa.xaerobinding.config.Configs.DRAG_RESOURCE_MODE.getOptionListValue()) == io.github.halfmasa.xaerobinding.config.DragMode.REQUIRES_MODIFIER && event.hasShiftDown())) && !draggable_lists$isMouseOverScrollbar(event.x()) && draggable_lists$dragManager.mouseDragged(event.x(), event.y(), event.button(), deltaX, deltaY)) return true;
+        if (draggable_lists$drag(event.x() - deltaX, event.y() - deltaY, event.button(), event.hasShiftDown())) return true;
         return super.mouseDragged(event, deltaX, deltaY);
     }
     //#else
     //$$ @Override
     //$$ public boolean mouseReleased(double mouseX, double mouseY, int button) {
-    //$$     if (draggable_lists$dragManager.mouseReleased(mouseX, mouseY, button)) return true;
+    //$$     if (button == draggable_lists$primaryButton() && draggable_lists$dragManager.isDragging()) {
+    //$$         draggable_lists$dragManager.mouseReleased(mouseX, mouseY, button);
+    //$$         return true;
+    //$$     }
     //$$     return super.mouseReleased(mouseX, mouseY, button);
     //$$ }
     //$$
     //$$ @Override
     //$$ public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-    //$$     if ((io.github.halfmasa.xaerobinding.config.Configs.DRAGGABLE_LISTS.getBooleanValue() && (((io.github.halfmasa.xaerobinding.config.DragMode) io.github.halfmasa.xaerobinding.config.Configs.DRAG_RESOURCE_MODE.getOptionListValue()) == io.github.halfmasa.xaerobinding.config.DragMode.ENABLED || ((io.github.halfmasa.xaerobinding.config.DragMode) io.github.halfmasa.xaerobinding.config.Configs.DRAG_RESOURCE_MODE.getOptionListValue()) == io.github.halfmasa.xaerobinding.config.DragMode.REQUIRES_MODIFIER && net.minecraft.client.gui.screens.Screen.hasShiftDown())) && !draggable_lists$isMouseOverScrollbar(mouseX) && draggable_lists$dragManager.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) return true;
+    //$$     if (draggable_lists$drag(mouseX - deltaX, mouseY - deltaY, button, net.minecraft.client.gui.screens.Screen.hasShiftDown())) return true;
     //$$     return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
     //$$ }
     //#endif
@@ -194,10 +232,25 @@ public abstract class TransferableSelectionListMixin extends ObjectSelectionList
     //#else
     //$$ public void draggable_lists$moveEntry(DragItem<PackSelectionModel.Entry, TransferableSelectionList.PackEntry> item, int n) {
     //#endif
-        if (item.draggable_lists$getUnderlyingData() instanceof AbstractPackDuckProvider duckProvider) {
-            duckProvider.draggable_lists$moveTo(n);
+        if (n < 0 || n >= getItemCount() || draggable_lists$getIndexOfEntry(item) < 0) return;
+        if (item.draggable_lists$getUnderlyingData() instanceof AbstractPackDuckProvider duckProvider
+                && children().get(n) instanceof DragItem<?, ?> target
+                && target.draggable_lists$getUnderlyingData() instanceof PackSelectionModel.Entry pack) {
+            duckProvider.draggable_lists$moveTo(pack.getId());
         }
     }
+
+    //#if MC >= 1.21.10
+    @Override
+    public int draggable_lists$getIndexAtY(double mouseY) {
+        // The title is a separate, shorter entry at index zero.
+        int count = getItemCount();
+        for (int index = 1; index < count; index++) {
+            if (mouseY < getRowBottom(index)) return index;
+        }
+        return count - 1;
+    }
+    //#endif
 
     @Override
     public int draggable_lists$getItemCount() {
@@ -207,12 +260,24 @@ public abstract class TransferableSelectionListMixin extends ObjectSelectionList
     @Override
     //#if MC >= 26.1
     public void draggable_lists$renderItem(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float tickDelta, int i, int rowLeft, int rowTop, int rowWidth, int rowHeight) {
-        extractItem(guiGraphics, mouseX, mouseY, tickDelta, children().get(i));
+        TransferableSelectionList.Entry entry = children().get(i);
+        int offsetY = rowTop - entry.getY();
+        var pose = guiGraphics.pose();
+        pose.pushMatrix();
+        pose.translate(0, offsetY);
+        extractItem(guiGraphics, mouseX, mouseY - offsetY, tickDelta, entry);
+        pose.popMatrix();
     }
     //#else
     //$$ public void draggable_lists$renderItem(GuiGraphics guiGraphics, int mouseX, int mouseY, float tickDelta, int i, int rowLeft, int rowTop, int rowWidth, int rowHeight) {
         //#if MC >= 1.21.10 && MC < 26.1
-        //$$ renderItem(guiGraphics, mouseX, mouseY, tickDelta, children().get(i));
+        //$$ TransferableSelectionList.Entry entry = children().get(i);
+        //$$ int offsetY = rowTop - entry.getY();
+        //$$ var pose = guiGraphics.pose();
+        //$$ pose.pushMatrix();
+        //$$ pose.translate(0, offsetY);
+        //$$ renderItem(guiGraphics, mouseX, mouseY - offsetY, tickDelta, entry);
+        //$$ pose.popMatrix();
         //#else
         //$$ renderItem(guiGraphics, mouseX, mouseY, tickDelta, i, rowLeft, rowTop, rowWidth, rowHeight);
         //#endif

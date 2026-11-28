@@ -189,7 +189,7 @@ public final class MasaConfigCatalog
         }
     }
 
-    private static IConfigBase canonical(IConfigBase config)
+    static IConfigBase canonical(IConfigBase config)
     {
         while (true)
         {
@@ -237,6 +237,17 @@ public final class MasaConfigCatalog
 
     public static Entry lookup(IConfigBase config) { return config == null ? null : OBJECTS.get(canonical(config)); }
 
+    public static String sourceName(String mod)
+    {
+        return FabricLoader.getInstance().getModContainer(mod).map(container -> container.getMetadata().getName())
+                .orElse(mod);
+    }
+
+    static boolean matches(IConfigBase config, Entry entry)
+    {
+        return config != null && canonical(config) == entry.identity();
+    }
+
     public static Entry find(String key)
     {
         if (key == null) return null;
@@ -254,10 +265,6 @@ public final class MasaConfigCatalog
         return ENTRIES.get(key);
     }
 
-    static List<Entry> indexedEntries(String mod)
-    {
-        return ENTRIES.values().stream().filter(entry -> entry.modId().equals(mod)).toList();
-    }
     public static List<Entry> entries() { discover(); return new ArrayList<>(ENTRIES.values()); }
 
     public record Entry(String key, String modId, IConfigBase identity, IConfigBase editable) { }

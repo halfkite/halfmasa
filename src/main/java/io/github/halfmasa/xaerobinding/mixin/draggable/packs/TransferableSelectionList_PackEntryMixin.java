@@ -1,7 +1,6 @@
 package io.github.halfmasa.xaerobinding.mixin.draggable.packs;
 
 import io.github.halfmasa.xaerobinding.draggable.DragItem;
-import io.github.halfmasa.xaerobinding.draggable.DraggableLists;
 //#if MC >= 26.1
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 //#else
@@ -57,9 +56,21 @@ public abstract class TransferableSelectionList_PackEntryMixin extends Transfera
     //#endif
         if (!draggable_lists$isBeingDragged) return;
         //#if MC >= 26.1
-        extractContent(guiGraphics, mouseX, mouseY, hovered, tickDelta);
+        int offsetX = x - getX();
+        int offsetY = y - getY();
+        var pose = guiGraphics.pose();
+        pose.pushMatrix();
+        pose.translate(offsetX, offsetY);
+        extractContent(guiGraphics, mouseX - offsetX, mouseY - offsetY, hovered, tickDelta);
+        pose.popMatrix();
         //#elseif MC >= 1.21.10
-        //$$ renderContent(guiGraphics, mouseX, mouseY, hovered, tickDelta);
+        //$$ int offsetX = x - getX();
+        //$$ int offsetY = y - getY();
+        //$$ var pose = guiGraphics.pose();
+        //$$ pose.pushMatrix();
+        //$$ pose.translate(offsetX, offsetY);
+        //$$ renderContent(guiGraphics, mouseX - offsetX, mouseY - offsetY, hovered, tickDelta);
+        //$$ pose.popMatrix();
         //#else
         //$$ render(guiGraphics, index, y, x, entryWidth, entryHeight, mouseX, mouseY, hovered, tickDelta);
         //#endif

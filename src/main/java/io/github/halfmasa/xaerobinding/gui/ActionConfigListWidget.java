@@ -36,6 +36,16 @@ public final class ActionConfigListWidget extends WidgetListConfigOptions
     }
 
     @Override
+    protected void addFilteredContents(Collection<ConfigOptionWrapper> entries)
+    {
+        super.addFilteredContents(entries);
+        //#if MC >= 1.21.1
+        if (this.expansionProvider instanceof io.github.halfmasa.xaerobinding.favorites.MasaFavoritesExpansionProvider favorites)
+            favorites.groupSearchResults(this.getCurrentEntries());
+        //#endif
+    }
+
+    @Override
     protected java.util.Comparator<ConfigOptionWrapper> getComparator()
     {
         //#if MC >= 1.21.1
@@ -163,6 +173,13 @@ public final class ActionConfigListWidget extends WidgetListConfigOptions
     {
         return this.expansionProvider;
     }
+
+    //#if MC >= 1.21.1
+    public IConfigBase getInlineConfig(IConfigBase config)
+    {
+        return this.expansionProvider.getInlineCompanion(config);
+    }
+    //#endif
 
     @Override
     protected WidgetConfigOption createListEntryWidget(

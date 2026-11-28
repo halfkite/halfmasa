@@ -106,6 +106,10 @@ public final class ItemManagerHistoryOverlay
     //$$ public static void renderJei(Object ingredientListOverlay, GuiGraphics graphics, int mouseX, int mouseY)
     //#endif
     {
+        if (STATES.get(Channel.JEI).available.empty())
+        {
+            return;
+        }
         try
         {
             if (!(boolean) findMethod(ingredientListOverlay.getClass(), "isListDisplayed", 0)
@@ -141,12 +145,12 @@ public final class ItemManagerHistoryOverlay
         return handleClick(Channel.JEI, state.area, mouseX, mouseY, button);
     }
 
-    public static Object reserveJeiArea(Object overlay, Object available)
+    public static void prepareJeiLayout(Object overlay, Object available)
     {
         if (!enabled() || available == null)
         {
             clear(Channel.JEI);
-            return available;
+            return;
         }
         try
         {
@@ -154,7 +158,7 @@ public final class ItemManagerHistoryOverlay
             if (original.empty())
             {
                 clear(Channel.JEI);
-                return available;
+                return;
             }
             int maxColumns = readJeiMaxColumns(overlay, original.width / SLOT_SIZE);
             PanelState state = STATES.get(Channel.JEI);
@@ -166,13 +170,20 @@ public final class ItemManagerHistoryOverlay
                 searchArea = readJeiSearchArea(overlay);
             }
             prepare(Channel.JEI, overlay, original, searchArea, SLOT_SIZE, maxColumns);
-            return available;
         }
         catch (Throwable throwable)
         {
             logFailure(Channel.JEI, throwable);
-            return available;
+            hideJeiLayout();
         }
+    }
+
+    public static void hideJeiLayout()
+    {
+        PanelState state = STATES.get(Channel.JEI);
+        state.area = Rect.EMPTY;
+        state.available = Rect.EMPTY;
+        state.nativeGridArea = Rect.EMPTY;
     }
 
     public static void reserveReiArea(Object entryList)

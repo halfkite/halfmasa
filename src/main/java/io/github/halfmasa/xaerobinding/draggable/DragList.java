@@ -6,11 +6,18 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 //$$ import net.minecraft.client.gui.GuiGraphics;
 //#endif
 import net.minecraft.client.gui.components.ObjectSelectionList;
+import net.minecraft.util.Mth;
 
 public interface DragList<T, E extends ObjectSelectionList.Entry<?>> {
     DragItem<T, E> draggable_lists$getEntryAtPosition(double mouseX, double mouseY);
 
     int draggable_lists$getIndexOfEntry(DragItem<T, E> selectedItem);
+
+    default int draggable_lists$getIndexAtY(double mouseY) {
+        int offset = Mth.floor(mouseY - draggable_lists$getY()) - draggable_lists$getHeaderHeight()
+                + (int) draggable_lists$getScrollAmount() - 4;
+        return offset / draggable_lists$getItemHeight();
+    }
 
     void draggable_lists$setDragging(boolean b);
 

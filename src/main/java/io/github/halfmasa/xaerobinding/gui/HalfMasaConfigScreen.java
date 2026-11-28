@@ -30,6 +30,8 @@ public final class HalfMasaConfigScreen extends GuiConfigsBase implements Scroll
     }
 
     //#if MC >= 1.21.1
+    public void showAllForNavigation() { this.tab = Tab.ALL; }
+
     @Override
     public void removed()
     {

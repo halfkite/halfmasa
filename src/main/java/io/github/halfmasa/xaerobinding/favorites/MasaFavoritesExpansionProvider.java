@@ -14,9 +14,9 @@ import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.options.ConfigBoolean;
 import fi.dy.masa.malilib.gui.GuiConfigsBase.ConfigOptionWrapper;
 import io.github.halfmasa.xaerobinding.config.Configs;
+import io.github.halfmasa.xaerobinding.config.ConfigGroupHeader;
 import io.github.halfmasa.xaerobinding.gui.ConfigExpansionProvider;
 import io.github.halfmasa.xaerobinding.gui.HalfMasaConfigExpansionProvider;
-import io.github.halfmasa.xaerobinding.gui.TweakerooConfigExpansionProvider;
 
 /** A visit owns its collapsed state; child rows reference the same original configs. */
 public final class MasaFavoritesExpansionProvider implements ConfigExpansionProvider
@@ -26,6 +26,7 @@ public final class MasaFavoritesExpansionProvider implements ConfigExpansionProv
     private final Map<String, ConfigExpansionProvider> sources = new LinkedHashMap<>();
     private List<MasaConfigCatalog.Entry> searchRoots;
     private final Map<IConfigBase, Integer> displayOrder = new IdentityHashMap<>();
+    private final Map<String, ConfigGroupHeader> sourceHeaders = new LinkedHashMap<>();
     private String query;
     private Set<String> queryFavorites = Set.of();
     private boolean globalSearch;
@@ -45,6 +46,31 @@ public final class MasaFavoritesExpansionProvider implements ConfigExpansionProv
     {
         return java.util.Comparator.comparingInt(entry -> this.displayOrder.getOrDefault(entry.getConfig(), Integer.MAX_VALUE));
     }
+
+    public void groupSearchResults(List<ConfigOptionWrapper> results)
+    {
+        Map<String, List<ConfigOptionWrapper>> grouped = new LinkedHashMap<>();
+        results.sort(this.comparator());
+        for (var wrapper : results)
+        {
+            var entry = MasaConfigCatalog.lookup(wrapper.getConfig());
+            if (entry != null) grouped.computeIfAbsent(entry.modId(), ignored -> new ArrayList<>()).add(wrapper);
+        }
+        results.clear();
+        this.displayOrder.clear();
+        grouped.forEach((mod, rows) -> {
+            var header = this.sourceHeaders.computeIfAbsent(mod, id -> new ConfigGroupHeader(
+                    id, "halfmasa.gui.favorites", new ConfigBoolean(id, true), MasaConfigCatalog.sourceName(id)));
+            results.add(new ConfigOptionWrapper(header));
+            if (header.getExpansion().getBooleanValue())
+            {
+                results.addAll(rows);
+                rows.forEach(row -> this.session.track(MasaConfigCatalog.lookup(row.getConfig())));
+            }
+        });
+        for (int index = 0; index < results.size(); index++)
+            this.displayOrder.put(results.get(index).getConfig(), index);
+    }
     private final Map<IConfigBase, List<IConfigBase>> children = new IdentityHashMap<>();
     private final Map<IConfigBase, IConfigBase> parents = new IdentityHashMap<>();
     private final Map<IConfigBase, ConfigBoolean> expansion = new IdentityHashMap<>();
@@ -63,8 +89,6 @@ public final class MasaFavoritesExpansionProvider implements ConfigExpansionProv
     {
         if (entries.stream().anyMatch(entry -> entry.modId().equals("halfmasa")))
             this.sources.computeIfAbsent("halfmasa", ignored -> halfMasaSource());
-        if (entries.stream().anyMatch(entry -> entry.modId().equals("tweakeroo")))
-            this.sources.computeIfAbsent("tweakeroo", ignored -> tweakerooSource());
         for (var entry : entries)
         {
             var source = this.sources.get(entry.modId());
@@ -84,14 +108,6 @@ public final class MasaFavoritesExpansionProvider implements ConfigExpansionProv
                         half.getExpansionChildren(config).stream()).distinct().toList();
             }
         };
-    }
-
-    private static ConfigExpansionProvider tweakerooSource()
-    {
-        TweakerooConfigExpansionProvider tweakeroo = new TweakerooConfigExpansionProvider();
-        tweakeroo.prepareEntries(MasaConfigCatalog.indexedEntries("tweakeroo").stream()
-                .map(entry -> new ConfigOptionWrapper(entry.editable())).toList(), true);
-        return tweakeroo;
     }
 
     private void addBranch(MasaConfigCatalog.Entry entry, ConfigExpansionProvider source, Set<String> path)
@@ -144,7 +160,7 @@ public final class MasaFavoritesExpansionProvider implements ConfigExpansionProv
             pinned.addAll(remaining);
             active = pinned;
         }
-        for (var root : active) this.append(root.editable(), visible, emitted);
+        for (var root : active) this.append(root.editable(), visible, emitted, searchActive);
         this.displayOrder.clear();
         for (int index = 0; index < visible.size(); index++) this.displayOrder.put(visible.get(index).getConfig(), index);
         return visible;
@@ -158,15 +174,15 @@ public final class MasaFavoritesExpansionProvider implements ConfigExpansionProv
                 this.getExpansionChildren(config).stream().anyMatch(child -> this.branchFavorite(child, visited));
     }
 
-    private void append(IConfigBase config, List<ConfigOptionWrapper> visible, Set<IConfigBase> emitted)
+    private void append(IConfigBase config, List<ConfigOptionWrapper> visible, Set<IConfigBase> emitted, boolean searching)
     {
         if (!emitted.add(config)) return;
         var entry = MasaConfigCatalog.lookup(config);
-        if (entry != null) this.session.track(entry);
+        if (entry != null && !searching) this.session.track(entry);
         visible.add(new ConfigOptionWrapper(config));
         ConfigBoolean expanded = this.expansion.get(config);
-        if (expanded != null && expanded.getBooleanValue())
-            for (IConfigBase child : this.getExpansionChildren(config)) this.append(child, visible, emitted);
+        if (expanded != null && (searching || expanded.getBooleanValue()))
+            for (IConfigBase child : this.getExpansionChildren(config)) this.append(child, visible, emitted, searching);
     }
 
     @Override public IConfigBase getExpansionParent(IConfigBase config) { return this.parents.get(config); }

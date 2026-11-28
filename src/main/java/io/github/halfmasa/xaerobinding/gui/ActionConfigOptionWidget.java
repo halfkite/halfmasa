@@ -189,8 +189,28 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         }
         //#endif
 
-        if (config instanceof ConfigGroupHeader)
+        if (config instanceof ConfigGroupHeader header)
         {
+            //#if MC >= 1.21.1
+            if (this.host instanceof io.github.halfmasa.xaerobinding.favorites.MasaFavoritesScreen favorites)
+            {
+                ConfigBoolean open = header.getExpansion();
+                var toggle = new ButtonGeneric(expandButtonX, y + 1, EXPAND_BUTTON_WIDTH, 20,
+                        open.getBooleanValue() ? "[-]" : "[+]");
+                this.addButton(toggle, (button, mouse) -> {
+                    if (mouse != io.github.halfmasa.xaerobinding.favorites.MasaFavoriteButton.LEFT_MOUSE) return;
+                    this.parent.applyPendingModifications();
+                    favorites.session().saveChanges();
+                    open.setBooleanValue(!open.getBooleanValue());
+                    io.github.halfmasa.xaerobinding.favorites.MasaFavoritesLayout.INSTANCE.requestRefresh();
+                });
+                this.addLabel(x, y + 7, labelWidth, 8, 0xFFFFFFFF, config.getConfigGuiDisplayName());
+                if (io.github.halfmasa.xaerobinding.favorites.MasaFavoritesScreen.canJumpToSource())
+                    this.addWidget(favorites.sourceButton(header.getName(), null, x + labelWidth + 10, y + 1,
+                            -1, StringUtils.translate("halfmasa.gui.favorites.open_source")));
+                return;
+            }
+            //#endif
             this.addLabel(x, y + 7, labelWidth, 8, 0xFFFFFFFF, config.getConfigGuiDisplayName());
             this.addExpandButton(expandButtonX, y, config, expansion);
             return;
@@ -540,7 +560,7 @@ public final class ActionConfigOptionWidget extends WidgetConfigOption
         //#if MC >= 1.21.1
         if (io.github.halfmasa.xaerobinding.favorites.MasaFavoriteButton.isShown(this.host) &&
                 !io.github.halfmasa.xaerobinding.favorites.MasaFavoritePosition.isLeft())
-            right -= io.github.halfmasa.xaerobinding.favorites.MasaFavoriteButton.SPACE;
+            right -= io.github.halfmasa.xaerobinding.favorites.MasaFavoriteButton.space();
         //#endif
         int downX = right - GROUP_BUTTON_WIDTH;
         int upX = downX - GROUP_BUTTON_GAP - GROUP_BUTTON_WIDTH;

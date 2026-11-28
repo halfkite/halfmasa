@@ -34,6 +34,10 @@ import io.github.halfmasa.xaerobinding.mixin.GuiListBaseAccessor;
 public class FavoritesSmoke implements ClientModInitializer {
  static final boolean BASE_ONLY=Boolean.getBoolean("favorites.baseOnly");
  static int stage,frames,wait; static boolean done;
+ static long sourceHighlightStarted;
+ static boolean sourceHighlightCaptured;
+ static GuiConfigsBase highlightedScreen;
+ static MasaConfigCatalog.Entry highlightedEntry;
  static MasaFavoritesScreen screen;
  static List<MasaConfigCatalog.Entry> chosen;
  static TitleScreen title;
@@ -107,8 +111,23 @@ public class FavoritesSmoke implements ClientModInitializer {
   MinecraftClientCompat.setScreen(mc,title);
  }
  static Field field(Class<?> c,String name)throws NoSuchFieldException{while(c!=null){try{var f=c.getDeclaredField(name);f.setAccessible(true);return f;}catch(NoSuchFieldException e){c=c.getSuperclass();}}throw new NoSuchFieldException(name);}
+ static ConfigBoolean sourceJump() throws Exception {
+  try { return (ConfigBoolean)Configs.class.getField("MASA_FAVORITES_SOURCE_JUMP").get(null); }
+  catch(NoSuchFieldException absent) { return null; }
+ }
+ static boolean highlighted(GuiConfigsBase page, IConfigBase config)throws Exception {
+  return (boolean)MasaConfigNavigation.class.getMethod("isHighlighted",Object.class,IConfigBase.class).invoke(null,page,config);
+ }
  static WidgetListConfigOptions list(GuiConfigsBase s){return (WidgetListConfigOptions)((GuiListBaseAccessor)(Object)s).halfmasa$getListWidget();}
  static List<WidgetConfigOption> rows(GuiConfigsBase s)throws Exception{return (List<WidgetConfigOption>)field(WidgetListBase.class,"listWidgets").get(list(s));}
+ static WidgetConfigOption visibleRow(GuiConfigsBase screen,IConfigBase config)throws Exception{
+  var visible=rows(screen).stream().filter(r->r.getEntry().getConfig()==config).findFirst();
+  if(visible.isPresent())return visible.get();
+  var list=list(screen);var entries=list.getCurrentEntries();
+  int index=java.util.stream.IntStream.range(0,entries.size()).filter(i->entries.get(i).getConfig()==config).findFirst().orElseThrow();
+  list.getScrollbar().setValue(index);list.refreshEntries();
+  return rows(screen).stream().filter(r->r.getEntry().getConfig()==config).findFirst().orElseThrow();
+ }
  static List<WidgetBase> children(WidgetConfigOption row)throws Exception{return (List<WidgetBase>)field(WidgetContainer.class,"subWidgets").get(row);}
  static String buttonText(WidgetBase button){try{return (String)field(ButtonBase.class,"displayString").get(button);}catch(ReflectiveOperationException error){throw new IllegalStateException(error);}}
  static void click(WidgetBase widget){check(widget.onMouseClicked(new MouseButtonEvent(widget.getX()+widget.getWidth()/2.0,widget.getY()+widget.getHeight()/2.0,new MouseButtonInfo(fi.dy.masa.malilib.util.input.ScanCodes.OFFSET_MOUSE_LEFT,0)),false),"widget click handled");}
@@ -138,6 +157,9 @@ public class FavoritesSmoke implements ClientModInitializer {
   try{
    if(stage==0){if(!(MinecraftClientCompat.getScreen(mc) instanceof TitleScreen)||mc.gui.overlay()!=null)return;
     title=(TitleScreen)MinecraftClientCompat.getScreen(mc);
+    boolean restart=Boolean.getBoolean("favorites.restart");
+    if(!restart)check(!Configs.MASA_FAVORITES.getBooleanValue(),"favorites are disabled by default");
+    Configs.MASA_FAVORITES.setBooleanValue(true);
     if(Boolean.getBoolean("favorites.measureMenu"))measureMenuOpen(mc);
     if(Boolean.getBoolean("favorites.verifyMenuCost"))checkLazyDiscovery(mc);
     if(Boolean.getBoolean("favorites.lpctoolsLayout")){
@@ -152,7 +174,6 @@ public class FavoritesSmoke implements ClientModInitializer {
     for(String mod:List.of("itemscroller","tweakermore","lpctools","magiclib"))if(net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded(mod))
      check(MasaConfigCatalog.entries().stream().anyMatch(e->e.modId().equals(mod)),"global catalog covers installed "+mod+" before original screen opens");
     if(Boolean.getBoolean("favorites.gadgetFixture"))check(MasaGadgetCompat.pages().stream().anyMatch(m->m.modId().equals("masa_gadget_mod")),"Gadget Mod Menu page merged before original screen opens");
-    boolean restart=Boolean.getBoolean("favorites.restart");
     for(String mod:BASE_ONLY?List.of("halfmasa"):List.of("halfmasa","minihud","litematica","tweakeroo"))check(MasaConfigCatalog.entries().stream().anyMatch(e->e.modId().equals(mod)),"discover "+mod+" before opening any config screen");
     if(BASE_ONLY)check(MasaConfigCatalog.entries().stream().noneMatch(e->List.of("minihud","litematica","tweakeroo").contains(e.modId())),"missing optional mods do not create invalid entries");
     if(restart){
@@ -163,7 +184,7 @@ public class FavoritesSmoke implements ClientModInitializer {
     }
     for(String key:MasaFavoritesStore.get().snapshot())MasaFavoritesStore.get().setFavorite(key,false);
     check(Configs.MASA_FAVORITES_POSITION.getOptionListValue()==MasaFavoritePosition.LEFT,"legacy boolean position migrates to left option");Configs.MASA_FAVORITES_POSITION.setOptionListValue(MasaFavoritePosition.RIGHT);
-    check(Configs.MASA_FAVORITES.getBooleanValue()&&Configs.MASA_FAVORITES_SHOW_STARS.getBooleanValue(),"independent favorites master and side stars default enabled");
+    check(Configs.MASA_FAVORITES_SHOW_STARS.getBooleanValue(),"side stars default enabled when the favorites master is enabled");
     for(var child:Configs.getExpansionChildren(Configs.MASA_FAVORITES))check(Configs.getExpansionParent(child)==Configs.MASA_FAVORITES,"favorite option belongs to independent master");
     check(Configs.getExpansionParent(Configs.OPEN_MASA_FAVORITES)==Configs.MASA_FAVORITES&&Configs.getExpansionParent(Configs.MASA_FAVORITES_LEFT)==Configs.MASA_FAVORITES,"favorites are not children of config grouping");
     Configs.CUSTOM_CONFIG_GROUPS.setBooleanValue(false);Configs.CONFIG_GROUPING_EXPANDED.setBooleanValue(false);Configs.MASA_FAVORITES_EXPANDED.setBooleanValue(false);
@@ -174,7 +195,8 @@ public class FavoritesSmoke implements ClientModInitializer {
     var oldGroup=groups.getGroups().stream().filter(g->g.id.equals("builtin_halfmasa_configGroupingGroup")).findFirst().orElseThrow();
     check(oldGroup.children.stream().noneMatch(ref->ref.contains("MasaFavorites")||ref.contains("masaFavorites")),"existing built-in grouping releases favorites during migration");
     check(groups.getGroups().stream().anyMatch(g->g.id.equals("builtin_halfmasa_masaFavorites")&&g.mainConfig.equals("masaFavorites")),"existing custom grouping receives independent favorites group");
-    check(groups.getGroups().size()==3&&groups.getGroups().stream().anyMatch(g->g.id.equals("user-keep")&&g.name.equals("User layout")),"migration preserves user groups and deleted unrelated defaults");
+    check(groups.getGroups().stream().allMatch(g->Set.of("builtin_halfmasa_configGroupingGroup","builtin_halfmasa_masaFavorites","builtin_halfmasa_betterRegistryPicker","builtin_halfmasa_allModeHud","builtin_halfmasa_containerComparatorOutput","user-keep").contains(g.id))&&groups.getGroups().stream().anyMatch(g->g.id.equals("user-keep")&&g.name.equals("User layout")),"migration preserves user groups and deleted unrelated defaults");
+    check(groups.getGroups().stream().anyMatch(g->g.id.equals("builtin_halfmasa_betterRegistryPicker")&&g.mainConfig.equals("betterRegistryPicker")),"existing custom grouping receives registry picker group");
     Configs.CUSTOM_CONFIG_GROUPS.setBooleanValue(true);Configs.MASA_FAVORITES_EXPANDED.setBooleanValue(true);Configs.MASA_BETTER_SWITCHER_EXPANDED.setBooleanValue(false);
     var customProvider=new HalfMasaConfigExpansionProvider("halfmasa");var customView=customProvider.prepareEntries(GuiConfigsBase.ConfigOptionWrapper.createFor(Configs.ALL),false);
     check(customView.stream().noneMatch(w->w.getConfig()==Configs.MASA_SWITCHER_FAVORITES),"custom grouping keeps switcher child collapsed");Configs.MASA_BETTER_SWITCHER_EXPANDED.setBooleanValue(true);
@@ -216,23 +238,74 @@ public class FavoritesSmoke implements ClientModInitializer {
     check(list(globalPage).getCurrentEntries().size()==1,"global search starts with favorites only");
     var globalSearch=list(globalPage).getSearchBarWidget();globalSearch.setSearchOpen(true);
     var globalBox=(GuiTextFieldGeneric)field(WidgetSearchBar.class,"searchBox").get(globalSearch);globalBox.setValueWrapper("GLOBALSEARCHPROBE");list(globalPage).refreshEntries();
-    check(list(globalPage).getCurrentEntries().size()==2,"search finds unstarred original configs case-insensitively");
-    check(list(globalPage).getCurrentEntries().get(0).getConfig()==probeB,"global search ranks favorite before non-favorite");
+    check(list(globalPage).getCurrentEntries().size()==3,"search shows a source header and both matching options");
+    check(list(globalPage).getCurrentEntries().get(1).getConfig()==probeB,"global search ranks favorite before non-favorite within its source");
+    var header=(io.github.halfmasa.xaerobinding.config.ConfigGroupHeader)list(globalPage).getCurrentEntries().get(0).getConfig();
+    var collapse=children(rows(globalPage).get(0)).stream().filter(w->w instanceof ButtonBase && "[-]".equals(buttonText(w))).findFirst().orElseThrow();
+    click(collapse);MasaFavoritesLayout.INSTANCE.onClientTick(mc);
+    check(list(globalPage).getCurrentEntries().size()==1 && !header.getExpansion().getBooleanValue(),"source collapse keeps its header");
+    var expand=children(rows(globalPage).get(0)).stream().filter(w->w instanceof ButtonBase && "[+]".equals(buttonText(w))).findFirst().orElseThrow();
+    click(expand);MasaFavoritesLayout.INSTANCE.onClientTick(mc);
+    check(list(globalPage).getCurrentEntries().size()==3,"expanding a source restores its matching rows");
     var probeRow=rows(globalPage).stream().filter(r->r.getEntry().getConfig()==probeA).findFirst().orElseThrow();
     click(children(probeRow).stream().filter(w->w instanceof ConfigButtonBoolean).findFirst().orElseThrow());check(probeA.getBooleanValue(),"global search edits original object");
     check(globalPage.session().changedMods().contains("halfmasa"),"non-favorite search edit is tracked for owner save");
-    click(star(rows(globalPage).get(0)));check(list(globalPage).getCurrentEntries().get(0).getConfig()==probeB,"unfavorite does not jump or remove current search row");
+    click(star(rows(globalPage).get(1)));check(list(globalPage).getCurrentEntries().get(1).getConfig()==probeB,"unfavorite does not jump or remove current search row");
     globalBox.setValueWrapper("no_global_matches");list(globalPage).refreshEntries();
     check(list(globalPage).getCurrentEntries().isEmpty(),"nonmatching search is empty");
     globalBox.setValueWrapper("globalSearchProbe");list(globalPage).refreshEntries();
-    check(list(globalPage).getCurrentEntries().get(0).getConfig()==probeA,"new query rebuild uses current favorite state");
+    check(list(globalPage).getCurrentEntries().get(1).getConfig()==probeA,"new query rebuild uses current favorite state");
     Configs.MASA_FAVORITES_GLOBAL_SEARCH.setBooleanValue(false);list(globalPage).refreshEntries();
-    check(list(globalPage).getCurrentEntries().size()==1,"disabling global search immediately restores snapshot-only filtering");
+    check(list(globalPage).getCurrentEntries().size()==2,"disabling global search shows a header and the matching favorite");
     Configs.MASA_FAVORITES_GLOBAL_SEARCH.setBooleanValue(true);globalBox.setValueWrapper("halfmasa");list(globalPage).refreshEntries();
     check(list(globalPage).getCurrentEntries().size()>10,"global search accepts mod identifier");
     globalBox.setValueWrapper("");list(globalPage).refreshEntries();
     check(list(globalPage).getCurrentEntries().size()==1,"clearing query restores visit snapshot including unfavorited row");
     MinecraftClientCompat.setScreen(mc,title);check(new MasaFavoritesScreen().getConfigs().isEmpty(),"reopening removes cancelled search favorite");
+    var target=MasaConfigCatalog.entries().stream()
+      .filter(e->BASE_ONLY ? e.identity()==Configs.MASA_FAVORITES : e.modId().equals("tweakeroo")&&e.identity().getName().equals("tweakToolSwitch"))
+      .findFirst().orElseThrow();
+    MasaFavoritesStore.get().setFavorite(target.key(),true);
+    var sourcePage=new MasaFavoritesScreen();MinecraftClientCompat.setScreen(mc,sourcePage);
+    Configs.MASA_FAVORITES_STAR_SIZE.setIntegerValue(14);MasaFavoritesLayout.INSTANCE.onClientTick(mc);
+    var targetRow=rows(sourcePage).get(0);
+    check(star(targetRow).getWidth()==14 && star(targetRow).getHeight()==14,"configured star size changes its hit area in place");
+    var sourceButton=children(targetRow).stream().filter(w->w instanceof ButtonBase && MasaConfigCatalog.sourceName(target.modId()).equals(buttonText(w))).findFirst().orElseThrow();
+    click(sourceButton);
+    var destination=(GuiConfigsBase)MinecraftClientCompat.getScreen(mc);
+    check(destination.getModId().equals(target.modId()) && destination.getParent()==sourcePage,"source button opens native page with return path");
+    check(list(destination).getCurrentEntries().stream().anyMatch(w->MasaConfigCatalog.lookup(w.getConfig())==target),"source button locates exact original row");
+    var jump=sourceJump();
+    if(jump!=null){
+     check(highlighted(destination,target.identity())&&!highlighted(sourcePage,target.identity()),"jump highlights only the target on the destination screen");
+     MinecraftClientCompat.setScreen(mc,sourcePage);
+     jump.setBooleanValue(false);MasaFavoritesLayout.INSTANCE.onClientTick(mc);
+     check(children(rows(sourcePage).get(0)).stream().noneMatch(w->w instanceof ButtonBase&&MasaConfigCatalog.sourceName(target.modId()).equals(buttonText(w))),"disabling source jump replaces the link with a label");
+     click(sourceButton);check(MinecraftClientCompat.getScreen(mc)==sourcePage,"disabled source jump ignores stale button clicks");
+     jump.setBooleanValue(true);MasaFavoritesLayout.INSTANCE.onClientTick(mc);
+    }
+    MinecraftClientCompat.setScreen(mc,sourcePage);
+    var targetSearch=list(sourcePage).getSearchBarWidget();targetSearch.setSearchOpen(true);
+    ((GuiTextFieldGeneric)field(WidgetSearchBar.class,"searchBox").get(targetSearch)).setValueWrapper(target.identity().getName());
+    list(sourcePage).refreshEntries();
+    var group=rows(sourcePage).stream().filter(r->r.getEntry().getConfig() instanceof io.github.halfmasa.xaerobinding.config.ConfigGroupHeader h && h.getName().equals(target.modId())).findFirst().orElseThrow();
+    if(jump!=null && !BASE_ONLY){
+     ((GuiTextFieldGeneric)field(WidgetSearchBar.class,"searchBox").get(targetSearch)).setValueWrapper("accuratePlacement");
+     list(sourcePage).refreshEntries();
+     var tweakRows=rows(sourcePage).stream().filter(r->{var e=MasaConfigCatalog.lookup(r.getEntry().getConfig());return e!=null&&e.modId().equals("tweakeroo");}).toList();
+     check(!tweakRows.isEmpty(),"Tweakeroo options remain visible while its folding is disabled");
+     for(var tweakRow:tweakRows)
+      check(children(tweakRow).stream().noneMatch(w->w instanceof ButtonBase && Set.of("[+]","[-]").contains(buttonText(w))),"Tweakeroo config rows omit unfinished folding controls");
+     ((GuiTextFieldGeneric)field(WidgetSearchBar.class,"searchBox").get(targetSearch)).setValueWrapper(target.identity().getName());
+     list(sourcePage).refreshEntries();
+     group=rows(sourcePage).stream().filter(r->r.getEntry().getConfig() instanceof io.github.halfmasa.xaerobinding.config.ConfigGroupHeader h && h.getName().equals(target.modId())).findFirst().orElseThrow();
+    }
+    String openText=fi.dy.masa.malilib.util.StringUtils.translate("halfmasa.gui.favorites.open_source");
+    click(children(group).stream().filter(w->w instanceof ButtonBase && openText.equals(buttonText(w))).findFirst().orElseThrow());
+    check(MinecraftClientCompat.getScreen(mc) instanceof GuiConfigsBase nativePage && nativePage.getModId().equals(target.modId()),"source group Open button opens its native page");
+    if(jump!=null) highlightedEntry=target;
+    Configs.MASA_FAVORITES_STAR_SIZE.resetToDefault();
+    MinecraftClientCompat.setScreen(mc,title);MasaFavoritesStore.get().setFavorite(target.key(),false);
     Path testDir=Configs.getHalfMasaDirectory().resolve("favorites-fixture");Files.createDirectories(testDir);
     Path file=testDir.resolve("valid.json");MasaFavoritesStore store=new MasaFavoritesStore(file);
     check(store.snapshot().isEmpty(),"missing file starts empty");check(store.setFavorite("missing_mod:config",true),"unknown mod key saves");
@@ -262,7 +335,7 @@ public class FavoritesSmoke implements ClientModInitializer {
     check(screen.getConfigs().size()==chosen.size(),"cancel keeps snapshot row");
     var search=list(screen).getSearchBarWidget();search.setSearchOpen(true);
     var searchBox=(GuiTextFieldGeneric)field(WidgetSearchBar.class,"searchBox").get(search);searchBox.setValueWrapper(chosen.get(0).identity().getName());list(screen).refreshEntries();
-    check(list(screen).getCurrentEntries().size()==1,"cancelled row remains searchable during visit");searchBox.setValueWrapper("");search.setSearchOpen(false);list(screen).refreshEntries();
+    check(list(screen).getCurrentEntries().stream().anyMatch(w->w.getConfig()==chosen.get(0).editable()),"cancelled row remains searchable during visit");searchBox.setValueWrapper("");search.setSearchOpen(false);list(screen).refreshEntries();
     check(list(screen).getCurrentEntries().size()==chosen.size(),"clearing filter restores unchanged snapshot");
     var visit=screen;MinecraftClientCompat.setScreen(mc,new TitleScreen());MinecraftClientCompat.setScreen(mc,visit);
     check(screen.getConfigs().size()==chosen.size(),"return from another screen preserves current visit");
@@ -338,15 +411,15 @@ public class FavoritesSmoke implements ClientModInitializer {
     MinecraftClientCompat.setScreen(mc,new HalfMasaConfigScreen());
     var independent=(GuiConfigsBase)MinecraftClientCompat.getScreen(mc);var search=list(independent).getSearchBarWidget();search.setSearchOpen(true);
     ((GuiTextFieldGeneric)field(WidgetSearchBar.class,"searchBox").get(search)).setValueWrapper("masaFavorites");list(independent).refreshEntries();
-    check(list(independent).getCurrentEntries().size()==7,"independent feature exposes master plus six settings with switcher child collapsed");
+    check(list(independent).getCurrentEntries().size()==(sourceJump()==null?10:11),"independent feature exposes settings with switcher child collapsed");
     stage=10;return;}
    if(stage==10){livePositionScreen=(GuiConfigsBase)MinecraftClientCompat.getScreen(mc);layout(livePositionScreen,false);screenshot(mc);
-    var switcherRow=rows(livePositionScreen).stream().filter(r->r.getEntry().getConfig()==Configs.MASA_BETTER_SWITCHER).findFirst().orElseThrow();click(children(switcherRow).stream().filter(w->w instanceof ButtonBase&&"[+]".equals(buttonText(w))).findFirst().orElseThrow());
+    var switcherRow=visibleRow(livePositionScreen,Configs.MASA_BETTER_SWITCHER);click(children(switcherRow).stream().filter(w->w instanceof ButtonBase&&"[+]".equals(buttonText(w))).findFirst().orElseThrow());
     check(list(livePositionScreen).getCurrentEntries().stream().anyMatch(w->w.getConfig()==Configs.MASA_SWITCHER_FAVORITES),"nested switcher child stays searchable by favorites ancestor");
-    var row=rows(livePositionScreen).stream().filter(r->r.getEntry().getConfig()==Configs.MASA_FAVORITES_POSITION).findFirst().orElseThrow();click(children(row).stream().filter(w->w instanceof ConfigButtonOptionList).findFirst().orElseThrow());stage=11;return;}
+    var row=visibleRow(livePositionScreen,Configs.MASA_FAVORITES_POSITION);click(children(row).stream().filter(w->w instanceof ConfigButtonOptionList).findFirst().orElseThrow());stage=11;return;}
    if(stage==11){check(MinecraftClientCompat.getScreen(mc)==livePositionScreen,"position change keeps current screen instance");layout(livePositionScreen,true);screenshot(mc);
     check(list(livePositionScreen).getSearchBarWidget().getFilter().equals("masafavorites"),"live position change preserves search");
-    var row=rows(livePositionScreen).stream().filter(r->r.getEntry().getConfig()==Configs.MASA_FAVORITES_POSITION).findFirst().orElseThrow();click(children(row).stream().filter(w->w instanceof ConfigButtonOptionList).findFirst().orElseThrow());stage=12;return;}
+    var row=visibleRow(livePositionScreen,Configs.MASA_FAVORITES_POSITION);click(children(row).stream().filter(w->w instanceof ConfigButtonOptionList).findFirst().orElseThrow());stage=12;return;}
    if(stage==12){check(MinecraftClientCompat.getScreen(mc)==livePositionScreen,"right position applies without reopening");layout(livePositionScreen,false);screenshot(mc);
     var dropdown=(WidgetDropDownList<fi.dy.masa.malilib.util.data.ModInfo>)field(GuiConfigsBase.class,"modSwitchWidget").get(livePositionScreen);check(dropdown instanceof MasaConfigSwitcher,"better switcher replaces only native dropdown widget");
     click(dropdown);var mods=(List<fi.dy.masa.malilib.util.data.ModInfo>)field(WidgetDropDownList.class,"filteredEntries").get(dropdown);
@@ -374,10 +447,10 @@ public class FavoritesSmoke implements ClientModInitializer {
     check(capacity==expectedCapacity&&capacity>10,"dropdown uses available height beyond native ten-row cap");
     check(large.getY()+field(WidgetDropDownList.class,"totalHeight").getInt(large)<=mc.getWindow().getGuiScaledHeight(),"expanded dropdown remains inside screen");
     check(large.getX()>=0&&large.getX()+large.getWidth()<=mc.getWindow().getGuiScaledWidth(),"long mod names fit available screen width");
-    click(large);var search=(fi.dy.masa.malilib.gui.wrappers.TextFieldWrapper<?>)field(WidgetDropDownList.class,"searchBar").get(large);search.textField().setValueWrapper("configuration page 23");
+    click(large);var search=(fi.dy.masa.malilib.gui.wrappers.TextFieldWrapper<?>)field(WidgetDropDownList.class,"searchBar").get(large);search.textField().setValueWrapper("page 23");
     var refresh=WidgetDropDownList.class.getDeclaredMethod("updateFilteredEntries");refresh.setAccessible(true);refresh.invoke(large);
     large.onMouseClicked(new MouseButtonEvent(large.getX()+8,large.getY()+large.getHeight()+10,new MouseButtonInfo(fi.dy.masa.malilib.util.input.ScanCodes.OFFSET_MOUSE_LEFT,0)),false);
-    check(search.textField().getValueWrapper().equals("configuration page 23")&&MasaFavoritesStore.get().contains("screen:fixture_page23"),"native menu search survives favorite toggle");
+    check(search.textField().getValueWrapper().equals("page 23")&&MasaFavoritesStore.get().contains("screen:fixture_page23"),"native menu search survives favorite toggle");
     MasaFavoritesStore.get().setFavorite("screen:fixture_page23",false);
     if(net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("magiclib")){
      check(MasaConfigCatalog.entries().stream().anyMatch(e->e.modId().equals("magiclib")&&e.identity().getName().equals("testConfigBoolean")),"MagicLib registry indexes inactive debug categories");
@@ -412,6 +485,27 @@ public class FavoritesSmoke implements ClientModInitializer {
     Configs.MASA_FAVORITES_POSITION.setOptionListValue(MasaFavoritePosition.RIGHT);stage=18;wait=0;return;}
    if(stage==18){list(livePositionScreen).getScrollbar().setValue(6);list(livePositionScreen).refreshEntries();stage=19;wait=0;return;}
    if(stage==19){screenshot(mc);stage=90;return;}
+   if(stage==90 && highlightedEntry!=null && sourceHighlightStarted==0){
+    var target=highlightedEntry;var page=new MasaFavoritesScreen();MinecraftClientCompat.setScreen(mc,page);
+    click(page.sourceButton(target.modId(),target,10,20,78,MasaConfigCatalog.sourceName(target.modId())));
+    sourceHighlightStarted=System.nanoTime();highlightedScreen=(GuiConfigsBase)MinecraftClientCompat.getScreen(mc);
+    check(highlighted(highlightedScreen,target.identity()),"destination highlight starts immediately");
+    stage=91;return;
+   }
+   if(stage==91){
+    long elapsed=System.nanoTime()-sourceHighlightStarted;
+    if(!sourceHighlightCaptured && elapsed>=300_000_000L && elapsed<4_500_000_000L){
+     boolean visible=false;
+     for(var row:rows(highlightedScreen))if(highlighted(highlightedScreen,row.getEntry().getConfig())){visible=true;break;}
+     check(visible,"jump scrolls the highlighted row into view");screenshot(mc);sourceHighlightCaptured=true;
+    }
+    if(elapsed<4_500_000_000L){
+     if(!highlighted(highlightedScreen,highlightedEntry.identity()))throw new AssertionError("highlight expired early");
+     return;
+    }
+    if(elapsed<5_100_000_000L)return;
+    check(!highlighted(highlightedScreen,highlightedEntry.identity()),"target highlight expires after five seconds");stage=90;
+   }
    if(stage==90){org.spongepowered.asm.mixin.MixinEnvironment.getCurrentEnvironment().audit();System.out.println("FAVORITES_PASS restart="+Boolean.getBoolean("favorites.restart"));done=true;mc.stop();}
   }catch(Throwable error){error.printStackTrace();System.out.println("FAVORITES_FAIL stage="+stage);done=true;mc.stop();}
  }

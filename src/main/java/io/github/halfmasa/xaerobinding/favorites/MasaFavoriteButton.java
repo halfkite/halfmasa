@@ -8,6 +8,7 @@ import fi.dy.masa.malilib.render.GuiContext;
 //$$ import net.minecraft.client.gui.GuiGraphics;
 //#endif
 import fi.dy.masa.malilib.util.StringUtils;
+import io.github.halfmasa.xaerobinding.config.Configs;
 //#if MC >= 26.3
 import fi.dy.masa.malilib.util.input.ScanCodes;
 //#else
@@ -22,14 +23,14 @@ public final class MasaFavoriteButton extends ButtonGeneric
     //#else
     //$$ public static final int LEFT_MOUSE = InputConstants.MOUSE_BUTTON_LEFT;
     //#endif
-    public static final int WIDTH = 20;
-    public static final int SPACE = WIDTH + 2;
+    public static int size() { return Configs.MASA_FAVORITES_STAR_SIZE.getIntegerValue(); }
+    public static int space() { return size() + 2; }
     private final MasaConfigCatalog.Entry entry;
     private boolean saveFailed;
 
     public MasaFavoriteButton(int x, int y, MasaConfigCatalog.Entry entry, Runnable onChanged)
     {
-        super(x, y, WIDTH, 20, "");
+        super(x, y, size(), size(), "");
         this.setRenderDefaultBackground(false);
         this.entry = entry;
         this.updateLabel();
@@ -48,13 +49,14 @@ public final class MasaFavoriteButton extends ButtonGeneric
                         io.github.halfmasa.xaerobinding.config.Configs.MASA_FAVORITES_SHOW_STARS.getBooleanValue());
     }
 
-    private void updateLabel()
+    private boolean updateLabel()
     {
         boolean favorite = MasaFavoritesStore.get().contains(this.entry.key());
         this.setDisplayString(favorite ? "\u2605" : "\u2606");
         this.setHoverStrings(this.entry.modId() + ": " + this.entry.identity().getConfigGuiDisplayName(),
                 StringUtils.translate(this.saveFailed ? "halfmasa.gui.favorites.save_failed" : favorite
                         ? "halfmasa.gui.favorites.remove" : "halfmasa.gui.favorites.add"));
+        return favorite;
     }
 
     @Override
@@ -66,12 +68,38 @@ public final class MasaFavoriteButton extends ButtonGeneric
     //$$ public void render(int mouseX,int mouseY,boolean selected,GuiGraphics context)
     //#endif
     {
-        this.updateLabel();
+        boolean favorite = this.updateLabel();
+        int color = (favorite ? Configs.MASA_FAVORITES_STAR_COLOR : Configs.MASA_FAVORITES_EMPTY_STAR_COLOR).getIntegerValue();
+        String glyph = favorite ? "★" : "☆";
+        float scale = this.getWidth() / 20.0F;
+        float x = this.getX() + (this.getWidth() - this.getStringWidth(glyph) * scale) / 2;
+        float y = this.getY() + (this.getHeight() - 8 * scale) / 2;
+        var pose = context.pose();
         //#if MC >= 1.21.8
-        super.render(context, mouseX, mouseY, selected);
+        pose.pushMatrix();
+        pose.translate(x, y);
+        pose.scale(scale, scale);
         //#else
-        //$$ super.render(mouseX,mouseY,selected,context);
+        //$$ pose.pushPose();
+        //$$ pose.translate(x, y, 0);
+        //$$ pose.scale(scale, scale, 1);
         //#endif
+        try
+        {
+            //#if MC >= 1.21.11
+            this.drawStringWithShadow(context, 0, 0, color, glyph);
+            //#else
+            //$$ context.drawString(net.minecraft.client.Minecraft.getInstance().font, glyph, 0, 0, color, true);
+            //#endif
+        }
+        finally
+        {
+            //#if MC >= 1.21.8
+            pose.popMatrix();
+            //#else
+            //$$ pose.popPose();
+            //#endif
+        }
     }
 }
 //#endif

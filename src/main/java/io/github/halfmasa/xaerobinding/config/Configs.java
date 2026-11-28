@@ -63,6 +63,8 @@ public final class Configs implements IConfigHandler
     //#if MC >= 1.21.1
     public static final ConfigBooleanHotkeyed BETTER_REGISTRY_PICKER = new ConfigBooleanHotkeyed(
             "betterRegistryPicker", true, "").apply(GENERIC_KEY);
+    private static final ConfigBoolean REGISTRY_PICKER_EXPANDED = new ConfigBoolean(
+            "registryPickerExpanded", false).apply(GENERIC_KEY);
     public static final ConfigBoolean REGISTRY_PICKER_ENTITY_MODELS = new ConfigBoolean(
             "registryPickerEntityModels", true).apply(GENERIC_KEY);
     //#endif
@@ -71,7 +73,7 @@ public final class Configs implements IConfigHandler
             CHINESE_MOD_LANGUAGE_FALLBACK,
             //#endif
             //#if MC >= 1.21.1
-            BETTER_REGISTRY_PICKER, REGISTRY_PICKER_ENTITY_MODELS,
+            BETTER_REGISTRY_PICKER, REGISTRY_PICKER_EXPANDED, REGISTRY_PICKER_ENTITY_MODELS,
             //#endif
             OPEN_TOOLS);
 
@@ -474,7 +476,7 @@ public final class Configs implements IConfigHandler
             "openCustomConfigGroups", "").applyTranslationKey(PORTED_KEY);
     //#if MC >= 1.21.1
     public static final ConfigBooleanHotkeyed MASA_FAVORITES = new ConfigBooleanHotkeyed(
-            "masaFavorites", true, "").apply(PORTED_KEY);
+            "masaFavorites", false, "").apply(PORTED_KEY);
     public static final ConfigBoolean MASA_FAVORITES_EXPANDED = new ConfigBoolean(
             "masaFavoritesExpanded", false).apply(PORTED_KEY);
     public static final ActionHotkey OPEN_MASA_FAVORITES = new ActionHotkey(
@@ -483,12 +485,20 @@ public final class Configs implements IConfigHandler
             "masaFavoritesShowStars", true).apply(PORTED_KEY);
     public static final ConfigOptionList MASA_FAVORITES_POSITION = new ConfigOptionList(
             "masaFavoritesPosition", io.github.halfmasa.xaerobinding.favorites.MasaFavoritePosition.RIGHT).apply(PORTED_KEY);
+    public static final ConfigInteger MASA_FAVORITES_STAR_SIZE = new ConfigInteger(
+            "masaFavoritesStarSize", 20, 12, 22).apply(PORTED_KEY);
+    public static final ConfigColor MASA_FAVORITES_STAR_COLOR = new ConfigColor(
+            "masaFavoritesStarColor", "#FFFFD45E").apply(PORTED_KEY);
+    public static final ConfigColor MASA_FAVORITES_EMPTY_STAR_COLOR = new ConfigColor(
+            "masaFavoritesEmptyStarColor", "#FFCCCCCC").apply(PORTED_KEY);
     // Retain the old public field identity used by saved favorites; both fields refer to one option.
     @Deprecated public static final ConfigOptionList MASA_FAVORITES_LEFT = MASA_FAVORITES_POSITION;
     public static final ConfigBoolean MASA_FAVORITES_PIN = new ConfigBoolean(
             "masaFavoritesPin", true).apply(PORTED_KEY);
     public static final ConfigBoolean MASA_FAVORITES_GLOBAL_SEARCH = new ConfigBoolean(
             "masaFavoritesGlobalSearch", true).apply(PORTED_KEY);
+    public static final ConfigBoolean MASA_FAVORITES_SOURCE_JUMP = new ConfigBoolean(
+            "masaFavoritesSourceJump", true).apply(PORTED_KEY);
     public static final ConfigBoolean MASA_BETTER_SWITCHER = new ConfigBoolean(
             "masaBetterSwitcher", true).apply(PORTED_KEY);
     public static final ConfigBoolean MASA_BETTER_SWITCHER_EXPANDED = new ConfigBoolean(
@@ -781,7 +791,9 @@ public final class Configs implements IConfigHandler
             //#endif
     //#if MC >= 1.21.1
     private static final List<IConfigBase> MASA_FAVORITES_CHILDREN = List.of(
-            OPEN_MASA_FAVORITES, MASA_FAVORITES_SHOW_STARS, MASA_FAVORITES_POSITION, MASA_FAVORITES_PIN, MASA_FAVORITES_GLOBAL_SEARCH, MASA_BETTER_SWITCHER);
+            OPEN_MASA_FAVORITES, MASA_FAVORITES_SHOW_STARS, MASA_FAVORITES_POSITION,
+            MASA_FAVORITES_STAR_SIZE, MASA_FAVORITES_STAR_COLOR, MASA_FAVORITES_EMPTY_STAR_COLOR,
+            MASA_FAVORITES_PIN, MASA_FAVORITES_GLOBAL_SEARCH, MASA_FAVORITES_SOURCE_JUMP, MASA_BETTER_SWITCHER);
     private static final List<IConfigBase> MASA_SWITCHER_CHILDREN = List.of(MASA_SWITCHER_FAVORITES);
     //#endif
     private static final List<IConfigBase> CONFIG_GROUPING_CHILDREN = List.of(
@@ -1188,7 +1200,11 @@ public final class Configs implements IConfigHandler
             GAME_MODE_ICON, ADVENTURE_MODE_ICON, ALL_MODE_EXPERIENCE_BAR);
     //#endif
 
+    public static final ConfigBoolean SPECTATOR_CROSSHAIR = new ConfigBoolean(
+            "spectatorCrosshair", false).apply(CLIENT_KEY);
+
     public static final List<IConfigBase> CLIENT = Stream.of(
+            List.<IConfigBase>of(SPECTATOR_CROSSHAIR),
             //#if MC >= 1.21.1
             List.<IConfigBase>of(ALL_MODE_HUD, ALL_MODE_HUD_EXPANDED), ALL_MODE_HUD_CHILDREN,
             List.<IConfigBase>of(CONTAINER_COMPARATOR_OUTPUT, CONTAINER_COMPARATOR_EXPANDED), CONTAINER_COMPARATOR_CHILDREN,
@@ -2126,8 +2142,7 @@ public final class Configs implements IConfigHandler
 
     public static List<IConfigBase> getAllView()
     {
-        List<IConfigBase> generic = CUSTOM_CONFIG_GROUPS.getBooleanValue()
-                ? visibleConfigs(GENERIC) : GENERIC;
+        List<IConfigBase> generic = visibleConfigs(GENERIC);
         List<IConfigBase> configs = Stream.of(generic, getWaypointView(), getCreativeView(), getPortedView(), getClientView(), getExtensionsView(), getDisabledView())
                 .flatMap(List::stream)
                 .distinct()
@@ -2236,6 +2251,7 @@ public final class Configs implements IConfigHandler
     public static ConfigBoolean getExpansionConfig(IConfigBase config)
     {
         //#if MC >= 1.21.1
+        if (config == BETTER_REGISTRY_PICKER) return REGISTRY_PICKER_EXPANDED;
         if (config == ALL_MODE_HUD) return ALL_MODE_HUD_EXPANDED;
         if (config == CONTAINER_COMPARATOR_OUTPUT) return CONTAINER_COMPARATOR_EXPANDED;
         //#endif
@@ -2324,6 +2340,7 @@ public final class Configs implements IConfigHandler
                 //#endif
     //#if MC >= 1.21.1
                 //#if MC >= 1.21.1
+                config == REGISTRY_PICKER_ENTITY_MODELS ||
                 ALL_MODE_HUD_CHILDREN.contains(config) || CONTAINER_COMPARATOR_CHILDREN.contains(config) ||
                 //#endif
                 //#if MC >= 1.21.1
@@ -2389,6 +2406,7 @@ public final class Configs implements IConfigHandler
     public static IConfigBase getExpansionParent(IConfigBase config)
     {
         //#if MC >= 1.21.1
+        if (config == REGISTRY_PICKER_ENTITY_MODELS) return BETTER_REGISTRY_PICKER;
         if (ALL_MODE_HUD_CHILDREN.contains(config)) return ALL_MODE_HUD;
         if (CONTAINER_COMPARATOR_CHILDREN.contains(config)) return CONTAINER_COMPARATOR_OUTPUT;
         //#endif
@@ -2504,6 +2522,8 @@ public final class Configs implements IConfigHandler
     //#endif
     //#if MC >= 1.21.1
                 //#if MC >= 1.21.1
+                .filter(config -> config != REGISTRY_PICKER_EXPANDED)
+                .filter(config -> config != REGISTRY_PICKER_ENTITY_MODELS || REGISTRY_PICKER_EXPANDED.getBooleanValue())
                 .filter(config -> config != ALL_MODE_HUD_EXPANDED && config != CONTAINER_COMPARATOR_EXPANDED)
                 .filter(config -> !ALL_MODE_HUD_CHILDREN.contains(config) || ALL_MODE_HUD_EXPANDED.getBooleanValue())
                 .filter(config -> !CONTAINER_COMPARATOR_CHILDREN.contains(config) || CONTAINER_COMPARATOR_EXPANDED.getBooleanValue())
@@ -2840,6 +2860,7 @@ public final class Configs implements IConfigHandler
     private static boolean isGenericExpandedChildVisible(IConfigBase config)
     {
         //#if MC >= 1.21.1
+        if (config == REGISTRY_PICKER_ENTITY_MODELS) return REGISTRY_PICKER_EXPANDED.getBooleanValue();
         if (ALL_MODE_HUD_CHILDREN.contains(config)) return ALL_MODE_HUD_EXPANDED.getBooleanValue();
         if (CONTAINER_COMPARATOR_CHILDREN.contains(config)) return CONTAINER_COMPARATOR_EXPANDED.getBooleanValue();
         //#endif

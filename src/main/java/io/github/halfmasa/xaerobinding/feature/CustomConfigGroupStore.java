@@ -87,10 +87,17 @@ public final class CustomConfigGroupStore
     /** Migrates built-in groups once, preserving any configs already assigned by the user. */
     public synchronized boolean ensureDefaults(String source, List<GroupTemplate> templates)
     {
+        boolean addedGroups = false;
         //#if MC >= 1.21.1
         if (HALF_MASA_SOURCE.equals(normalizeSource(source)) && templates != null)
         {
             ensureLoaded();
+            if (this.initializedDefaultVersions.contains(HALF_MASA_SOURCE + "::" + BUILT_IN_GROUPS_VERSION))
+            {
+                var pickerGroups = templates.stream().filter(template -> template != null &&
+                        Configs.BETTER_REGISTRY_PICKER.getName().equals(template.mainConfig)).toList();
+                addedGroups = ensureDefaults(source, pickerGroups, "registry-picker-v1", false);
+            }
             String migration = HALF_MASA_SOURCE + "::favorites-independent-v1";
             if (!this.initializedDefaultVersions.contains(migration))
             {
@@ -115,10 +122,10 @@ public final class CustomConfigGroupStore
             var newGroups = templates.stream().filter(template -> template != null &&
                     (Configs.ALL_MODE_HUD.getName().equals(template.mainConfig)
                             || Configs.CONTAINER_COMPARATOR_OUTPUT.getName().equals(template.mainConfig))).toList();
-            return ensureDefaults(source, newGroups, "hud-comparator-v1", false);
+            return ensureDefaults(source, newGroups, "hud-comparator-v1", false) || addedGroups;
         }
         //#endif
-        return ensureDefaults(source, templates, BUILT_IN_GROUPS_VERSION, true);
+        return ensureDefaults(source, templates, BUILT_IN_GROUPS_VERSION, true) || addedGroups;
     }
 
     private boolean ensureDefaults(String source, List<GroupTemplate> templates, String version,
